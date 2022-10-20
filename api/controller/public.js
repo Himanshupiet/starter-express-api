@@ -1,0 +1,183 @@
+const { userModel } = require("../../models/user");
+const { roleModel } = require("../../models/role");
+const { AuthToken } = require("../../models/authtoken");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+
+const {
+  newUserIdGen,
+  sendSms,
+  randomPassword,
+  encryptAES,
+  decryptAES,
+  passwordEncryptAES,
+  passwordDecryptAES
+
+} = require("../../util/helper");
+
+const secret = process.env.secret;
+
+module.exports = {
+  userlogin: async (req, res) => {
+    try {
+      const user = await userModel.findOne({ "userInfo.userId": req.body.bmmsId });
+      let isAdmin = false;
+      if (!user) {
+        return res.status(200).json({
+          success: false,
+          message: "BMMS ID or Password is wrong.",
+        });
+      }
+     
+      if (user.deleted === true) {
+        return res
+        .status(200)
+        .json({ success: false, message: "Your form is rejected." });
+      }
+      // if (!user.isActive) {
+      //   return res.status(200).json({
+      //     success: false,
+      //     message: "User was suspended.",
+      //   });
+      // }
+      // if(!user.isApproved){
+      //     return res.status(200).json({
+      //       success: false,
+      //       message: "User not approved by admin. Please contact to admin 9470510100.",
+      //     });
+      // }
+        if(!(user && passwordDecryptAES(user.userInfo.password)===decryptAES(req.body.password))) {
+          return res.status(200).json({
+            success: false,
+            message: "BMMS ID or Password is wrong",
+          });
+        }
+        const roleExist = await roleModel.findOne({ _id: user.userInfo.roleId });
+        if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN")) isAdmin = true;
+        const tokenGen = jwt.sign(
+          {
+            userId: user.id,
+            isAdmin: isAdmin,
+          },
+          secret,
+          { expiresIn: "100d" }
+        );
+        const tokenSave = new AuthToken({
+          token: tokenGen,
+          userId: user.id
+        });
+
+        const tokenData = await tokenSave.save();
+        return res.status(200).json({
+          success: true,
+          message: "Logged-in successfully",
+          data: { user: user, token: tokenGen },
+        });
+
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Error while login-user.",
+        error: err.message,
+      });
+    }
+  },
+
+  addUser: async (req, res) => {
+    try {
+      const notUniqueUser = await userModel.findOne({ "userInfo.aadharNumber": req.body.aadharNumber});
+      if (notUniqueUser){
+        return res.status(200).json({
+          success: false,
+          message: "Aadhar number is already registered.",
+        });
+      }
+
+      const newUserId = await newUserIdGen();
+      const getRoleId = await roleModel.findOne({ roleName: "STUDENT" });
+      let newPassword =  randomPassword().join("").toString();
+        let newUser = new userModel({
+          userInfo: {
+            ...req.body,
+            dob:new Date(req.body.dob),
+            roleId: getRoleId._id.toString(),
+            userId: newUserId,
+            password: passwordEncryptAES(newPassword)
+          },
+        });
+        const sendSMSandEmaildata = {
+          name: req.body.name,
+          email: req.body.email,
+          phoneNumber: req.body.phoneNumber1,
+          userId: newUserId,
+          password: newPassword,
+        };
+
+        // let responseData = {
+        //   name: req.body.name,
+        //   email: req.body.email,
+        //   roiId: newRoiId,
+        //   referralRoiId: req.body.parentRoiId,
+        //   receiverPhoneNumber: req.body.phoneNumber,
+        //   password: newPassword,
+        // };
+           const sms = await sendSms(sendSMSandEmaildata);
+          //const sms= true
+       
+          if (sms) {
+            let userData = await newUser.save();
+            return res.status(200).json({
+              success: true,
+              message: "Registration successful.",
+            });
+          } else {
+            return res.status(200).json({
+              success: false,
+              message: "Mobile mumber is not valid",
+            });
+          }
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        message: "Resigtration unsuccessful.",
+        error: err.message,
+      });
+    }
+  },
+
+  getAllUser: async (req, res) => {
+    try {
+      let data = await User.find(
+        {
+          $and: [
+            { deleted: false },
+            {
+              "userInfo.email": {
+                $nin: ["topadmin@yopmail.com", "fundlakshmi@gmail.com"],
+              },
+            },
+          ],
+        },
+      );
+      data = data.map((d) => {
+        return {
+          name: d.userInfo.name,
+          userId: d.userInfo.userId,
+        };
+      });
+      return res.status(200).json({
+        success: true,
+        message: "Users found",
+        data,
+      });
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Users not found.",
+        error: error.message,
+      });
+    }
+  },
+};
