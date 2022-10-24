@@ -5,6 +5,7 @@ const mongodb = require("mongodb");
 const MongoClient = mongodb.MongoClient;
 const URL = process.env.MONGO_LOCAL_CONN_URL;
 const { userModel } = require("../../models/user");
+const {roleModel} = require("../../models/role")
 const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
@@ -19,15 +20,26 @@ const authorization = process.env.SMS_API;
 module.exports = {
   getAllUsers: async (req, res) => {
     try {
+      const searchStr= req.query
+      let searchParam={}
+       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
+         searchParam={
+          $or:[
+            {'userInfo.roleName': new RegExp(searchStr, 'i')},
+            {'userInfo.fullName': new RegExp(searchStr, 'i')},
+            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
+            {'userInfo.motherName': new RegExp(searchStr, 'i')},
+            {'userInfo.email': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
+            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
+            {'userInfo.userId':new RegExp(searchStr, 'i')}
+          ]
+        }
+      }
+    
       const users = await userModel.find({
-        $and: [
-          { deleted: false },
-          {
-            "userInfo.email": {
-              $nin: ["topadmin@yopmail.com", "fundlakshmi@gmail.com"],
-            },
-          },
-        ],
+        $and: [ { deleted: false },searchParam]
       });
       return res.status(200).json({
         success: true,
@@ -44,12 +56,38 @@ module.exports = {
   },
   getAllStudents: async (req, res) => {
     try {
+
+      const searchStr= req.body.searchStr
+      let searchParam={}
+      let classParam={}
+       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
+         searchParam={
+          $or:[
+            {'userInfo.roleName': new RegExp(searchStr, 'i')},
+            {'userInfo.fullName': new RegExp(searchStr, 'i')},
+            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
+            {'userInfo.motherName': new RegExp(searchStr, 'i')},
+            {'userInfo.email': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
+            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
+            {'userInfo.userId':new RegExp(searchStr, 'i')}
+          ]
+        }
+      }
+      console.log("req.body", req.body)
+
+      if(req.body.selectedClass){
+        classParam={'userInfo.class':req.body.selectedClass}
+      }
       const users = await userModel.find({
         $and: [
           { deleted: false },
           {
             'userInfo.roleName':'STUDENT'
-          }
+          },
+          searchParam,
+          classParam
         ],
       });
       return res.status(200).json({
@@ -84,8 +122,18 @@ module.exports = {
 
   updateUserById: async (req, res) => {
     try {
-      let user =  await userModel.findOne({_id:req.params.id});
 
+      if(req.body.roleUpdate){
+          const newRoleName = req.body.newRoleName
+          delete req.body.updateRole
+          delete req.body.newRoleName
+          const getNewRoleData= await roleModel.findOne({$and:[{roleName:newRoleName},{ roleName:{$nin:['TOPADMIN','ADMIN']}}]})
+          if(getNewRoleData){
+            req.body.roleName = getNewRoleData.roleName
+            req.body.roleId = getNewRoleData._id.toString()
+          }
+      }
+      let user =  await userModel.findOne({_id:req.params.id});
       if(!user){
         return res.status(400).json({
           success: false,
@@ -102,7 +150,7 @@ module.exports = {
       await userModel.findOneAndUpdate({_id:req.params.id}, user);
       return res.status(200).json({
         success: true,
-        message: "Upddted successfully."
+        message: "Updated successfully."
       });
     } catch (err) {
       console.log(err);
@@ -167,7 +215,7 @@ module.exports = {
       });
     }
   },
-  updateWithdrawalStatus: async (req, res, next) => {
+  updateRole: async (req, res, next) => {
     try {
       let fdata = await FundingSource.findOneAndUpdate(
         { "withDrawalHistory._id": req.body.transactionId },

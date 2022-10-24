@@ -67,11 +67,6 @@ mongoose
   })
   .then(() => {
 
-
-    
-    console.log(decryptAES("U2FsdGVkX1+izMKtCzWgd3zqakPXE+TfI7DESPS753Q="))
-    console.log("Database Connection is ready...");
-
     const getAdmin = async () => {
       try {
         let topAdminRoleId = "";
@@ -99,7 +94,7 @@ mongoose
                 fatherName:"1",
                 class:"1",
                 dob:new Date(),
-                password: passwordEncryptAES("topadmin@%$#"),
+                // password: passwordEncryptAES("password removed"),
                 phoneNumber1: "1234567890",
                 roleId: topAdminRoleId,
                 roleName: "TOPADMIN",
@@ -114,7 +109,7 @@ mongoose
         console.log(err);
       }
     };
-    getAdmin();
+    //getAdmin();
   })
   .catch((err) => {
     console.log(err);

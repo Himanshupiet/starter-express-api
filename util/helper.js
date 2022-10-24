@@ -143,11 +143,9 @@ module.exports = {
     return CryptoJS.AES.encrypt(text, SECRET_MSG_PASSWORD).toString();
   },
   passwordDecryptAES : (encryptedBase64) => {
-    console.log('decryptAES', encryptedBase64)
     const decrypted = CryptoJS.AES.decrypt(encryptedBase64, SECRET_MSG_PASSWORD);
     if (decrypted) {
         try {
-            console.log(decrypted);
             const str = decrypted.toString(CryptoJS.enc.Utf8);
             if (str.length > 0) {
                 return str;
