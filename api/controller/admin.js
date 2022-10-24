@@ -75,7 +75,6 @@ module.exports = {
           ]
         }
       }
-      console.log("req.body", req.body)
 
       if(req.body.selectedClass){
         classParam={'userInfo.class':req.body.selectedClass}
