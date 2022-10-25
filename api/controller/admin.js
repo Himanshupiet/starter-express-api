@@ -20,8 +20,9 @@ const authorization = process.env.SMS_API;
 module.exports = {
   getAllUsers: async (req, res) => {
     try {
-      const searchStr= req.query
+      const searchStr= req.body.searchStr
       let searchParam={}
+      let classParam={}
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
           $or:[
@@ -30,16 +31,19 @@ module.exports = {
             {'userInfo.fatherName': new RegExp(searchStr, 'i')},
             {'userInfo.motherName': new RegExp(searchStr, 'i')},
             {'userInfo.email': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
             {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
             {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
             {'userInfo.userId':new RegExp(searchStr, 'i')}
           ]
         }
       }
-    
+      if(req.body.selectedClass){
+          classParam={'userInfo.class':req.body.selectedClass}
+      }
+ 
       const users = await userModel.find({
-        $and: [ { deleted: false },searchParam]
+        $and: [ { deleted: false },searchParam,classParam]
       });
       return res.status(200).json({
         success: true,
@@ -79,6 +83,7 @@ module.exports = {
       if(req.body.selectedClass){
         classParam={'userInfo.class':req.body.selectedClass}
       }
+
       const users = await userModel.find({
         $and: [
           { deleted: false },
@@ -121,7 +126,6 @@ module.exports = {
 
   updateUserById: async (req, res) => {
     try {
-
       if(req.body.roleUpdate){
           const newRoleName = req.body.newRoleName
           delete req.body.updateRole
