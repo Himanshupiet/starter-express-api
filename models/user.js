@@ -69,6 +69,32 @@ const userSchema = new mongoose.Schema({
       type:String,
     }
   },
+  document:{
+    stPhoto: {
+      type: String,
+    },
+    stAadharFside:{
+      type: String,
+    },
+    stAadharBside:{
+      type:String,
+    },
+    p1AadharFside:{
+      type: String,
+    },
+    p1AadharBside:{
+      type:String,
+    },
+    p2AadharFside:{
+      type: String,
+    },
+    p2AadharBside:{
+      type:String,
+    },
+    birthDoc:{
+      type:String,
+    },
+  },
   isApproved: {
     type: Boolean,
     default: false,

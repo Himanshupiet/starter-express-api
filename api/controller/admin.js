@@ -60,7 +60,6 @@ module.exports = {
   },
   getAllStudents: async (req, res) => {
     try {
-
       const searchStr= req.body.searchStr
       let searchParam={}
       let classParam={}
@@ -144,10 +143,18 @@ module.exports = {
           error: err.message,
         });
       }
-      user.userInfo={
-        ...user.userInfo,
-        ...req.body
+      if(req.body.student_document){
+        user['document']={
+          ...user['document'],
+          ...req.body.student_document
+        }
+      }else{
+        user.userInfo={
+          ...user.userInfo,
+          ...req.body
+        }
       }
+
       user.modified = new Date();
 
       await userModel.findOneAndUpdate({_id:req.params.id}, user);
