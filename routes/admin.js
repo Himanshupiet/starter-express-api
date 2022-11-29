@@ -9,6 +9,8 @@ router.get("/deleteUser/:id",isAunthaticatedAdmin, admin.deleteUser)
 router.post("/updateUser/:id",isAunthaticatedAdmin, admin.updateUserById)
 router.post("/updateStatus", isAunthaticatedAdmin, admin.updateStatus);
 router.get("/getSmsData", isAunthaticatedAdmin, admin.getSmsData);
+router.post("/submitResult", isAunthaticatedAdmin, admin.submitResult);
+router.post("/getResult", isAunthaticatedAdmin, admin.getResult);
 // router.get("/getAllEmailData", isAunthaticatedAdmin, admin.getAllEmail);
 // router.get("/getAllcronJobs", isAunthaticatedAdmin, admin.getAllcronJobs);
 // router.post("/backupFund", isAunthaticatedAdmin, admin.backupFund);

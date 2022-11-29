@@ -14,6 +14,7 @@ const {
   getAllActiveRoi,
   withDrawalBalance,
 } = require("../../util/income");
+const { resultModel } = require("../../models/result");
 
 const authorization = process.env.SMS_API;
 
@@ -23,6 +24,7 @@ module.exports = {
       const searchStr= req.body.searchStr
       let searchParam={}
       let classParam={}
+      let roleParam={}
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
           $or:[
@@ -41,9 +43,13 @@ module.exports = {
       if(req.body.selectedClass){
           classParam={'userInfo.class':req.body.selectedClass}
       }
- 
+
+      if(req.body.selectedRole){
+        roleParam={'userInfo.roleName':req.body.selectedRole}
+      }
+
       const users = await userModel.find({
-        $and: [ { deleted: false },searchParam,classParam]
+        $and: [ { deleted: false },searchParam,classParam,roleParam]
       });
       return res.status(200).json({
         success: true,
@@ -63,6 +69,7 @@ module.exports = {
       const searchStr= req.body.searchStr
       let searchParam={}
       let classParam={}
+      let rolePermissionParam={}
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
           $or:[
@@ -72,10 +79,19 @@ module.exports = {
             {'userInfo.motherName': new RegExp(searchStr, 'i')},
             {'userInfo.email': new RegExp(searchStr, 'i')},
             {'userInfo.phoneNumber': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
             {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
             {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
             {'userInfo.userId':new RegExp(searchStr, 'i')}
           ]
+        }
+      }
+      if(req.body.role==='TEACHER'){
+        rolePermissionParam={
+          'userInfo.phoneNumber': 0,
+          'userInfo.phoneNumber1': 0,
+          'userInfo.phoneNumber2': 0,  
+          'userInfo.aadharNumber': 0,
         }
       }
 
@@ -90,9 +106,10 @@ module.exports = {
             'userInfo.roleName':'STUDENT'
           },
           searchParam,
-          classParam
+          classParam,
+          
         ],
-      });
+      },rolePermissionParam);
       return res.status(200).json({
         success: true,
         users,
@@ -225,6 +242,204 @@ module.exports = {
       });
     }
   },
+
+  submitResult: async (req, res) => {
+    try {
+      console.log("req", req.body)
+      const resultData= req.body
+
+      if(resultData.resultPermissionData.role==='TEACHER'){
+          const subject=  resultData.subject.toLowerCase()
+          console.log("subject", subject)
+    
+        for (const it of resultData.resultMarks) {
+          console.log("userId", it.userId)
+            let result={}
+            result[subject]=it.marks
+
+           const newAndUpdateRsultEntry= await resultModel.findOneAndUpdate({$and:[
+            {userId:it.userId},
+            {resultYear:resultData.resultPermissionData.resultYear},
+            {examType:resultData.resultPermissionData.examType},
+            {class:resultData.class}
+            ]},
+             result,   
+             {upsert: true, new:true},
+            );
+
+            console.log("newAndUpdateRsultEntry",newAndUpdateRsultEntry)
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Update result successfully.",
+        });
+
+      }else if(resultData.resultPermissionData.role==='ADMIN'){
+          for (let it of resultData.totalResultMarks) {
+          
+           const updateRsultEntry= await resultModel.findOneAndUpdate({$and:[
+            {userId:it.userId},
+            {resultYear:resultData.resultPermissionData.resultYear},
+            {examType:resultData.resultPermissionData.examType},
+            {class:resultData.class}
+            ]},
+            it,   
+             {new:true},
+            );
+
+            console.log("updateRsultEntry",updateRsultEntry)
+        }
+
+      }
+
+      // const newResult = new resultModel({
+       
+      // });
+
+      // resultModel.findOneAndUpdate({ 'userId': userId },datatoUpdate,(err, response) => {
+      //   if (err) {
+      //     next(err);
+      //   }else{
+      //     return res.status(200).json({
+      //       success: true,
+      //       message: "Update status successfully.",
+      //     });
+      //   }
+      // })
+
+      // let userData = await newResult.save();
+      // return res.status(200).json({
+      //   success: true,
+      //   message: "Registration successful.",
+      // });
+
+      // resultModel.findOne({},(err, response) => {
+      //   if (err) {
+      //     next(err);
+      //   }else{
+      //     return res.status(200).json({
+      //       success: true,
+      //       message: "Update result successfully.",
+      //     });
+      //   }
+      // })
+
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Something went wrong",
+        error: err.response,
+      });
+    }
+  },
+
+  getResult: async (req, res) => {
+    try {
+      console.log("req", req.body)
+      const resultData= req.body
+
+      if(resultData.resultPermissionData.role==='TEACHER'){
+          const subject=  resultData.selectedSubject && resultData.selectedSubject.toLowerCase()
+          let subjectPermissionParam={
+            userId:1,
+          }
+          subjectPermissionParam[subject]=1
+
+          console.log("subject", subject)
+          const resultParam={
+            $and:[
+            {resultYear:resultData.resultPermissionData.resultYear},
+            {examType:resultData.resultPermissionData.examType},
+            {class:resultData.selectedClass}
+            ]
+          }
+        const resultData22 = await resultModel.find(resultParam,subjectPermissionParam);
+
+        // resultModel.find(resultParam,(err, response) => {
+        //   if (err) {
+        //     next(err);
+        //   }else{
+        //     return res.status(200).json({
+        //       success: true,
+        //       message: "get result successfully.",
+        //     });
+        //   }
+        // })
+          return res.status(200).json({
+            success: true,
+            message: "Result get successfully.",
+            result:resultData22
+          });
+    
+
+      }else if(resultData.resultPermissionData.role==='ADMIN'){
+     
+        const resultParam={
+          $and:[
+          {resultYear:resultData.resultPermissionData.resultYear},
+          {examType:resultData.resultPermissionData.examType},
+          {class:resultData.selectedClass}
+          ]
+        }
+      const resultData22 = await resultModel.find(resultParam);
+
+      // resultModel.find(resultParam,(err, response) => {
+      //   if (err) {
+      //     next(err);
+      //   }else{
+      //     return res.status(200).json({
+      //       success: true,
+      //       message: "get result successfully.",
+      //     });
+      //   }
+      // })
+        return res.status(200).json({
+          success: true,
+          message: "Result get successfully.",
+          result:resultData22
+        });
+      }
+
+   
+
+ 
+
+      // const newResult = new resultModel({
+       
+      // });
+
+
+
+      // let userData = await newResult.save();
+      // return res.status(200).json({
+      //   success: true,
+      //   message: "Registration successful.",
+      // });
+
+      // resultModel.findOne({},(err, response) => {
+      //   if (err) {
+      //     next(err);
+      //   }else{
+      //     return res.status(200).json({
+      //       success: true,
+      //       message: "Update result successfully.",
+      //     });
+      //   }
+      // })
+
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Something went wrong",
+        error: err.response,
+      });
+    }
+  },
+
+  //old apis
   updateRole: async (req, res, next) => {
     try {
       let fdata = await FundingSource.findOneAndUpdate(

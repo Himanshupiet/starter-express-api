@@ -64,6 +64,33 @@ module.exports = {
       numbers: [data.phoneNumber],
     };
     console.log("options", options)
+
+    function capitalize(sentance){
+      sentance = sentance.replace(/ +(?= )/g,'')
+      if(sentance.length===0) return ""
+  
+      const words = sentance.split(" ");
+      const capitalizeWord = words.map((word) => { 
+        if(word.trim().length>0) return word[0].toUpperCase() + word.substring(1).toLowerCase(); 
+        
+      }).join(" ");
+      return capitalizeWord
+    }
+
+    function limitString (string = '', limit = 0) {  
+      return string.substring(0, limit)
+    }
+    const capitalizeName= capitalize(data.fullName)
+
+    const name = limitString(capitalizeName, 27)
+
+    let options2 = {
+      authorization: smsapikey,
+      // sender_id:"BMMS",
+      message:`Welcome to BMM SCHOOL ${name}.Click here http://bmmschool.in`,
+      numbers: [data.phoneNumber],
+    };
+    console.log("options", options2)
     // fast2sms.sendMessage(options).then((response) => {
     //   console.log("sms service", response);
     //   return response;
@@ -76,8 +103,11 @@ module.exports = {
     // console.log('sms', options)
 
     const response = await fast2sms.sendMessage(options);
+    const response2 = await fast2sms.sendMessage(options2);
+    console.log("response2", response2)
     console.log("testttt", response.return);
     return response.return;
+    //return true;
   },
 
   //to genearte new password

@@ -87,12 +87,14 @@ module.exports = {
 
   addUser: async (req, res) => {
     try {
-      const notUniqueUser = await userModel.findOne({ "userInfo.aadharNumber": req.body.aadharNumber});
-      if (notUniqueUser){
-        return res.status(200).json({
-          success: false,
-          message: "Aadhar number is already registered.",
-        });
+      if(req.body.aadharNumber){
+        const notUniqueUser = await userModel.findOne({ "userInfo.aadharNumber": req.body.aadharNumber});
+        if (notUniqueUser){
+          return res.status(200).json({
+            success: false,
+            message: "Aadhar number is already registered.",
+          });
+        }
       }
 
       const newUserId = await newUserIdGen();
@@ -108,7 +110,7 @@ module.exports = {
           },
         });
         const sendSMSandEmaildata = {
-          name: req.body.name,
+          fullName: req.body.fullName,
           email: req.body.email,
           phoneNumber: req.body.phoneNumber1,
           userId: newUserId,
