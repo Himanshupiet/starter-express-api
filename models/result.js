@@ -22,59 +22,63 @@ const resultSchema = new mongoose.Schema({
     trim: true
   },
   hindi: {
-    type: String,
+    type: Number,
     default: 0,
   },
   english: {
-    type: String,
+    type: Number,
     default: 0,
   },
   science: {
-    type: String,
+    type: Number,
     default: 0,
   },
   math: {
-    type: String,
+    type: Number,
     default: 0,
   },
   sst: {
-    type: String,
+    type: Number,
     default: 0,
   },
   computer: {
-    type: String,
+    type: Number,
     default: 0,
   },
   gk: {
-    type: String,
+    type: Number,
     default: 0,
   },
   drawing: {
-    type: String,
+    type: Number,
     default: 0,
   },
-  moralScience: {
-    type: String,
+  moralValue: {
+    type: Number,
     default: 0,
   },
   hindiNote: {
-    type: String,
+    type: Number,
     default: 0,
   },
   englishNote: {
-    type: String,
+    type: Number,
     default: 0,
   },
   mathNote: {
-    type: String,
+    type: Number,
     default: 0,
   },
   scienceNote: {
-    type: String,
+    type: Number,
     default: 0,
   },
   sstNote: {
-    type: String,
+    type: Number,
+    default: 0,
+  },
+  attendance: {
+    type: Number,
     default: 0,
   },
 });
