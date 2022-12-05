@@ -73,7 +73,6 @@ module.exports = {
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
           $or:[
-            {'userInfo.roleName': new RegExp(searchStr, 'i')},
             {'userInfo.fullName': new RegExp(searchStr, 'i')},
             {'userInfo.fatherName': new RegExp(searchStr, 'i')},
             {'userInfo.motherName': new RegExp(searchStr, 'i')},
@@ -192,11 +191,22 @@ module.exports = {
   updateStatus:  (req, res, next) => {
       try{
       const userId = req.body.userId;
-      const datatoUpdate={
-        isActive: req.body.isActive && req.body.isActive==="true"? true:false,
-        isApproved: req.body.isApproved && req.body.isApproved==="true"? true:false,
-        modified: new Date(),
+      let datatoUpdate={}
+      if(req.body.recover){
+        datatoUpdate={
+          isActive:true,
+          isApproved: true,
+          modified: new Date(),
+          deleted:false
+        }
+      }else{
+        datatoUpdate={
+          isActive: req.body.isActive && req.body.isActive==="true"? true:false,
+          isApproved: req.body.isApproved && req.body.isApproved==="true"? true:false,
+          modified: new Date(),
+        }
       }
+
        userModel.findOneAndUpdate({ 'userInfo.userId': userId },datatoUpdate,(err, response) => {
         if (err) {
           next(err);
@@ -435,6 +445,60 @@ module.exports = {
         success: false,
         message: "Something went wrong",
         error: err.response,
+      });
+    }
+  },
+
+  getDeletedUser: async (req, res) => {
+    try {
+      const searchStr= req.body.searchStr
+      let searchParam={}
+       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
+         searchParam={
+          $or:[
+            {'userInfo.roleName': new RegExp(searchStr, 'i')},
+            {'userInfo.fullName': new RegExp(searchStr, 'i')},
+            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
+            {'userInfo.motherName': new RegExp(searchStr, 'i')},
+            {'userInfo.email': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
+            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
+            {'userInfo.userId':new RegExp(searchStr, 'i')}
+          ]
+        }
+      }
+
+      const users = await userModel.find({
+        $and: [ { deleted: true },searchParam]
+      });
+      return res.status(200).json({
+        success: true,
+        users,
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "User not found.",
+        error: err.message,
+      });
+    }
+  },
+
+  permanentDeleteUser: async (req, res) => {
+    try {
+     await userModel.deleteOne({_id:req.params.id});
+      return res.status(200).json({
+        success: true,
+        message: "Deleted successfully."
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "user not found.",
+        error: err.message,
       });
     }
   },

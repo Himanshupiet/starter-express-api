@@ -77,7 +77,11 @@ const resultSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  attendance: {
+  attendance1: {
+    type: Number,
+    default: 0,
+  },
+  attendance2: {
     type: Number,
     default: 0,
   },
