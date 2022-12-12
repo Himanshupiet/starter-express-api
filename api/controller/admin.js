@@ -503,6 +503,66 @@ module.exports = {
     }
   },
 
+  reportData: async (req, res) => {
+    try {
+      let repodata={}
+    let queryParam={}
+    if(req.body.deleteOption){
+      queryParam={
+        ...queryParam,
+        deleted:req.body.deleteOption==='true'?true:false,
+      }
+    }
+    if(req.body.activeOption){
+      queryParam={
+        ...queryParam,
+        isActive:req.body.activeOption==='true'?true:false,
+      }
+    }
+    if(req.body.gender){
+      queryParam={
+        ...queryParam,
+        'userInfo.gender':req.body.gender,
+      }
+    }
+    if(req.body.selectedClass){
+      queryParam={
+        ...queryParam,
+        'userInfo.class':req.body.selectedClass,
+      }
+    }
+    if(req.body.selectedRole){
+      queryParam={
+        ...queryParam,
+        'userInfo.roleName':req.body.selectedRole,
+      }
+    }
+    if(req.body.selectedCategory){
+      queryParam={
+        ...queryParam,
+        'userInfo.category':req.body.selectedCategory,
+      }
+    }
+
+   const reportCount= await userModel.find(queryParam).count();
+
+
+    return res.status(200).json({
+      success: true,
+      message: "Report Data get successfully.",
+      reportData:repodata,
+      reportCount:reportCount,
+    });
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "user not found.",
+        error: err.message,
+      });
+    }
+  },
+
   //old apis
   updateRole: async (req, res, next) => {
     try {

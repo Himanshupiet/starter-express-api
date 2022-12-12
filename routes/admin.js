@@ -13,6 +13,7 @@ router.post("/submitResult", isAunthaticatedAdmin, admin.submitResult);
 router.post("/getResult", isAunthaticatedAdmin, admin.getResult);
 router.post("/getDeletedUser", isAunthaticatedAdmin, admin.getDeletedUser);
 router.delete("/permanentDeleteUser/:id", isAunthaticatedAdmin, admin.permanentDeleteUser);
+router.post("/reportData", isAunthaticatedAdmin, admin.reportData);
 
 // router.get("/getAllEmailData", isAunthaticatedAdmin, admin.getAllEmail);
 // router.get("/getAllcronJobs", isAunthaticatedAdmin, admin.getAllcronJobs);
