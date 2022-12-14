@@ -87,6 +87,14 @@ module.exports = {
 
   addUser: async (req, res) => {
     try {
+       const regis=true
+       if(regis){
+        return res.status(200).json({
+          success: false,
+          message: "Please contact to admin.",
+        });
+       }
+
       if(req.body.aadharNumber){
         const notUniqueUser = await userModel.findOne({ "userInfo.aadharNumber": req.body.aadharNumber});
         if (notUniqueUser){
