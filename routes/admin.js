@@ -14,6 +14,12 @@ router.post("/getResult", isAunthaticatedAdmin, admin.getResult);
 router.post("/getDeletedUser", isAunthaticatedAdmin, admin.getDeletedUser);
 router.delete("/permanentDeleteUser/:id", isAunthaticatedAdmin, admin.permanentDeleteUser);
 router.post("/reportData", isAunthaticatedAdmin, admin.reportData);
+router.post("/createExam", isAunthaticatedAdmin, admin.createExam);
+router.get("/getExamData", isAunthaticatedAdmin, admin.getExam);
+router.post("/updateExam", isAunthaticatedAdmin, admin.updateExam);
+router.delete("/deleteExam", isAunthaticatedAdmin, admin.deleteExam);
+router.get("/getExamPermission", isAunthaticatedAdmin, admin.getExamPermission);
+
 
 // router.get("/getAllEmailData", isAunthaticatedAdmin, admin.getAllEmail);
 // router.get("/getAllcronJobs", isAunthaticatedAdmin, admin.getAllcronJobs);

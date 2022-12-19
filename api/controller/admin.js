@@ -5,6 +5,7 @@ const mongodb = require("mongodb");
 const MongoClient = mongodb.MongoClient;
 const URL = process.env.MONGO_LOCAL_CONN_URL;
 const { userModel } = require("../../models/user");
+const { examModel } = require("../../models/exam");
 const {roleModel} = require("../../models/role")
 const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
@@ -15,6 +16,7 @@ const {
   withDrawalBalance,
 } = require("../../util/income");
 const { resultModel } = require("../../models/result");
+
 
 const authorization = process.env.SMS_API;
 
@@ -562,6 +564,109 @@ module.exports = {
       });
     }
   },
+
+  createExam: async (req, res) => {
+    try {
+      const examData=new examModel({
+        examType: req.body.examType,
+        examYear: req.body.examYear,
+        created: new Date(),
+        modified: new Date()
+      })
+      let newExamData = await examData.save();
+      if(newExamData){
+        return res.status(200).json({
+          success: true,
+          message: "exam created successfully."
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "exam not created."
+        });
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Error while creating exam.",
+        error: err.message,
+      });
+    }
+  },
+
+  updateExam: async (req, res) => {
+    try {
+      if(req.body.key==='primary'){
+        await examModel.findOneAndUpdate({_id:req.body.examId},{primary:req.body.value, modified: new Date()});
+      }
+      return res.status(200).json({
+        success: true,
+        message: "exam updated successfully."
+      });
+     
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Error while exam update.",
+        error: err.message,
+      });
+    }
+  },
+
+  deleteExam: async (req, res) => {
+    try {
+     await examModel.findOneAndUpdate({_id:req.params.id},{deleted:true});
+      return res.status(200).json({
+        success: true,
+        message: "Deleted successfully."
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Error while get exam.",
+        error: err.message,
+      });
+    }
+  },
+  getExam:async(req, res)=>{
+    try{
+      const getExamsData= await examModel.find({deleted:false})
+        return res.status(200).json({
+          success: true,
+          message: "Exam data get successfully.",
+          data: getExamsData && getExamsData.length>0? getExamsData:[]
+        })
+
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:"Error while get exam "
+      })
+    }
+  },
+
+  getExamPermission :async(req, res)=>{
+    try{
+      const getExamsData= await examModel.findOne({$and:[{deleted:false, primary:true}]})
+        return res.status(200).json({
+          success: true,
+          message: "Exam data get successfully.",
+          data: getExamsData 
+        })
+
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:"Error while get exam "
+      })
+    }
+  },
+
 
   //old apis
   updateRole: async (req, res, next) => {
