@@ -16,6 +16,7 @@ const {
   withDrawalBalance,
 } = require("../../util/income");
 const { resultModel } = require("../../models/result");
+const { resultEntryPerModel } = require("../../models/resutlEntryPer");
 
 
 const authorization = process.env.SMS_API;
@@ -567,6 +568,8 @@ module.exports = {
 
   createExam: async (req, res) => {
     try {
+     const oldExam = await examModel.findOne({$and:[{examType:req.body.examType},{examYear:req.body.examYear}]});
+     if(!oldExam){
       const examData=new examModel({
         examType: req.body.examType,
         examYear: req.body.examYear,
@@ -585,6 +588,12 @@ module.exports = {
           message: "exam not created."
         });
       }
+    }else{
+      return res.status(200).json({
+        success: false,
+        message: "exam already created."
+      });
+    }
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -597,13 +606,21 @@ module.exports = {
 
   updateExam: async (req, res) => {
     try {
+      let newUpdate=null
       if(req.body.key==='primary'){
-        await examModel.findOneAndUpdate({_id:req.body.examId},{primary:req.body.value, modified: new Date()});
+        newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{primary:req.body.value, modified: new Date()});
       }
-      return res.status(200).json({
-        success: true,
-        message: "exam updated successfully."
-      });
+      if(newUpdate){
+        return res.status(200).json({
+          success: true,
+          message: "exam updated successfully."
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "exam not updated try again."
+        });
+      }
      
     } catch (err) {
       console.log(err);
@@ -633,11 +650,19 @@ module.exports = {
   },
   getExam:async(req, res)=>{
     try{
-      const getExamsData= await examModel.find({deleted:false})
+      const getExamsData= await examModel.find({})
+      const getResultEntryPerData = await resultEntryPerModel.find({});
+      const getTeacherData= await userModel.find({$and:[{deleted:false, 'userInfo.roleName':'TEACHER'}]})
+      const sendData={
+        examsData:getExamsData,
+        teacherData:getTeacherData,
+        resultEntryPerData:getResultEntryPerData
+      }
+
         return res.status(200).json({
           success: true,
           message: "Exam data get successfully.",
-          data: getExamsData && getExamsData.length>0? getExamsData:[]
+          data: sendData
         })
 
     }catch(err){
@@ -651,19 +676,106 @@ module.exports = {
 
   getExamPermission :async(req, res)=>{
     try{
-      const getExamsData= await examModel.findOne({$and:[{deleted:false, primary:true}]})
+      const getExamsData= await examModel.findOne({$and:[{deleted:false, primary:true}]}) 
+      const resultEntryPermission= await resultEntryPerModel.findOne({$and:[{deleted:false, userId:req.query.userId}]}) 
+
+      if(resultEntryPermission && getExamsData){
+        const sendExamsData={
+          permission:resultEntryPermission,
+          examsData:getExamsData
+        }
         return res.status(200).json({
           success: true,
           message: "Exam data get successfully.",
-          data: getExamsData 
+          data: sendExamsData 
         })
+
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Exam data not get, please try again.", 
+        })
+
+      }
 
     }catch(err){
       console.log(err)
       return res.status(400).json({
         success:false,
-        message:"Error while get exam "
+        message:"Error while get exam"
       })
+    }
+  },
+  createResultEntryPermission: async(req, res)=>{
+    try{
+      const resultEntryPerData= new resultEntryPerModel({
+        userId:req.body.teacherId,
+        subjectsAllowed:req.body.subjectsAllowed,
+        classAllowed:req.body.classAllowed
+      })
+      const newResultEntryPer = await resultEntryPerData.save();
+      return res.status(200).json({
+        success: true,
+        message: "created successfully.",
+      })
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:'Error whille create new result entry permission.'
+      })
+    }
+  },
+  getResultEntryPermission: async(req, res)=>{
+    try{
+      const getResultEntryPerData = await resultEntryPerModel.find({});
+      return res.status(200).json({
+        success: true,
+        message: "created successfully.",
+        data:getResultEntryPerData
+      })
+    }catch(err){
+      return res.status(400).json({
+        success:false,
+        message:'Error whille create new result entry permission.'
+      })
+    }
+  },
+  updateResultEntryPermission: async (req, res) => {
+    try {
+      let newUpdate=null
+      if(req.body.key==='entry'){
+        newUpdate= await resultEntryPerModel.findOneAndUpdate({_id:req.body.resultEntryPerId},{entry:req.body.value, modified: new Date()});
+      }
+      if(req.body.key==='update'){
+        const updateData={
+          classAllowed:req.body.classAllowed,
+          subjectsAllowed:req.body.subjectsAllowed, 
+          modified: new Date
+        }
+       newUpdate= await resultEntryPerModel.findOneAndUpdate({$and:[{_id:req.body.resultEntryPerId},{userId:req.body.selectTeacher}]},updateData);
+      }
+      if(newUpdate){
+        return res.status(200).json({
+          success: true,
+          message: "Updated successfully."
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: 'Not updated, try agian',
+          error: err.message,
+        });
+      }
+
+     
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Error while update.",
+        error: err.message,
+      });
     }
   },
 
