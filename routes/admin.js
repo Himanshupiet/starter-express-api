@@ -21,6 +21,8 @@ router.delete("/deleteExam", isAunthaticatedAdmin, admin.deleteExam);
 router.get("/getExamPermission", isAunthaticatedAdmin, admin.getExamPermission);
 router.post("/resultEntryPer",isAunthaticatedAdmin, admin.createResultEntryPermission)
 router.post("/updateResultEntryPer",isAunthaticatedAdmin, admin.updateResultEntryPermission)
+router.get("/adminDashboardData", isAunthaticatedAdmin, admin.getAdminDashboardData);
+
 
 
 

@@ -353,6 +353,8 @@ module.exports = {
       console.log("req", req.body)
       const resultData= req.body
 
+     const userData =  await userModel.find({$and:[{'userInfo.class':resultData.selectedClass},{'userInfo.roleName':'STUDENT'},{deleted: false}]});
+console.log("userDataaaaaaaaaaaaa", userData)
       if(resultData.resultPermissionData.role==='TEACHER'){
           const subject=  resultData.selectedSubject && resultData.selectedSubject.toLowerCase()
           let subjectPermissionParam={
@@ -386,7 +388,6 @@ module.exports = {
             result:resultData22
           });
     
-
       }else if(resultData.resultPermissionData.role==='ADMIN'){
      
         const resultParam={
@@ -396,7 +397,25 @@ module.exports = {
           {class:resultData.selectedClass}
           ]
         }
+        let newResultData22=[]
       const resultData22 = await resultModel.find(resultParam);
+      console.log("resultData22222", resultData22)
+      if(userData && userData.length>0){
+        newResultData22 = userData.map(data=>{
+          const found = resultData22.find(element => element.userId === data.userInfo.userId);
+          if(found){
+            const newResultData={
+                  ...data.userInfo,
+                  ...found,
+                  }
+                  return newResultData
+          }else{
+            return data.userInfo
+          }
+        })
+        console.log("newResultData22",newResultData22)
+      }
+     
 
       // resultModel.find(resultParam,(err, response) => {
       //   if (err) {
@@ -411,7 +430,7 @@ module.exports = {
         return res.status(200).json({
           success: true,
           message: "Result get successfully.",
-          result:resultData22
+          result:newResultData22
         });
       }
 
@@ -777,6 +796,38 @@ module.exports = {
         error: err.message,
       });
     }
+  },
+  getAdminDashboardData:async(req, res)=>{
+    try{
+      let dashBoardData={}
+      const todayDate = req.query.todayDate
+      //console.log("todayDateeeeeeeeeeeeeeeee",  todayDate)
+      const totalStudent= await userModel.find({$and:[{deleted:false}, {'userInfo.roleName': 'STUDENT'}]}).count()
+      const totalTeacher= await userModel.find({$and:[{deleted:false}, {'userInfo.roleName': 'TEACHER'}]}).count()
+      const userFound= await userModel.find({$and:[{deleted:false}, {'userInfo.dob': todayDate}]})
+      //console.log("userFoundddddddddddddd",  userFound)
+      dashBoardData={
+        totalStudent:totalStudent,
+        totalTeacher:totalTeacher,
+        todayBirthday:userFound
+      }
+
+      if(dashBoardData){
+        return res.status(200).json({ 
+          success: true,
+          message: "get dashboard data successfully.",
+          dashboardData:dashBoardData
+        });
+      }
+    }catch(err){
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Error while get dashboard data.",
+        error: err.message,
+      });
+    }
+
   },
 
 
