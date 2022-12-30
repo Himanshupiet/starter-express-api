@@ -20,6 +20,10 @@ const { resultEntryPerModel } = require("../../models/resutlEntryPer");
 
 
 const authorization = process.env.SMS_API;
+const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PREP"]
+const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
+const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
+const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK','MV']
 
 module.exports = {
   getAllUsers: async (req, res) => {
@@ -258,29 +262,71 @@ module.exports = {
 
   submitResult: async (req, res) => {
     try {
-      console.log("req", req.body)
+      //console.log("req", req.body)
       const resultData= req.body
 
-      if(resultData.resultPermissionData.role==='TEACHER'){
-          const subject=  resultData.subject.toLowerCase()
-          console.log("subject", subject)
+      if(resultData.resultPermissionData.role==='TEACHER' && resultData.subject){
+          let subjectName=  resultData.subject.toLowerCase().trim()
+          subjectName = subjectName.includes(' ')? subjectName.split(' ').join('_'):subjectName
+        //  console.log("subject", subjectName)
     
         for (const it of resultData.resultMarks) {
-          console.log("userId", it.userId)
-            let result={}
-            result[subject]=it.marks
+          // console.log("userId", it.userId)
+          //   let result={
+          //     subjects:{}
+          //   }
+          //   // if(resultData.resultPermissionData.examType.includes('unit')){
+          //   //   result.subjects['HINDI']=0
+          //   //   result.subjects['ENGLISH']=0
+          //   //   result.subjects['MATH']=0
+          //   //   result.subjects['SCIENCE']=0
+          //   //   result.subjects['SST']=0
+          //   //   result.subjects['COMPUTER']=0
+          //   // }
+          //   result.subjects[subjectName]=it.marks
+       
+          //   console.log("resultttttttttttttttt",result)
+          //   const subjectParam= `subjects.${subjectName}`
+            
+       
+          //  const newAndUpdateRsultEntry= await resultModel.findOneAndUpdate({$and:[
+          //   {userId:it.userId},
+          //   {resultYear:resultData.resultPermissionData.resultYear},
+          //   {examType:resultData.resultPermissionData.examType},
+          //   {class:resultData.class},
+          //   {subjectParam:subjectName}
+          //   ]},
+          //    result,   
+          //    {upsert: true, new:true},
+          //   );
 
-           const newAndUpdateRsultEntry= await resultModel.findOneAndUpdate({$and:[
+
+          const resultParam ={$and:[
             {userId:it.userId},
             {resultYear:resultData.resultPermissionData.resultYear},
             {examType:resultData.resultPermissionData.examType},
-            {class:resultData.class}
-            ]},
-             result,   
-             {upsert: true, new:true},
-            );
-
-            console.log("newAndUpdateRsultEntry",newAndUpdateRsultEntry)
+            {class:resultData.class},
+            ]}
+            let resultEntryFound= await resultModel.findOne(resultParam);
+            if(resultEntryFound){
+              resultEntryFound.subjects[subjectName]=it.marks
+      
+             await resultModel.findOneAndUpdate(resultParam,resultEntryFound )
+            }else{
+                let result={
+                    subjects:{}
+                  }
+                  result.subjects[subjectName]=it.marks
+                  const newResultEntryData=resultModel({
+                    userId:it.userId,
+                    resultYear:resultData.resultPermissionData.resultYear,
+                    examType:resultData.resultPermissionData.examType,
+                    class:resultData.class,
+                    ...result
+                  })
+                  //console.log('newRsultEntryDataaaaaaaaaaaaaaaaaaaa',newResultEntryData)
+                 const  newResultEntryCreated = await newResultEntryData.save()
+            }
         }
 
         return res.status(200).json({
@@ -288,55 +334,27 @@ module.exports = {
             message: "Update result successfully.",
         });
 
-      }else if(resultData.resultPermissionData.role==='ADMIN'){
-          for (let it of resultData.totalResultMarks) {
-          
-           const updateRsultEntry= await resultModel.findOneAndUpdate({$and:[
-            {userId:it.userId},
-            {resultYear:resultData.resultPermissionData.resultYear},
-            {examType:resultData.resultPermissionData.examType},
-            {class:resultData.class}
-            ]},
-            it,   
-             {new:true},
-            );
-
-            console.log("updateRsultEntry",updateRsultEntry)
-        }
-
       }
+      // else if(resultData.resultPermissionData.role==='ADMIN'){
+      //     for (let it of resultData.totalResultMarks) {
+          
+      //      const updateRsultEntry= await resultModel.findOneAndUpdate({$and:[
+      //       {userId:it.userId},
+      //       {resultYear:resultData.resultPermissionData.resultYear},
+      //       {examType:resultData.resultPermissionData.examType},
+      //       {class:resultData.class}
+      //       ]},
+      //       it,   
+      //        {new:true},
+      //       );
 
-      // const newResult = new resultModel({
-       
-      // });
-
-      // resultModel.findOneAndUpdate({ 'userId': userId },datatoUpdate,(err, response) => {
-      //   if (err) {
-      //     next(err);
-      //   }else{
-      //     return res.status(200).json({
-      //       success: true,
-      //       message: "Update status successfully.",
-      //     });
+      //       console.log("updateRsultEntry",updateRsultEntry)
       //   }
-      // })
 
-      // let userData = await newResult.save();
-      // return res.status(200).json({
-      //   success: true,
-      //   message: "Registration successful.",
-      // });
+      // }
 
-      // resultModel.findOne({},(err, response) => {
-      //   if (err) {
-      //     next(err);
-      //   }else{
-      //     return res.status(200).json({
-      //       success: true,
-      //       message: "Update result successfully.",
-      //     });
-      //   }
-      // })
+    
+   
 
     } catch (err) {
       console.log(err);
@@ -350,116 +368,72 @@ module.exports = {
 
   getResult: async (req, res) => {
     try {
-      console.log("req", req.body)
-      const resultData= req.body
-
-     const userData =  await userModel.find({$and:[{'userInfo.class':resultData.selectedClass},{'userInfo.roleName':'STUDENT'},{deleted: false}]});
-console.log("userDataaaaaaaaaaaaa", userData)
-      if(resultData.resultPermissionData.role==='TEACHER'){
-          const subject=  resultData.selectedSubject && resultData.selectedSubject.toLowerCase()
+      //console.log("req", req.body)
+    const resultQuery= req.body
+     const userData =  await userModel.find({$and:[{'userInfo.class':resultQuery.selectedClass},{'userInfo.roleName':'STUDENT'},{deleted: false}]});
+      if(resultQuery.resultPermissionData.action==='ENTRY'){
+          let subjectName=  resultQuery.selectedSubject && resultQuery.selectedSubject.toLowerCase().trim()
+          subjectName = subjectName.includes(' ')?subjectName.split(' ').join('_'):subjectName
           let subjectPermissionParam={
             userId:1,
+            subjects:{}
           }
-          subjectPermissionParam[subject]=1
-
-          console.log("subject", subject)
-          const resultParam={
+          subjectPermissionParam.subjects[subjectName]=1
+ 
+          let resultParam={
             $and:[
-            {resultYear:resultData.resultPermissionData.resultYear},
-            {examType:resultData.resultPermissionData.examType},
-            {class:resultData.selectedClass}
+            {resultYear:resultQuery.resultPermissionData.resultYear},
+            {examType:resultQuery.resultPermissionData.examType},
+            {class:resultQuery.selectedClass},
             ]
           }
-        const resultData22 = await resultModel.find(resultParam,subjectPermissionParam);
-
-        // resultModel.find(resultParam,(err, response) => {
-        //   if (err) {
-        //     next(err);
-        //   }else{
-        //     return res.status(200).json({
-        //       success: true,
-        //       message: "get result successfully.",
-        //     });
-        //   }
-        // })
+        const resultData = await resultModel.find(resultParam,subjectPermissionParam);
           return res.status(200).json({
             success: true,
             message: "Result get successfully.",
-            result:resultData22
+            result:resultData
           });
     
-      }else if(resultData.resultPermissionData.role==='ADMIN'){
+      }else if(resultQuery.resultPermissionData.role==='ADMIN'){
      
         const resultParam={
           $and:[
-          {resultYear:resultData.resultPermissionData.resultYear},
-          {examType:resultData.resultPermissionData.examType},
-          {class:resultData.selectedClass}
+          {resultYear:resultQuery.resultPermissionData.resultYear},
+          {examType:resultQuery.resultPermissionData.examType},
+          {class:resultQuery.selectedClass}
           ]
         }
-        let newResultData22=[]
-      const resultData22 = await resultModel.find(resultParam);
-      console.log("resultData22222", resultData22)
-      if(userData && userData.length>0){
-        newResultData22 = userData.map(data=>{
-          const found = resultData22.find(element => element.userId === data.userInfo.userId);
-          if(found){
-            const newResultData={
+       
+        const resultData = await resultModel.find(resultParam);
+        if(userData && userData.length>0){
+           const newResultData = userData.map(data=>{
+            const found = resultData.find(element => element.userId === data.userInfo.userId);
+              if(found){
+                const subjectsValues = Object.values(found.subjects);
+                const total = subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0)
+             
+                const newResultData={
                   ...data.userInfo,
-                  ...found,
+                  studentResult:found,
+                  total:total
                   }
                   return newResultData
-          }else{
-            return data.userInfo
-          }
-        })
-        console.log("newResultData22",newResultData22)
-      }
-     
-
-      // resultModel.find(resultParam,(err, response) => {
-      //   if (err) {
-      //     next(err);
-      //   }else{
-      //     return res.status(200).json({
-      //       success: true,
-      //       message: "get result successfully.",
-      //     });
-      //   }
-      // })
+              }else{
+                return data.userInfo
+              }
+          })
+          return res.status(200).json({
+            success: true,
+            message: "Result get successfully.",
+            result:newResultData
+          });
+        }
+      }else{
         return res.status(200).json({
-          success: true,
-          message: "Result get successfully.",
-          result:newResultData22
+          success: false,
+          message: "Result not found.",
         });
       }
-
-   
-
- 
-
-      // const newResult = new resultModel({
-       
-      // });
-
-
-
-      // let userData = await newResult.save();
-      // return res.status(200).json({
-      //   success: true,
-      //   message: "Registration successful.",
-      // });
-
-      // resultModel.findOne({},(err, response) => {
-      //   if (err) {
-      //     next(err);
-      //   }else{
-      //     return res.status(200).json({
-      //       success: true,
-      //       message: "Update result successfully.",
-      //     });
-      //   }
-      // })
 
     } catch (err) {
       console.log(err);
@@ -629,6 +603,9 @@ console.log("userDataaaaaaaaaaaaa", userData)
       if(req.body.key==='primary'){
         newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{primary:req.body.value, modified: new Date()});
       }
+      if(req.body.key==='adminEntryAllow'){
+        newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{adminAllowed:req.body.value, modified: new Date()});
+      }
       if(newUpdate){
         return res.status(200).json({
           success: true,
@@ -695,28 +672,58 @@ console.log("userDataaaaaaaaaaaaa", userData)
 
   getExamPermission :async(req, res)=>{
     try{
-      const getExamsData= await examModel.findOne({$and:[{deleted:false, primary:true}]}) 
-      const resultEntryPermission= await resultEntryPerModel.findOne({$and:[{deleted:false, userId:req.query.userId}]}) 
-
-      if(resultEntryPermission && getExamsData){
-        const sendExamsData={
-          permission:resultEntryPermission,
-          examsData:getExamsData
-        }
-        return res.status(200).json({
-          success: true,
-          message: "Exam data get successfully.",
-          data: sendExamsData 
-        })
-
-      }else{
-        return res.status(200).json({
-          success: false,
-          message: "Exam data not get, please try again.", 
-        })
-
-      }
-
+          const adminUser = await userModel.findOne({$and:[{'userInfo.userId':req.query.userId},{deleted:false},{'userInfo.roleName':{$in:['ADMIN','TOPADMIN']}}]})
+          const getExamsData= await examModel.findOne({$and:[{deleted:false, primary:true}]})
+            const resultEntryPermission= await resultEntryPerModel.findOne({$and:[{deleted:false, userId:req.query.userId}]}) 
+          if(adminUser && getExamsData){
+            const permission={
+              classAllowed :classList,
+              subjectsAllowed : subjectList,
+              entry:true
+            }
+            let sendExamsData={
+              permission:permission,
+              examsData:getExamsData
+            }
+            if(adminUser.userInfo.roleName==='TOPADMIN'){
+              return res.status(200).json({
+                success: true,
+                message: "Result entry permission data get successfully.",
+                data: sendExamsData 
+              })
+            }
+            if(adminUser.userInfo.roleName==='ADMIN' &&  getExamsData.adminAllowed){
+              return res.status(200).json({
+                success: true,
+                message: "Result entry permission data get successfully.",
+                data: sendExamsData 
+              })
+            }else{
+              return res.status(200).json({
+                success: false,
+                message: "Result entry permission not allowed. Please contact to admin.", 
+              })
+            }
+          }else{
+            if(resultEntryPermission && getExamsData){
+              const sendExamsData={
+                permission:resultEntryPermission,
+                examsData:getExamsData
+              }
+              return res.status(200).json({
+                success: true,
+                message: "Result entry permission data get successfully.",
+                data: sendExamsData 
+              })
+      
+            }else{
+              return res.status(200).json({
+                success: false,
+                message: "Result entry permission not allowed. Please contact to admin.", 
+              })
+            }
+          }
+     
     }catch(err){
       console.log(err)
       return res.status(400).json({

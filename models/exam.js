@@ -13,6 +13,10 @@ const exam = new mongoose.Schema({
     type:Boolean,
     default:false
   },
+  adminAllowed:{
+    type:Boolean,
+    default:false
+  },
   created: {
     type: Date,
   },

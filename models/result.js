@@ -21,61 +21,8 @@ const resultSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  hindi: {
-    type: Number,
-    default: 0,
-  },
-  english: {
-    type: Number,
-    default: 0,
-  },
-  science: {
-    type: Number,
-    default: 0,
-  },
-  math: {
-    type: Number,
-    default: 0,
-  },
-  sst: {
-    type: Number,
-    default: 0,
-  },
-  computer: {
-    type: Number,
-    default: 0,
-  },
-  gk: {
-    type: Number,
-    default: 0,
-  },
-  drawing: {
-    type: Number,
-    default: 0,
-  },
-  moralValue: {
-    type: Number,
-    default: 0,
-  },
-  hindiNote: {
-    type: Number,
-    default: 0,
-  },
-  englishNote: {
-    type: Number,
-    default: 0,
-  },
-  mathNote: {
-    type: Number,
-    default: 0,
-  },
-  scienceNote: {
-    type: Number,
-    default: 0,
-  },
-  sstNote: {
-    type: Number,
-    default: 0,
+  subjects: {
+    type: JSON,
   },
   attendance1: {
     type: Number,
