@@ -22,6 +22,8 @@ router.get("/getExamPermission", isAunthaticatedAdmin, admin.getExamPermission);
 router.post("/resultEntryPer",isAunthaticatedAdmin, admin.createResultEntryPermission)
 router.post("/updateResultEntryPer",isAunthaticatedAdmin, admin.updateResultEntryPermission)
 router.get("/adminDashboardData", isAunthaticatedAdmin, admin.getAdminDashboardData);
+router.post("/uploadDocumentS3", isAunthaticatedAdmin, admin.uploadDocumentS3);
+
 
 
 

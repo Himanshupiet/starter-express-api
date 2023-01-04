@@ -4,6 +4,10 @@ const mongoose = require("mongoose");
 const { userModel } = require("../models/user");
 const mailgun = require("mailgun-js");
 const CryptoJS = require('crypto-js');
+const OneSignal = require('onesignal-node'); 
+const awsSdk = require("aws-sdk");
+const s3 = new awsSdk.S3()
+
 const DOMAIN =
   "https://api.mailgun.net/v3/sandboxea9896c664194cff9614608387a91f33.mailgun.org";
 require("dotenv/config");
@@ -187,6 +191,104 @@ module.exports = {
         }
     }
     return encryptedBase64;
+  },
+  notificationSend : async () => {
+ 
+      try {
+       const client = new OneSignal.Client('1ad13ded-ebe0-4bdc-b8c3-23a02796e880', 'M2YxNDExOGMtNDFhNS00M2MzLTg5NTgtMWM2OTgzNjRmODU5');
+       //const response = await client.viewDevices({ limit: 200, offset: 0 });
+       //console.log(response.body);
+          const notification = {
+            contents: {
+              'tr': 'Yeni bildirim',
+              'en': 'New notification',
+            },
+            //included_segments: ['Subscribed Users'],
+            include_player_ids:[],
+            // filters: [
+            //   { field: 'tag', key: 'level', relation: '>', value: 10 }
+            // ]
+          };
+         
+          try {
+            const response = await client.createNotification(notification);
+            console.log("response notify",response);
+          } catch (e) {
+            if (e instanceof OneSignal.HTTPError) {
+              // When status code of HTTP response is not 2xx, HTTPError is thrown.
+              console.log(e.statusCode);
+              console.log(e.body);
+            }
+          }
+        } catch (e) {
+          console.log(e)
+            return e;
+        }
+    
+  },
+  s3upload: async(userId,fileName, file)=>{
+    // const Bucket="cyclic-fine-rose-fly-sari-ap-northeast-2"
+    // const AWS_REGION="ap-northeast-2"
+    // const AWS_ACCESS_KEY_ID="ASIAWCJ5L2TDQAU7E6EG"
+    // const AWS_SECRET_ACCESS_KEY="hYD6hDQ3tFC3b8hly+7pVgfXiixvBjHhwc6gDsg9"
+    // const AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEKf//////////wEaCmFwLXNvdXRoLTEiRzBFAiAPyTrduOVQ+LdcVsdWG5TZ4RPkCTqL19PX2EtDTIkeAgIhAKlKtjWyKoLZzHi7Prb/P4zrY3965XIvQKhLuc/Crzx7KrUCCPD//////////wEQABoMNDE3Mjc3NDAwMjYzIgwMESSmailtcLCh1YEqiQLs/jrUXCr6vnJRl8+3UX21PjTEBhTOPDTJvlDtx4T0fvLlbZmtbUIBDoH84MptMiIDsOJnw0qzXsPZfMWX9u+BeWuP5YSEye0cZAYPyWZE843oGtZdw/MHPgT1b1CzRAs4dU6KJgKUn8ty/K7vUtq41DV4KyvAiJRsmd0XFAkXzi5/RU3YngkA65bKlAf6ZydbelapSiEcgT5GueyrPq+nhsdK0N8sGM6AB1EtBmqBhn6xAoMvqznSvDJ3QxYkJ+/2JWjBY5d76RmabOFZ2cvpgwL7X9u9rGriRttOuM9arsOJKznSmgLObPCURVF0Dtlr5ZUB2uA4PHj1FqpBem+68glrfB8Sb39AMPKb1p0GOp0BxfSKYiQ33jEpteiycvRZa6qM7HNkvaVe0z5UjG+8b7TldMYWj4T27fxcuV++zlMJnO0EjDQLbjS+e+ZDXhuePblpuniInzj/AI9iotmPwb+KbnK03BLHhco3nGFgWa9d7kc1mVX7v+b/bWdQGB3AjIUFiIt1mijm3pJBN/+MnqOoMAFZV7Wh1tvBjvC5BDKVU/zoURc50tMxqXKKEA=="
+
+//  AWS_REGION="ap-south-1"
+// export AWS_ACCESS_KEY_ID="ASIAYIJYDZJLZDBCZ3VQ"
+// export AWS_SECRET_ACCESS_KEY="3sKOEC5vvk2P7Vmt6GRZn3JP8Bj1vdd4aHdyTboy"
+// export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEKf//////////wEaCmFwLXNvdXRoLTEiRzBFAiEA0cqjRUvRKqw2jSwHzCdRnA5zOLasepKJLvUgu6q9BFwCIBvkOuJT0RA5rMz01R6NFxINXGILbg40Z7bDNO7/Uew4KrUCCPD//////////wEQABoMNTY3NTkwMjQyOTAzIgwtEc5BB0TQ7FPPM1MqiQJdmQ46IT5yAczB+oi49BHGBolm4wMr/eq3Gjnq62eFx6uHoZiHCaLODgqDogIFtX6mdEWjST14e74/lN83FrIXMCvtv0If9oeCcTZuMKgRlI1BHshcHo3Eyehki8GJ2wog3aaduf8ToJC0Zl9/I+dsP6yY3Xip0h8eUaWB3LfD0arTxY8IFoSX755umF/xaTTxY3CNstHOgF3YNUyXZhZfeRjus+7JWGfyLXBeDw2sS8f9CsybkQ4vUgG6/0ogyDKqixPb1ncihF7NPcw7DJMB1vgcWUaOYGlL5eaaC5NTAE5/0zv1bghjkCJo05fhVgq/CuyowfwwyDUL2hph3qV0u33i2y97d8R2MMKf1p0GOp0Bh/fIxJRl5BiIkH/Tc7TzoDURJl/LnoOpPxivWu4ZfUS8wD2zCVaX1Y2pHg3OavMX59WPtuzBf017Jfawwgl0eJGsQ/9DDjNo8YGa5UNuDx9xrSGPDVOVbJZRyyob68P5qab8+Ci+i5wPuP6KDYyqBKociuJatyj+TbCI0O1YE6imYTAguiNEQMQVjveo55f135TOaMrDHARN1gEhXQ=="
+    // const AWS_REGION=process.env.AWS_REGION
+    // const AWS_ACCESS_KEY_ID=process.env.AWS_ACCESS_KEY_ID
+    // const AWS_SECRET_ACCESS_KEY=process.env.AWS_SECRET_ACCESS_KEY
+    //   await s3.putObject({
+    //     Body: JSON.stringify({key:"value"}),
+    //     Bucket: "cyclic-plum-clear-caridea-ap-south-1",
+    //     Key: "some_files/my_file.json",
+    // }).promise()
+    //console.log("AWS_REGION", AWS_REGION,"AWS_ACCESS_KEY_ID", AWS_ACCESS_KEY_ID,"AWS_SECRET_ACCESS_KEY", AWS_SECRET_ACCESS_KEY)
+
+    // awsSdk.config.update({region: AWS_REGION});
+    // const s3 = new awsSdk.S3({
+    //     apiVersion: '2006-03-01',
+    //     accessKeyId: AWS_ACCESS_KEY_ID,
+    //     secretAccessKey: AWS_SECRET_ACCESS_KEY
+    // });
+    //  const dddd=   await s3.putObject({
+    //     Body: file.data,
+    //     Bucket: "cyclic-fine-rose-fly-sari-ap-northeast-2",
+    //     Key:fileName,
+    // })
+    // console.log("dddddddddd", dddd.response)
+
+    // var bucketParams = {
+    //     Bucket: userId.toString(),
+    //     ACL: 'private'
+    // };
+
+    // s3.createBucket(bucketParams, async function (err, data) {
+    //     if (err) {
+    //         console.log("Error-1", err);
+    //     } else {
+    //         var uploadParams = {
+    //             Bucket: userId,
+    //             Key: fileName,
+    //             Body: file
+    //         };
+
+    //         //console.log('uploadParams', uploadParams)
+
+    //         // s3.upload(uploadParams, function (err, data) {
+    //         //     if (err) {
+    //         //         console.log("Error", err);
+    //         //     }
+    //         //     if (data) {
+    //         //         console.log("Upload Success", data.Location);
+    //         //     }
+    //         // });
+
+    //     }
+    // });
+
   },
 
 

@@ -73,6 +73,9 @@ const userSchema = new mongoose.Schema({
     stPhoto: {
       type: String,
     },
+    parentPhoto:{
+      type: String,
+    },
     stAadharFside:{
       type: String,
     },

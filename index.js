@@ -12,8 +12,8 @@ const errorHandler = require("./util/errorHandler");
 const { roleModel } = require("./models/role");
 const { userModel } = require("./models/user");
 const { cronjobModel } = require("./models/cronjob");
-
-const { decryptAES } = require("./util/helper");
+const fileUpload = require('express-fileupload')
+const { decryptAES ,notificationSend} = require("./util/helper");
 
 const bcrypt = require("bcryptjs");
 const api = process.env.API_URL;
@@ -29,6 +29,10 @@ app.options("*", cors());
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(errorHandler);
+app.use(fileUpload({
+  limits: {fileSize: 50 * 1024 * 1024},
+}));
+
 
 app.get("/", (req, res) => res.json({ message: "Home Page  test Route" }));
 app.use(function (req, res, next) {
@@ -66,6 +70,7 @@ mongoose
     dbName: mongoDbName,
   })
   .then(() => {
+    //notificationSend()
 
     const getAdmin = async () => {
       try {

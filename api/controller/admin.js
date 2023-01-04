@@ -11,9 +11,11 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
+const {s3upload} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
+  
 } = require("../../util/income");
 const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
@@ -180,10 +182,11 @@ module.exports = {
 
       user.modified = new Date();
 
-      await userModel.findOneAndUpdate({_id:req.params.id}, user);
+     const updatedUser= await userModel.findOneAndUpdate({_id:req.params.id}, user,{new:true});
       return res.status(200).json({
         success: true,
-        message: "Updated successfully."
+        message: "Updated successfully.",
+        data:updatedUser
       });
     } catch (err) {
       console.log(err);
@@ -193,6 +196,17 @@ module.exports = {
         error: err.message,
       });
     }
+  },
+  uploadDocumentS3:(req, res, next)=>{
+    console.log("userIdddddddddddddddddddddddd",req.body.userId)
+    console.log("imagefileeeeeeeeeeeeee", req.files.document)
+    const userId =req.body.userId
+    //const fileName= `${req.body.userId}_${req.body.fileName.split('_')[1]}`
+    const fileName=req.body.fileName
+    console.log("fileNameeeeeeeeeeeee", fileName)
+    const file= req.files.document
+    s3upload(userId,fileName, file)
+
   },
 
   updateStatus:  (req, res, next) => {
@@ -996,7 +1010,6 @@ module.exports = {
             collections,
           });
         } else {
-          // console.log("response", response);
           const conn = mongoose.createConnection(URL, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
