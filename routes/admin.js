@@ -23,6 +23,8 @@ router.post("/resultEntryPer",isAunthaticatedAdmin, admin.createResultEntryPermi
 router.post("/updateResultEntryPer",isAunthaticatedAdmin, admin.updateResultEntryPermission)
 router.get("/adminDashboardData", isAunthaticatedAdmin, admin.getAdminDashboardData);
 router.post("/uploadDocumentS3", isAunthaticatedAdmin, admin.uploadDocumentS3);
+router.delete("/deleteExamPermission/:id", isAunthaticatedAdmin, admin.deleteResultEntryPermission);
+
 
 
 

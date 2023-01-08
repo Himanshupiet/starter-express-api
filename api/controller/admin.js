@@ -748,16 +748,25 @@ module.exports = {
   },
   createResultEntryPermission: async(req, res)=>{
     try{
-      const resultEntryPerData= new resultEntryPerModel({
-        userId:req.body.teacherId,
-        subjectsAllowed:req.body.subjectsAllowed,
-        classAllowed:req.body.classAllowed
-      })
-      const newResultEntryPer = await resultEntryPerData.save();
-      return res.status(200).json({
-        success: true,
-        message: "created successfully.",
-      })
+      const checkAlreadyExist = await resultEntryPerModel.findOne({userId:req.body.teacherId});
+      if(!checkAlreadyExist){
+        const resultEntryPerData= new resultEntryPerModel({
+          userId:req.body.teacherId,
+          subjectsAllowed:req.body.subjectsAllowed,
+          classAllowed:req.body.classAllowed
+        })
+        const newResultEntryPer = await resultEntryPerData.save();
+        return res.status(200).json({
+          success: true,
+          message: "created successfully.",
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Already Result Entry Permission created.",
+        })
+      }
+   
     }catch(err){
       console.log(err)
       return res.status(400).json({
@@ -816,6 +825,28 @@ module.exports = {
         message: "Error while update.",
         error: err.message,
       });
+    }
+  },
+  deleteResultEntryPermission: async(req, res)=>{
+    try{
+      const deleted = await resultEntryPerModel.deleteOne({_id:req.params.id});
+      if(deleted){
+        return res.status(200).json({
+          success: true,
+          message: "Delated successfully.",
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Not Delated",
+        })
+      }
+  
+    }catch(err){
+      return res.status(400).json({
+        success:false,
+        message:'Error whille deleting result entry permission.'
+      })
     }
   },
   getAdminDashboardData:async(req, res)=>{
