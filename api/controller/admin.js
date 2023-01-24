@@ -444,29 +444,16 @@ module.exports = {
               }
           })
         
-         const newResultData1 =  newResultData.slice().sort((a,b) => b.total - a.total);
-        //  const newResultData2 = newResultData.map((data)=> newResultData1.userId.find(data.userId)
-        //   return
-          
-        //  )
-         //for (let i = 0; i < newResultData.length; i++) {
-        //   console.log("dfsdfgdfgdfgdfbfgdgdf",newResultData[i])
-  
-        // }
-        const actualResult=[]
-        for(let i=0; i < newResultData.length; i++){
-          for(let j=0; j < newResultData1.length;j++){
-             if(newResultData[i].userId === newResultData1[j].userId){
-                let ddd= {
-                  ...newResultData[i],
-                  rank:j+1
+        const sortResultData =  newResultData.slice().sort((a,b) => b.total - a.total);
+        const actualResult = newResultData.map(originalData=> {
+          const sortDataIndex = sortResultData.findIndex((sortdata)=> originalData.userId === sortdata.userId)
+                const ddd= {
+                  ...originalData,
+                  rank:sortDataIndex +1
                 }
-                actualResult.push(ddd)
-             }
-          }
-
-        }
-
+                return ddd
+            }
+          )
           return res.status(200).json({
             success: true,
             message: "Result get successfully.",
