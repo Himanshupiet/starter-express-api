@@ -11,7 +11,7 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
-const {s3upload} = require('../../util/helper')
+const {s3upload, passwordEncryptAES} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -173,6 +173,8 @@ module.exports = {
           ...user['document'],
           ...req.body.student_document
         }
+      }else if(req.body.passwordChange){
+        user.userInfo.password= passwordEncryptAES(req.body.password)
       }else{
         user.userInfo={
           ...user.userInfo,
@@ -433,13 +435,42 @@ module.exports = {
                   }
                   return newResultData
               }else{
-                return data.userInfo
+                const newResultData={
+                  ...data.userInfo,
+                  total:0
+                  }
+                  return newResultData
+                //return data.userInfo
               }
           })
+        
+         const newResultData1 =  newResultData.slice().sort((a,b) => b.total - a.total);
+        //  const newResultData2 = newResultData.map((data)=> newResultData1.userId.find(data.userId)
+        //   return
+          
+        //  )
+         //for (let i = 0; i < newResultData.length; i++) {
+        //   console.log("dfsdfgdfgdfgdfbfgdgdf",newResultData[i])
+  
+        // }
+        const actualResult=[]
+        for(let i=0; i < newResultData.length; i++){
+          for(let j=0; j < newResultData1.length;j++){
+             if(newResultData[i].userId === newResultData1[j].userId){
+                let ddd= {
+                  ...newResultData[i],
+                  rank:j+1
+                }
+                actualResult.push(ddd)
+             }
+          }
+
+        }
+
           return res.status(200).json({
             success: true,
             message: "Result get successfully.",
-            result:newResultData
+            result:actualResult
           });
         }
       }else{
