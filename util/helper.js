@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const { userModel } = require("../models/user");
 const mailgun = require("mailgun-js");
 const CryptoJS = require('crypto-js');
-const OneSignal = require('onesignal-node'); 
+//const OneSignal = require('onesignal-node'); 
 const awsSdk = require("aws-sdk");
 const s3 = new awsSdk.S3()
 
@@ -192,40 +192,40 @@ module.exports = {
     }
     return encryptedBase64;
   },
-  notificationSend : async () => {
+  // notificationSend : async () => {
  
-      try {
-       const client = new OneSignal.Client('1ad13ded-ebe0-4bdc-b8c3-23a02796e880', 'M2YxNDExOGMtNDFhNS00M2MzLTg5NTgtMWM2OTgzNjRmODU5');
-       //const response = await client.viewDevices({ limit: 200, offset: 0 });
-       //console.log(response.body);
-          const notification = {
-            contents: {
-              'tr': 'Yeni bildirim',
-              'en': 'New notification',
-            },
-            //included_segments: ['Subscribed Users'],
-            include_player_ids:[],
-            // filters: [
-            //   { field: 'tag', key: 'level', relation: '>', value: 10 }
-            // ]
-          };
+  //     try {
+  //      const client = new OneSignal.Client('1ad13ded-ebe0-4bdc-b8c3-23a02796e880', 'M2YxNDExOGMtNDFhNS00M2MzLTg5NTgtMWM2OTgzNjRmODU5');
+  //      //const response = await client.viewDevices({ limit: 200, offset: 0 });
+  //      //console.log(response.body);
+  //         const notification = {
+  //           contents: {
+  //             'tr': 'Yeni bildirim',
+  //             'en': 'New notification',
+  //           },
+  //           //included_segments: ['Subscribed Users'],
+  //           include_player_ids:[],
+  //           // filters: [
+  //           //   { field: 'tag', key: 'level', relation: '>', value: 10 }
+  //           // ]
+  //         };
          
-          try {
-            const response = await client.createNotification(notification);
-            console.log("response notify",response);
-          } catch (e) {
-            if (e instanceof OneSignal.HTTPError) {
-              // When status code of HTTP response is not 2xx, HTTPError is thrown.
-              console.log(e.statusCode);
-              console.log(e.body);
-            }
-          }
-        } catch (e) {
-          console.log(e)
-            return e;
-        }
+  //         try {
+  //           const response = await client.createNotification(notification);
+  //           console.log("response notify",response);
+  //         } catch (e) {
+  //           if (e instanceof OneSignal.HTTPError) {
+  //             // When status code of HTTP response is not 2xx, HTTPError is thrown.
+  //             console.log(e.statusCode);
+  //             console.log(e.body);
+  //           }
+  //         }
+  //       } catch (e) {
+  //         console.log(e)
+  //           return e;
+  //       }
     
-  },
+  // },
   s3upload: async(userId,fileName, file)=>{
     // const Bucket="cyclic-fine-rose-fly-sari-ap-northeast-2"
     // const AWS_REGION="ap-northeast-2"
