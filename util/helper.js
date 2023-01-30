@@ -2,7 +2,7 @@ const fast2sms = require("fast-two-sms");
 const moment = require("moment-timezone");
 const mongoose = require("mongoose");
 const { userModel } = require("../models/user");
-const mailgun = require("mailgun-js");
+//const mailgun = require("mailgun-js");
 const CryptoJS = require('crypto-js');
 //const OneSignal = require('onesignal-node'); 
 const awsSdk = require("aws-sdk");
@@ -18,24 +18,24 @@ const SECRET_MSG_PASSWORD = process.env.SECRET_MSG_PASSWORD
 module.exports = {
   // to send email
   sendEmail: async (data) => {
-    console.log("email", data);
-    const mg = mailgun({
-      apiKey: "53e27866df661695271225a6e49e93d4-02fa25a3-4de5fb23",
-      domain: DOMAIN,
-    });
-    const data1 = {
-      from: "info@bmmschool.in",
-      to: data.email,
-      subject: "Registered Successfully with LAKSHMI FUND.",
-      text: "Testing some Mailgun awesomness!",
-    };
-    mg.messages().send(data1, function (error, body) {
-      if (error) {
-        console.log("mail", error);
-      } else {
-        console.log("shi", body);
-      }
-    });
+    // console.log("email", data);
+    // const mg = mailgun({
+    //   apiKey: "53e27866df661695271225a6e49e93d4-02fa25a3-4de5fb23",
+    //   domain: DOMAIN,
+    // });
+    // const data1 = {
+    //   from: "info@bmmschool.in",
+    //   to: data.email,
+    //   subject: "Registered Successfully with LAKSHMI FUND.",
+    //   text: "Testing some Mailgun awesomness!",
+    // };
+    // mg.messages().send(data1, function (error, body) {
+    //   if (error) {
+    //     console.log("mail", error);
+    //   } else {
+    //     console.log("shi", body);
+    //   }
+    // });
 
     // let mailOptions = {
     //   from: "fundlakshmi@gmail.com",

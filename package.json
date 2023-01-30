@@ -23,7 +23,6 @@
     "fast-two-sms": "^3.0.0",
     "googleapis": "^100.0.0",
     "jsonwebtoken": "^8.5.1",
-    "mailgun-js": "^0.22.0",
     "moment-timezone": "^0.5.34",
     "mongoose": "^5.10.19",
     "morgan": "^1.10.0",
