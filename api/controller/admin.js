@@ -78,7 +78,8 @@ module.exports = {
       const searchStr= req.body.searchStr
       let searchParam={}
       let classParam={}
-      let rolePermissionParam={}
+       let docFilterParam={}
+      let dataFilterParam={}
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
           $or:[
@@ -95,7 +96,7 @@ module.exports = {
         }
       }
       if(req.body.role==='TEACHER'){
-        rolePermissionParam={
+        dataFilterParam={
           'userInfo.phoneNumber': 0,
           'userInfo.phoneNumber1': 0,
           'userInfo.phoneNumber2': 0,  
@@ -106,8 +107,10 @@ module.exports = {
       if(req.body.selectedClass){
         classParam={'userInfo.class':req.body.selectedClass}
       }
-
-      const users = await userModel.find({
+      if(req.body.docFilter){
+        docFilterParam={[`document.${req.body.docFilter}`]:{$exists:true}}
+      }
+      const condParam={
         $and: [
           { deleted: false },
           {
@@ -115,9 +118,12 @@ module.exports = {
           },
           searchParam,
           classParam,
-          
+          docFilterParam
         ],
-      },rolePermissionParam);
+      }
+      //console.log("condParammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", JSON.stringify(condParam))
+      const users = await userModel.find(condParam,dataFilterParam);
+    
       return res.status(200).json({
         success: true,
         users,
