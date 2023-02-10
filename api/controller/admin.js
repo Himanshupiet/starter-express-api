@@ -19,6 +19,7 @@ const {
 } = require("../../util/income");
 const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
+const {examDateAndSubModel}=require("../../models/examDateAndSub");
 
 
 const authorization = process.env.SMS_API;
@@ -698,7 +699,56 @@ module.exports = {
           message: "Exam data get successfully.",
           data: sendData
         })
-
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:"Error while get exam "
+      })
+    }
+  },
+  getExamDateAndSub:async(req, res)=>{
+    try{
+      const getExamsData= await examDateAndSubModel.find({})
+        return res.status(200).json({
+          success: true,
+          message: "Exam data get successfully.",
+          data: getExamsData
+        })
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:"Error while get exam "
+      })
+    }
+  },
+  updateExamDateAndSub:async(req, res)=>{
+    try{
+     //const examDateDetail=  await examDateAndSubModel.findOne({$and:[{ examYear : req.body.selectedSession},{examType: req.body.selectedExamType}]})
+     const examDateDetail=  await examDateAndSubModel.find({})
+      if(examDateDetail, examDateDetail.length>0){
+       await examDateAndSubModel.findOneAndUpdate(
+        {'_id':examDateDetail[0]._id},
+        // {$and:[
+        //   { examYear : req.body.selectedSession},
+        //   {examType: req.body.selectedExamType}
+        // ]},
+        {examDateAndSub:req.body.examDateAndSub, modified: new Date()});
+      }else{
+        const examData=new examDateAndSubModel({
+          examYear:req.body.selectedSession,
+          examType:req.body.selectedExamType,
+          examDateAndSub: req.body.examDateAndSub,
+          created: new Date(),
+          modified:new Date()
+        })
+        await examData.save();
+      }
+      return res.status(200).json({
+        success: true,
+        message: "Exam data created successfully.",
+      })
     }catch(err){
       console.log(err)
       return res.status(400).json({
