@@ -926,7 +926,7 @@ module.exports = {
   getAdminDashboardData:async(req, res)=>{
     try{
       let dashBoardData={}
-      const todayDate = req.query.todayDate
+      //const todayDate = req.query.todayDate
       //console.log("todayDateeeeeeeeeeeeeeeee",  todayDate)
       const totalStudent= await userModel.find({$and:[{deleted:false}, {'userInfo.roleName': 'STUDENT'}]}).count()
       const totalTeacher= await userModel.find({$and:[{deleted:false}, {'userInfo.roleName': 'TEACHER'}]}).count()
@@ -935,15 +935,30 @@ module.exports = {
           $match: {
             $expr: {
               $and: [
-                { $eq: [{ $dayOfMonth: '$userInfo.dob' }, { $dayOfMonth: new Date() }] },
-                { $eq: [{ $month: '$userInfo.dob' }, { $month: new Date() }] },
+                { $eq: [{ $dayOfMonth: '$userInfo.dob' }, 
+                  { $dayOfMonth: {
+                    date: new Date(),
+                    timezone: "Asia/Kolkata"
+                    } 
+                  }
+                  ] 
+                },
+                { $eq: [{ $month: '$userInfo.dob' },
+                  { 
+                    $month: 
+                    {
+                    date: new Date(),
+                    timezone: "Asia/Kolkata"
+                    } 
+                  }
+                  ] 
+                },
               ],
             },
           }
         }
       ])
-      //const userFound= await userModel.find({$and:[{deleted:false}, {'userInfo.dob': todayDate}]})
-      //console.log("userFoundddddddddddddd",  userFound)
+
       dashBoardData={
         totalStudent:totalStudent,
         totalTeacher:totalTeacher,
