@@ -930,12 +930,24 @@ module.exports = {
       //console.log("todayDateeeeeeeeeeeeeeeee",  todayDate)
       const totalStudent= await userModel.find({$and:[{deleted:false}, {'userInfo.roleName': 'STUDENT'}]}).count()
       const totalTeacher= await userModel.find({$and:[{deleted:false}, {'userInfo.roleName': 'TEACHER'}]}).count()
-      const userFound= await userModel.find({$and:[{deleted:false}, {'userInfo.dob': todayDate}]})
+      const birthDayUser=  await userModel.aggregate([
+        { 
+          $match: {
+            $expr: {
+              $and: [
+                { $eq: [{ $dayOfMonth: '$userInfo.dob' }, { $dayOfMonth: new Date() }] },
+                { $eq: [{ $month: '$userInfo.dob' }, { $month: new Date() }] },
+              ],
+            },
+          }
+        }
+      ])
+      //const userFound= await userModel.find({$and:[{deleted:false}, {'userInfo.dob': todayDate}]})
       //console.log("userFoundddddddddddddd",  userFound)
       dashBoardData={
         totalStudent:totalStudent,
         totalTeacher:totalTeacher,
-        todayBirthday:userFound
+        todayBirthday:birthDayUser
       }
 
       if(dashBoardData){
