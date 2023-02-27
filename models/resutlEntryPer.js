@@ -12,6 +12,9 @@ const resultEntryPerSchema = new mongoose.Schema({
   classAllowed: {
     type: Array,
   },
+  allowedList:{
+    type: Array
+  },
   entry:{
     type: Boolean,
     default: false,

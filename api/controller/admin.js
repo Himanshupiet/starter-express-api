@@ -826,8 +826,9 @@ module.exports = {
       if(!checkAlreadyExist){
         const resultEntryPerData= new resultEntryPerModel({
           userId:req.body.teacherId,
-          subjectsAllowed:req.body.subjectsAllowed,
-          classAllowed:req.body.classAllowed
+          // subjectsAllowed:req.body.subjectsAllowed,
+          // classAllowed:req.body.classAllowed,
+          allowedList:req.body.allowedList
         })
         const newResultEntryPer = await resultEntryPerData.save();
         return res.status(200).json({
@@ -871,12 +872,13 @@ module.exports = {
         newUpdate= await resultEntryPerModel.findOneAndUpdate({_id:req.body.resultEntryPerId},{entry:req.body.value, modified: new Date()});
       }
       if(req.body.key==='update'){
-        const updateData={
-          classAllowed:req.body.classAllowed,
-          subjectsAllowed:req.body.subjectsAllowed, 
-          modified: new Date
-        }
-       newUpdate= await resultEntryPerModel.findOneAndUpdate({$and:[{_id:req.body.resultEntryPerId},{userId:req.body.selectTeacher}]},updateData);
+       let resultEntryPerData= await resultEntryPerModel.findOne({$and:[{_id:req.body.resultEntryPerId}]})
+      //  console.log("resultEntryPerData", resultEntryPerData,)
+      //  console.log("req.body.allowedList", req.body.allowedList,)
+        resultEntryPerData.allowedList = req.body.allowedList,
+        resultEntryPerData.modified = new Date
+
+       newUpdate= await resultEntryPerModel.findOneAndUpdate({$and:[{_id:req.body.resultEntryPerId}]},resultEntryPerData);
       }
       if(newUpdate){
         return res.status(200).json({
@@ -887,7 +889,6 @@ module.exports = {
         return res.status(200).json({
           success: false,
           message: 'Not updated, try agian',
-          error: err.message,
         });
       }
 
