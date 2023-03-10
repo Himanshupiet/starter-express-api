@@ -20,6 +20,7 @@ const {
 const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
 const {examDateAndSubModel}=require("../../models/examDateAndSub");
+const { blogModel } = require("../../models/blog");
 
 
 const authorization = process.env.SMS_API;
@@ -982,6 +983,61 @@ module.exports = {
       });
     }
 
+  },
+  createBlogPost: async (req, res) => {
+    try {
+      let newBlogPost = new blogModel(req.body)
+      //   {
+      //     title:req.body.title,
+      //     subTitle:req.body.subTitle,
+      //     content:req.body.content,
+      //     postImageUrl:req.body.postImageUrl,
+      //     category:req.body.category,
+      //   }
+      // )
+      newBlogPost.save()
+      return res.status(200).json({
+        success: true,
+        message: "New Blog Post created",
+      });
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Blog Post not created.",
+        error: error.message,
+      });
+    }
+  },
+  deleteBlogPost: async (req, res) => {
+    try {
+      const data= await blogModel.findOneAndDelete({_id:req.body.id})
+      return res.status(200).json({
+        success: true,
+        message: "Delete Blog Post successfuly",
+      });
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Error while deleting blog post.",
+        error: error.message,
+      });
+    }
+  },
+
+  updateBlogPost: async (req, res) => {
+    try {
+      const updateData= blogModel.findOneAndUpdate({_id:req.body.blogPostNumber},req.body)
+      return res.status(200).json({
+        success: true,
+        message: "Blog Post updated",
+      });
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Blog Post not updated.",
+        error: error.message,
+      });
+    }
   },
 
 

@@ -5,8 +5,8 @@ const { userModel } = require("../models/user");
 //const mailgun = require("mailgun-js");
 const CryptoJS = require('crypto-js');
 //const OneSignal = require('onesignal-node'); 
-const awsSdk = require("aws-sdk");
-const s3 = new awsSdk.S3()
+// const awsSdk = require("aws-sdk");
+// const s3 = new awsSdk.S3()
 
 const DOMAIN =
   "https://api.mailgun.net/v3/sandboxea9896c664194cff9614608387a91f33.mailgun.org";

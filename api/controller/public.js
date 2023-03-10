@@ -15,6 +15,7 @@ const {
   passwordDecryptAES
 
 } = require("../../util/helper");
+const { blogModel } = require("../../models/blog");
 
 const secret = process.env.secret;
 
@@ -187,6 +188,39 @@ module.exports = {
       return res.status(401).json({
         success: false,
         message: "Users not found.",
+        error: error.message,
+      });
+    }
+  },
+  getBlogPost: async (req, res) => {
+    try {
+      console.log("eq.param",req.params)
+      const data= await blogModel.findOne({postId:req.params.postId})
+      return res.status(200).json({
+        success: true,
+        message: "Get Blog Post successfuly",
+        data
+      });
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Error while getting blog post data",
+        error: error.message,
+      });
+    }
+  },
+  getAllBlogPost: async (req, res) => {
+    try {
+      const data= await blogModel.find().sort( { "created": -1 } )
+      return res.status(200).json({
+        success: true,
+        message: "Get All Blog Post successfuly",
+        data
+      });
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Error while getting All blog post data",
         error: error.message,
       });
     }
