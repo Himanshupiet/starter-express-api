@@ -12,11 +12,11 @@ const userSchema = new mongoose.Schema({
     },
     fatherName: {
       type: String,
-      required: true,
+      //required: true,
     },
     motherName: {
       type: String,
-      required: true,
+      //required: true,
     },
     password: {
       type: String,
@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
     },
     phoneNumber1: {
       type: String,
-      required: true,
+      //required: true,
     },
     phoneNumber2: {
       type: String,

@@ -135,8 +135,8 @@ module.exports = {
         //   receiverPhoneNumber: req.body.phoneNumber,
         //   password: newPassword,
         // };
-           const sms = await sendSms(sendSMSandEmaildata);
-          //const sms= true
+           //const sms = await sendSms(sendSMSandEmaildata);
+          const sms= true
        
           if (sms) {
             let userData = await newUser.save();
@@ -167,7 +167,7 @@ module.exports = {
             { deleted: false },
             {
               "userInfo.email": {
-                $nin: ["topadmin@yopmail.com", "fundlakshmi@gmail.com"],
+                $nin: ["topadmin@yopmail.com"],
               },
             },
           ],
