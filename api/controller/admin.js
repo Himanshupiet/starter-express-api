@@ -58,7 +58,7 @@ const getGrade=(score)=>{
   }else{
     return "E"
   }
-}
+ }
 
 const getPerformance =(grade)=>{
   return performanceList.find( data => data.grade === grade).performance
@@ -508,7 +508,17 @@ module.exports = {
                     ]})
                     
                         if(secondResultData){
-                          let subjectsValues = (secondResultData && secondResultData.subjects)? Object.values(secondResultData.subjects):0;
+                          let subjectsValues=0
+                          if(class9to10){
+                            const copyOfSecondResultData= {...secondResultData}
+                            Object.defineProperty(obj, 'computer', {
+                              enumerable: false,  
+                            });
+                            subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects)? Object.values(copyOfSecondResultData.subjects):0;
+                          }else{
+                            subjectsValues = (secondResultData && secondResultData.subjects)? Object.values(secondResultData.subjects):0;
+                          }
+                          
                           total = subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
                           studentResultData={
                             ...studentResultData,
@@ -529,8 +539,19 @@ module.exports = {
                         ]})
 
                         if(unitResultData){
-                          let subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
-                          total = subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
+
+                          if(class9to10){
+                            const copyOfUnitResultData= {...unitResultData}
+                            let subjectsValues=0
+                            Object.defineProperty(obj, 'computer', {
+                              enumerable: false,  
+                            });
+                            subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
+                          }else{
+                            subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
+                          }
+                         
+                          total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
                           studentResultData = {
                             ...studentResultData,
                             studentResult: unitResultData? unitResultData:{},
