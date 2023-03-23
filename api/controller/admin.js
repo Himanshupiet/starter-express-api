@@ -27,7 +27,7 @@ const authorization = process.env.SMS_API;
 const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PREP"]
 const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
 const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
-const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK','MV']
+const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','COMP PRACT','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI SUB ENRICH','ENGLISH SUB ENRICH','MATH SUB ENRICH','SCIENCE SUB ENRICH','SST SUB ENRICH','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK MV','ATTENDANCE']
 const performanceList= [
   {grade:'A1', performance:'Outstanding'},
   {grade:'A2', performance:'Excellent'},
@@ -39,7 +39,6 @@ const performanceList= [
   {grade:'E',  performance:'Fail'},
 ]
 const getGrade=(score)=>{
-  score=50.23
   if(score > 100 || score < 0) return "INVALID SCORE";
   if(score >=91) {
     return "A1"
@@ -333,7 +332,7 @@ module.exports = {
           let subjectName=  resultData.subject.toLowerCase().trim()
           subjectName = subjectName.includes(' ')? subjectName.split(' ').join('_'):subjectName
         //  console.log("subject", subjectName)
-    
+        const examType = resultData.resultPermissionData.examType
         for (const it of resultData.resultMarks) {
           // console.log("userId", it.userId)
           //   let result={
@@ -373,14 +372,30 @@ module.exports = {
             ]}
             let resultEntryFound= await resultModel.findOne(resultParam);
             if(resultEntryFound){
-              resultEntryFound.subjects[subjectName]=it.marks
+              if(subjectName==='attendance'){
+                if(examType.includes('HALF')){
+                  resultEntryFound.attendance1 = it.marks
+                }else{
+                  resultEntryFound.attendance2 = it.marks
+                }
+              }else{
+                resultEntryFound.subjects[subjectName]=it.marks
+              }
       
              await resultModel.findOneAndUpdate(resultParam,resultEntryFound )
             }else{
                 let result={
                     subjects:{}
                   }
-                  result.subjects[subjectName]=it.marks
+                  if(subjectName==='attendance'){
+                    if(examType.includes('HALF')){
+                      result.attendance1 = it.marks
+                    }else{
+                      result.attendance2 = it.marks
+                    }
+                  }else{
+                    result.subjects[subjectName] = it.marks
+                  }
                   const newResultEntryData=resultModel({
                     userId:it.userId,
                     resultYear:resultData.resultPermissionData.resultYear,
@@ -510,8 +525,8 @@ module.exports = {
                         if(secondResultData){
                           let subjectsValues=0
                           if(class9to10){
-                            const copyOfSecondResultData= {...secondResultData}
-                            Object.defineProperty(obj, 'computer', {
+                             const copyOfSecondResultData= {...secondResultData}
+                            Object.defineProperty(copyOfSecondResultData.subjects, 'computer', {
                               enumerable: false,  
                             });
                             subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects)? Object.values(copyOfSecondResultData.subjects):0;
@@ -539,19 +554,21 @@ module.exports = {
                         ]})
 
                         if(unitResultData){
-
+                          let subjectsValues=0
                           if(class9to10){
-                            const copyOfUnitResultData= {...unitResultData}
-                            let subjectsValues=0
-                            Object.defineProperty(obj, 'computer', {
+                            const copyOfUnitResultData= unitResultData
+                            console.log("copyOfUnitResultData",copyOfUnitResultData)
+                            Object.defineProperty(copyOfUnitResultData.subjects, 'computer', {
                               enumerable: false,  
                             });
                             subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
+                            total += subjectsValues ? (subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0))/2:0
                           }else{
                             subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
+                            total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
                           }
                          
-                          total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
+                       
                           studentResultData = {
                             ...studentResultData,
                             studentResult: unitResultData? unitResultData:{},
