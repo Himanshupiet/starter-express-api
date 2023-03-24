@@ -455,9 +455,20 @@ module.exports = {
           subjectName = subjectName.includes(' ')?subjectName.split(' ').join('_'):subjectName
           let subjectPermissionParam={
             userId:1,
-            subjects:{}
           }
-          subjectPermissionParam.subjects[subjectName]=1
+          if(subjectName==='attendance' && resultQuery.resultPermissionData.examType.includes('HALF')) {
+            subjectPermissionParam.attendance1=1
+            
+          } else if(subjectName==='attendance' && resultQuery.resultPermissionData.examType.includes('ANNUAL')){
+            subjectPermissionParam.attendance2=1
+
+          }else{
+            subjectPermissionParam={
+              userId:1,
+              subjects:{}
+            }
+            subjectPermissionParam.subjects[subjectName]=1
+          }  
  
           let resultParam={
             $and:[
@@ -525,8 +536,8 @@ module.exports = {
                         if(secondResultData){
                           let subjectsValues=0
                           if(class9to10){
-                             const copyOfSecondResultData= {...secondResultData}
-                            Object.defineProperty(copyOfSecondResultData.subjects, 'computer', {
+                             const copyOfSecondResultData= secondResultData
+                            Object.defineProperty(copyOfSecondResultData.subjects && copyOfSecondResultData.subjects, 'computer', {
                               enumerable: false,  
                             });
                             subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects)? Object.values(copyOfSecondResultData.subjects):0;
