@@ -60,7 +60,13 @@ const getGrade=(score)=>{
  }
 
 const getPerformance =(grade)=>{
-  return performanceList.find( data => data.grade === grade).performance
+  
+  const performanceObj = performanceList.find( data => data.grade === grade)
+  if(performanceObj){
+    return performanceObj.performance
+  }else{
+    return 'Invalid'
+  }
 }
 const percentageMarks= (getTotal, fullMarks)=>{
   return ((Number(getTotal)*100)/Number(fullMarks)).toFixed(2)
@@ -567,16 +573,32 @@ module.exports = {
                         if(unitResultData){
                           let subjectsValues=0
                           if(class9to10){
-                            const copyOfUnitResultData= unitResultData
-                            console.log("copyOfUnitResultData",copyOfUnitResultData)
-                            Object.defineProperty(copyOfUnitResultData.subjects, 'computer', {
-                              enumerable: false,  
-                            });
-                            subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
-                            total += subjectsValues ? (subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0))/2:0
+                            // const copyOfUnitResultData= unitResultData
+                            // console.log("copyOfUnitResultData",copyOfUnitResultData)
+                            // Object.defineProperty(copyOfUnitResultData.subjects, 'computer', {
+                            //   enumerable: false,  
+                            // });
+                            let unitTotal=0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi)/2:0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english)/2:0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math)/2:0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science)/2:0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst)/2:0
+
+                            // subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
+                            // total += subjectsValues ? (subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0))/2:0
+                            total +=unitTotal
                           }else{
-                            subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
-                            total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
+                            let unitTotal=0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.computer ? Number(unitResultData.subjects.computer):0
+                            // subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
+                            // total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
+                            total += unitTotal
                           }
                          
                        
