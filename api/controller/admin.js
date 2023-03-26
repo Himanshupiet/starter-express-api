@@ -542,8 +542,13 @@ module.exports = {
                         if(secondResultData){
                           let subjectsValues=0
                           if(class9to10){
-                             const copyOfSecondResultData= secondResultData
-                            Object.defineProperty(copyOfSecondResultData.subjects && copyOfSecondResultData.subjects, 'computer', {
+
+                            const copyOfSecondResultData = JSON.parse(JSON.stringify(secondResultData));
+                       
+                            Object.defineProperty(copyOfSecondResultData.subjects , 'computer', {
+                              enumerable: false,  
+                            });
+                            Object.defineProperty(copyOfSecondResultData.subjects , 'comp_pract', {
                               enumerable: false,  
                             });
                             subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects)? Object.values(copyOfSecondResultData.subjects):0;
