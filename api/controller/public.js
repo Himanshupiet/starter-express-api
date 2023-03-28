@@ -107,6 +107,9 @@ module.exports = {
         }
       }
 
+      const isAdminRegistration = req.body.isAdminRegistration
+      delete req.body.isAdminRegistration
+
       const newUserId = await newUserIdGen();
       const getRoleId = await roleModel.findOne({ roleName: "STUDENT" });
       let newPassword =  randomPassword().join("").toString();
@@ -116,6 +119,8 @@ module.exports = {
             dob:new Date(req.body.dob),
             roleId: getRoleId._id.toString(),
             userId: newUserId,
+            isActive:isAdminRegistration? true: false,
+            isApproved: isAdminRegistration? true: false,
             password: passwordEncryptAES(newPassword)
           },
         });

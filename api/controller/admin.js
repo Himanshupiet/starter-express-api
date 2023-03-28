@@ -24,7 +24,7 @@ const { blogModel } = require("../../models/blog");
 
 
 const authorization = process.env.SMS_API;
-const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PREP"]
+const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PREP"]
 const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
 const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
 const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','COMP PRACT','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI SUB ENRICH','ENGLISH SUB ENRICH','MATH SUB ENRICH','SCIENCE SUB ENRICH','SST SUB ENRICH','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK MV','ATTENDANCE']
@@ -71,6 +71,8 @@ const getPerformance =(grade)=>{
 const percentageMarks= (getTotal, fullMarks)=>{
   return ((Number(getTotal)*100)/Number(fullMarks)).toFixed(2)
 }
+
+const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
 
 
 
@@ -159,7 +161,7 @@ module.exports = {
       }
       const condParam={
         $and: [
-          { deleted: false },
+          activeParam,
           {
             'userInfo.roleName':'STUDENT'
           },
@@ -276,10 +278,19 @@ module.exports = {
           deleted:false
         }
       }else{
-        datatoUpdate={
-          isActive: req.body.isActive && req.body.isActive==="true"? true:false,
-          isApproved: req.body.isApproved && req.body.isApproved==="true"? true:false,
-          modified: new Date(),
+
+        if(req.body.task==='isApproved'){
+          datatoUpdate={
+            isApproved: req.body.isApproved && req.body.isApproved==="true"? true:false,
+            modified: new Date(),
+          }
+        }
+    
+        if(req.body.task==='isActive'){
+          datatoUpdate={
+            isActive: req.body.isActive && req.body.isActive==="true"? true:false,
+            modified: new Date(),
+          }
         }
       }
 
@@ -455,7 +466,7 @@ module.exports = {
     try {
       //console.log("req", req.body)
     const resultQuery= req.body
-     const userData =  await userModel.find({$and:[{'userInfo.class':resultQuery.selectedClass},{'userInfo.roleName':'STUDENT'},{deleted: false}]});
+     const userData =  await userModel.find({$and:[{'userInfo.class':resultQuery.selectedClass},{'userInfo.roleName':'STUDENT'},activeParam]});
       if(resultQuery.resultPermissionData.action==='ENTRY'){
           let subjectName=  resultQuery.selectedSubject && resultQuery.selectedSubject.toLowerCase().trim()
           subjectName = subjectName.includes(' ')?subjectName.split(' ').join('_'):subjectName
@@ -825,7 +836,7 @@ module.exports = {
       }
     }
 
-   const reportCount= await userModel.find(queryParam).count();
+   const reportCount= await userModel.find({$and:[activeParam,queryParam]}).count();
 
 
     return res.status(200).json({
@@ -933,7 +944,7 @@ module.exports = {
     try{
       const getExamsData= await examModel.find({})
       const getResultEntryPerData = await resultEntryPerModel.find({});
-      const getTeacherData= await userModel.find({$and:[{deleted:false, 'userInfo.roleName':'TEACHER'}]})
+      const getTeacherData= await userModel.find({$and:[activeParam, {'userInfo.roleName':'TEACHER'}]})
       const sendData={
         examsData:getExamsData,
         teacherData:getTeacherData,
@@ -1175,8 +1186,8 @@ module.exports = {
       let dashBoardData={}
       //const todayDate = req.query.todayDate
       //console.log("todayDateeeeeeeeeeeeeeeee",  todayDate)
-      const totalStudent= await userModel.find({$and:[{deleted:false}, {'userInfo.roleName': 'STUDENT'}]}).count()
-      const totalTeacher= await userModel.find({$and:[{deleted:false}, {'userInfo.roleName': 'TEACHER'}]}).count()
+      const totalStudent= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'}]}).count()
+      const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).count()
       const birthDayUser=  await userModel.aggregate([
         { 
           $match: {
@@ -1229,6 +1240,39 @@ module.exports = {
     }
 
   },
+  upgradeClass: async (req, res) => {
+    try {
+      let totalStudent = await userModel.find(  {$and: 
+        [ 
+          activeParam,
+          {'userInfo.roleName':'STUDENT'},
+          {'userInfo.class':req.body.selectedClass},
+        ]
+      })
+      if(totalStudent && totalStudent.length>0){
+        for(student of totalStudent){
+
+           await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass})
+             
+          }
+      }
+        
+      return res.status(200).json({
+        success: true,
+        message: "class upgraded successfully",
+      });
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "class not upgraded",
+        error: error.message,
+      });
+    }
+  },
+
+
+
+  /// blog website
   createBlogPost: async (req, res) => {
     try {
       let newBlogPost = new blogModel(req.body)
