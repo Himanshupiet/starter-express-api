@@ -127,7 +127,7 @@ module.exports = {
       const searchStr= req.body.searchStr
       let searchParam={}
       let classParam={}
-       let docFilterParam={}
+       let filterOptionParam={}
       let dataFilterParam={}
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
@@ -156,8 +156,16 @@ module.exports = {
       if(req.body.selectedClass){
         classParam={'userInfo.class':req.body.selectedClass}
       }
-      if(req.body.docFilter){
-        docFilterParam={[`document.${req.body.docFilter}`]:{$exists:true}}
+      if(req.body.filterOption && req.body.docFilter===true){
+        filterOptionParam={[`document.${req.body.filterOption}`]:{$exists:false}}
+      }else if(req.body.filterOption && req.body.docFilter===false){
+        if(req.body.filterOption==='No Mobile Number'){
+          filterOptionParam={'userInfo.phoneNumber1':''}
+        }
+        if(req.body.filterOption==='No Aadhar'){
+          filterOptionParam={'userInfo.aadharNumber':''}
+        }
+
       }
       const condParam={
         $and: [
@@ -167,7 +175,7 @@ module.exports = {
           },
           searchParam,
           classParam,
-          docFilterParam
+          filterOptionParam
         ],
       }
       //console.log("condParammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", JSON.stringify(condParam))

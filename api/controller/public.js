@@ -119,10 +119,10 @@ module.exports = {
             dob:new Date(req.body.dob),
             roleId: getRoleId._id.toString(),
             userId: newUserId,
-            isActive:isAdminRegistration? true: false,
-            isApproved: isAdminRegistration? true: false,
             password: passwordEncryptAES(newPassword)
           },
+          isActive:isAdminRegistration? true: false,
+          isApproved: isAdminRegistration? true: false,
         });
         const sendSMSandEmaildata = {
           fullName: req.body.fullName,
@@ -140,7 +140,7 @@ module.exports = {
         //   receiverPhoneNumber: req.body.phoneNumber,
         //   password: newPassword,
         // };
-           const sms = await sendSms(sendSMSandEmaildata);
+          const sms = await sendSms(sendSMSandEmaildata);
           //const sms= true
        
           if (sms) {
