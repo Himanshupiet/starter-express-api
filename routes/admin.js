@@ -11,6 +11,7 @@ router.post("/updateStatus", isAunthaticatedAdmin, admin.updateStatus);
 router.get("/getSmsData", isAunthaticatedAdmin, admin.getSmsData);
 router.post("/submitResult", isAunthaticatedAdmin, admin.submitResult);
 router.post("/getResult", isAunthaticatedAdmin, admin.getResult);
+router.post("/oldExamResult", isAunthaticatedAdmin, admin.oldExamResult)
 router.post("/getDeletedUser", isAunthaticatedAdmin, admin.getDeletedUser);
 router.delete("/permanentDeleteUser/:id", isAunthaticatedAdmin, admin.permanentDeleteUser);
 router.post("/reportData", isAunthaticatedAdmin, admin.reportData);

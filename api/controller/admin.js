@@ -129,6 +129,7 @@ module.exports = {
       let classParam={}
        let filterOptionParam={}
       let dataFilterParam={}
+      let sortingOption={'created':'desc'}
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
           $or:[
@@ -178,8 +179,11 @@ module.exports = {
           filterOptionParam
         ],
       }
+      if(req.body.sortByClass){
+        sortingOption={'userInfo.class':req.body.sortByClass}
+      }
       //console.log("condParammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", JSON.stringify(condParam))
-      const users = await userModel.find(condParam,dataFilterParam);
+      const users = await userModel.find(condParam,dataFilterParam).sort(sortingOption);
     
       return res.status(200).json({
         success: true,
@@ -739,6 +743,249 @@ module.exports = {
             });
           }
       }
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Something went wrong",
+        error: err.response,
+      });
+    }
+  },
+  oldExamResult: async (req, res) => {
+    try {
+      //console.log("req", req.body)
+    const resultQuery= req.body
+     //const userData =  await userModel.find({$and:[{'userInfo.class':resultQuery.selectedClass},{'userInfo.roleName':'STUDENT'},activeParam]});
+
+        const fullAttendance =resultQuery.fullAttendance
+        const fullMarks =resultQuery.fullMarks
+        const classBetween1to10 = resultQuery.classBetween1to10
+        const class9to10 = resultQuery.class9to10
+        const examType= resultQuery.resultPermissionData.examType
+        const mainExams =  (examType==='ANNUAL EXAM' || examType==='HALF YEARLY EXAM')?true:false
+        let resultParam={}
+        let secondResultParam={}
+            if(mainExams && classBetween1to10){
+              if(examType==='ANNUAL EXAM'){
+                resultParam = { 
+                  resultYear:resultQuery.resultPermissionData.resultYear,
+                  examType:'UNIT TEST-II',
+                  class:resultQuery.selectedClass
+                }
+                secondResultParam = {
+                  resultYear:resultQuery.resultPermissionData.resultYear,
+                  examType:examType,
+                  class:resultQuery.selectedClass
+                }
+              }else{
+                resultParam = { 
+                  resultYear:resultQuery.resultPermissionData.resultYear,
+                  examType:'UNIT TEST-I',
+                  class:resultQuery.selectedClass
+                }
+                secondResultParam = {
+                  resultYear:resultQuery.resultPermissionData.resultYear,
+                  examType:examType,
+                  class:resultQuery.selectedClass
+                }
+              }
+      
+                let newResultData=[]
+                    let total = 0 
+                    const secondResultDataAll = await resultModel.find({$and:[
+                      {
+                        ...secondResultParam,
+                      }
+                    ]})
+                    if(secondResultDataAll && secondResultDataAll.length>0){
+                      for(const secondResultData of secondResultDataAll){
+                        const studentData= await userModel.findOne({'userInfo.userId':secondResultData.userId})
+                        let studentResultData={}
+                        if(studentData){
+                          studentResultData = {
+                            ...studentData.userInfo,
+                          }
+                        }
+                    
+                        if(secondResultData){
+                          let subjectsValues=0
+                          if(class9to10){
+
+                            const copyOfSecondResultData = JSON.parse(JSON.stringify(secondResultData));
+                       
+                            Object.defineProperty(copyOfSecondResultData.subjects , 'computer', {
+                              enumerable: false,  
+                            });
+                            Object.defineProperty(copyOfSecondResultData.subjects , 'comp_pract', {
+                              enumerable: false,  
+                            });
+                            subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects)? Object.values(copyOfSecondResultData.subjects):0;
+                          }else{
+                            subjectsValues = (secondResultData && secondResultData.subjects)? Object.values(secondResultData.subjects):0;
+                          }
+                          
+                          total = subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
+                          studentResultData={
+                            ...studentResultData,
+                            studentResultSecond: secondResultData? secondResultData:{},
+                            total: total
+                          }
+
+                        }else{
+                          studentResultData = {
+                            ...studentResultData,
+                            studentResultSecond: {},
+                            total: total
+                          }
+                        }
+
+                      const unitResultData = await resultModel.findOne({$and:[
+                          {...resultParam,userId: studentData.userInfo.userId}
+                        ]})
+
+                        if(unitResultData){
+                          let subjectsValues=0
+                          if(class9to10){
+                            // const copyOfUnitResultData= unitResultData
+                            // console.log("copyOfUnitResultData",copyOfUnitResultData)
+                            // Object.defineProperty(copyOfUnitResultData.subjects, 'computer', {
+                            //   enumerable: false,  
+                            // });
+                            let unitTotal=0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi)/2:0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english)/2:0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math)/2:0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science)/2:0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst)/2:0
+
+                            // subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
+                            // total += subjectsValues ? (subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0))/2:0
+                            total +=unitTotal
+                          }else{
+                            let unitTotal=0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst):0
+                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.computer ? Number(unitResultData.subjects.computer):0
+                            // subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
+                            // total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
+                            total += unitTotal
+                          }
+                         
+                       
+                          studentResultData = {
+                            ...studentResultData,
+                            studentResult: unitResultData? unitResultData:{},
+                            total: total
+                          }
+                        }else{
+                          studentResultData = {
+                            ...studentResultData,
+                            studentResult: {},
+                            total: total
+                          }
+                        }
+                        newResultData.push(studentResultData)
+                      }
+                    }else{
+                      return res.status(200).json({
+                            success: false,
+                            message: "Result not found.",
+                          });
+                    }
+                  
+                  const sortResultData =  newResultData.slice().sort((a,b) => b.total - a.total);
+                  const actualResult = newResultData.map(originalData=> {
+                      const sortDataIndex = sortResultData.findIndex((sortdata)=> (originalData && originalData.userId) === (sortdata && sortdata.userId))
+                          const percentage = percentageMarks(originalData.total, fullMarks)
+                          const grade = getGrade(percentage)
+                          const performance= getPerformance(grade)
+                          const ddd= {
+                            ...originalData,
+                            rank:sortDataIndex +1,
+                            percentage :percentage,
+                            grade:grade ,
+                            performance:performance,
+                            fullMarks:fullMarks,
+                            fullAttendance:fullAttendance
+                          }
+                          return ddd
+                      }
+                    )
+                return res.status(200).json({
+                  success: true,
+                  message: "Result get successfully.",
+                  result:actualResult
+                });
+              
+            }else{
+              const resultParam={
+                $and:[
+                {resultYear:resultQuery.resultPermissionData.resultYear},
+                {examType:resultQuery.resultPermissionData.examType},
+                {class:resultQuery.selectedClass}
+                ]
+              }
+              let newResultData=[]
+              const allResultData = await resultModel.find(resultParam);
+              if(allResultData && allResultData.length>0){
+                for(const rData of allResultData){
+
+                  const userfound = await userModel.findOne({'userInfo.userId':rData.userId});
+                    if(userfound){
+                      const subjectsValues = Object.values(rData.subjects);
+                      const total = subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0)
+                      let resultData = {
+                        ...userfound.userInfo,
+                        studentResult:rData,
+                        total:total
+                        }
+                        newResultData.push(resultData)
+                    }
+                }
+              
+              const sortResultData =  newResultData.slice().sort((a,b) => b.total - a.total);
+              const actualResult = newResultData.map(originalData=> {
+                  const sortDataIndex = sortResultData.findIndex((sortdata)=> originalData.userId === sortdata.userId)
+                  let ddd = {}
+                  if(mainExams){
+                    const percentage = percentageMarks(originalData.total, fullMarks)
+                    const grade = getGrade(percentage)
+                    const performance= getPerformance(grade)
+                     ddd= {
+                      ...originalData,
+                      rank:sortDataIndex +1,
+                      percentage :percentage,
+                      grade:grade ,
+                      performance:performance,
+                      fullMarks:fullMarks,
+                      fullAttendance:fullAttendance
+                    }
+                  }else{
+                     ddd = {
+                      ...originalData,
+                      rank:sortDataIndex +1
+                    }
+                  }
+                      return ddd
+                  }
+                )
+                return res.status(200).json({
+                  success: true,
+                  message: "Result get successfully.",
+                  result:actualResult
+                });
+              }else{
+                return res.status(200).json({
+                  success: false,
+                  message: "Result not found.",
+                });
+              }
+            }
+     
     } catch (err) {
       console.log(err);
       return res.status(400).json({
