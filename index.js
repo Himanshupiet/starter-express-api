@@ -19,8 +19,7 @@ const bcrypt = require("bcryptjs");
 const api = process.env.API_URL;
 const PORT = process.env.PORT;
 const mongoUrl = process.env.MONGO_LOCAL_CONN_URL;
-//const mongoDbName = process.env.MONGO_DB_NAME;
-const mongoDbName ='Fail to service'
+const mongoDbName = process.env.MONGO_DB_NAME;
 
 const secrets = process.env.secret;
 
