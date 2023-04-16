@@ -28,6 +28,7 @@ router.delete("/deleteExamPermission/:id", isAunthaticatedAdmin, admin.deleteRes
 router.get("/getExamDateAndSub", isAunthaticatedAdmin, admin.getExamDateAndSub);
 router.post("/updateExamDateAndSub", isAunthaticatedAdmin, admin.updateExamDateAndSub);
 router.post("/upgradeClass", isAunthaticatedAdmin, admin.upgradeClass)
+router.post("/getAllTeacherAndStaff", isAunthaticatedAdmin, admin.getAllTeacherAndStaff)
 
 
 router.post("/addBlogPost", isAunthaticatedAdmin, admin.createBlogPost)

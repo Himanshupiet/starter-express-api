@@ -198,6 +198,59 @@ module.exports = {
       });
     }
   },
+  getAllTeacherAndStaff: async (req, res) => {
+    try {
+      const searchStr= req.body.searchStr
+      let searchParam={}
+      let classParam={}
+      let roleParam=   {
+        'userInfo.roleName':'TEACHER'
+      }
+       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
+         searchParam={
+          $or:[
+            {'userInfo.roleName': new RegExp(searchStr, 'i')},
+            {'userInfo.fullName': new RegExp(searchStr, 'i')},
+            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
+            {'userInfo.motherName': new RegExp(searchStr, 'i')},
+            {'userInfo.email': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
+            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
+            {'userInfo.userId':new RegExp(searchStr, 'i')}
+          ]
+        }
+      }
+   
+      if(req.body.selectedClass){
+          classParam={'userInfo.class':req.body.selectedClass}
+      }
+
+      const users = await userModel.find({
+        $and: [ { deleted: false },searchParam,classParam,roleParam]
+      });
+      if(users.length>0){
+        return res.status(200).json({
+          success: true,
+          users,
+        });
+      }else{
+        return res.status(400).json({
+          success: false,
+          message: "User not found.",
+          error: err.message,
+        });
+      }
+   
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "User not found.",
+        error: err.message,
+      });
+    }
+  },
   deleteUser: async (req, res) => {
     try {
      await userModel.findOneAndUpdate({_id:req.params.id},{deleted: true, modified:new Date()});
@@ -1200,6 +1253,18 @@ module.exports = {
       const getExamsData= await examModel.find({})
       const getResultEntryPerData = await resultEntryPerModel.find({});
       const getTeacherData= await userModel.find({$and:[activeParam, {'userInfo.roleName':'TEACHER'}]})
+      // let filterGetResultEntryPerData=[]
+      // for (const data of getResultEntryPerData) {
+      //   const userFound= getTeacherData.find(it=> it.userInfo.userId===data.userId)
+      //   if(userFound){
+      //     const permissionData= JSON.parse(JSON.stringify(data))
+      //       const newData= {
+      //         ...userFound.userInfo,
+      //         ...permissionData,
+      //       }
+      //       filterGetResultEntryPerData.push(newData)
+      //   }
+      // }
       const sendData={
         examsData:getExamsData,
         teacherData:getTeacherData,
@@ -1439,10 +1504,31 @@ module.exports = {
   getAdminDashboardData:async(req, res)=>{
     try{
       let dashBoardData={}
-      //const todayDate = req.query.todayDate
+      const todayDate = req.query.todayDate
       //console.log("todayDateeeeeeeeeeeeeeeee",  todayDate)
-      const totalStudent= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'}]}).count()
-      const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).count()
+      const totalStudent= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'}]}).countDocuments()
+      const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
+      let date = new Date(todayDate)
+      let date_end = new Date(todayDate)
+      let startDate = new Date(date.setDate(date.getDate()-1));
+      let endDate= new Date(date_end.setDate(date_end.getDate()))
+      startDate.setUTCHours(18);
+      startDate.setUTCMinutes(30);
+      startDate.setSeconds(0);
+      startDate.setMilliseconds(0);
+      endDate.setUTCHours(18);
+      endDate.setUTCMinutes(30);
+      endDate.setSeconds(0);
+      endDate.setMilliseconds(0);
+      params = {
+          'created': {
+              "$gte": startDate,
+              "$lte":  endDate
+          }
+      };
+      console.log(JSON.stringify(params))
+     const userr = await userModel.find({params})
+     console.log("=================>",userr)
       const birthDayUser=  await userModel.aggregate([
         { 
           $match: {

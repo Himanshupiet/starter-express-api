@@ -34,20 +34,20 @@ module.exports = {
       if (user.deleted === true) {
         return res
         .status(200)
-        .json({ success: false, message: "Your form is rejected." });
+        .json({ success: false, message: "Please contact to admin 9470510100." });
       }
-      // if (!user.isActive) {
-      //   return res.status(200).json({
-      //     success: false,
-      //     message: "User was suspended.",
-      //   });
-      // }
-      // if(!user.isApproved){
-      //     return res.status(200).json({
-      //       success: false,
-      //       message: "User not approved by admin. Please contact to admin 9470510100.",
-      //     });
-      // }
+      if (!user.isActive) {
+        return res.status(200).json({
+          success: false,
+          message: "User was suspended. Please contact to admin 9470510100 ",
+        });
+      }
+      if(!user.isApproved){
+          return res.status(200).json({
+            success: false,
+            message: "User not approved by admin. Please contact to admin 9470510100.",
+          });
+      }
         if(!(user && passwordDecryptAES(user.userInfo.password)===decryptAES(req.body.password))) {
           return res.status(200).json({
             success: false,
