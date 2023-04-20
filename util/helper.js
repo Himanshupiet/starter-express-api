@@ -107,7 +107,7 @@ module.exports = {
     // console.log('sms', options)
 
     const response = await fast2sms.sendMessage(options);
-    const response2 = await fast2sms.sendMessage(options2);
+    //const response2 = await fast2sms.sendMessage(options2);
     console.log("response2", response2)
     console.log("testttt", response.return);
     return response.return;

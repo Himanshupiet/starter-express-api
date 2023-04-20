@@ -305,6 +305,9 @@ module.exports = {
       user.modified = new Date();
 
      const updatedUser= await userModel.findOneAndUpdate({_id:req.params.id}, user,{new:true});
+      if(updatedUser && req.body.passwordChange){
+        await AuthToken.deleteMany({ userId: user.userInfo.userId })
+      }
       return res.status(200).json({
         success: true,
         message: "Updated successfully.",
@@ -359,10 +362,13 @@ module.exports = {
         }
       }
 
-       userModel.findOneAndUpdate({ 'userInfo.userId': userId },datatoUpdate,(err, response) => {
+       userModel.findOneAndUpdate({ 'userInfo.userId': userId },datatoUpdate, async (err, response) => {
         if (err) {
           next(err);
         }else{
+          if(datatoUpdate.isActive ===false || datatoUpdate.isApproved===false){
+            await AuthToken.deleteMany({ userId: userId })
+          }
           return res.status(200).json({
             success: true,
             message: "Update status successfully.",
