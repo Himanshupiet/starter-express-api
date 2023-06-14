@@ -21,6 +21,9 @@ const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
 const {examDateAndSubModel}=require("../../models/examDateAndSub");
 const { blogModel } = require("../../models/blog");
+const {vehicleModel}=require("../../models/vehicle");
+const {vehicleRouteFareModel}=require("../../models/vehicleRouteFare");
+const {monthlyFeeListModel}=require("../../models/monthlyFeeList");
 
 
 const authorization = process.env.SMS_API;
@@ -1617,6 +1620,71 @@ module.exports = {
     }
   },
 
+  createList: async (req, res) => {
+    try{
+      let newListCreated=''
+      if(req.params.name==='vehicleList'){
+        const newInfo= new vehicleModel({
+          ...req.body
+        })
+        newListCreated = await newInfo.save();
+      }
+      if(req.params.name==='busRouteFareList'){
+        const newInfo= new vehicleRouteFareModel({
+          ...req.body
+        })
+        newListCreated = await newInfo.save();
+      }
+      if(req.params.name==='monthlyFeeList'){
+        const newInfo= new monthlyFeeListModel({
+          ...req.body
+        })
+        newListCreated = await newInfo.save();
+      }
+      if(newListCreated){
+        return res.status(200).json({
+          success: true,
+          message: "created successfully.",
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Not created list, Please try again!",
+        })
+      }
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:'Error whille create new list'
+      })
+    }
+  },
+
+  getAllList: async (req, res) => {
+    try{
+      let vehicleList= await vehicleModel.find()
+      let busRouteFareList= await vehicleRouteFareModel.find()
+      let monthlyFeeList= await monthlyFeeListModel.find()
+      
+      return res.status(200).json({
+        success: true,
+        message: "Get list successfully.",
+        data:{
+          vehicleList,
+          busRouteFareList,
+          monthlyFeeList
+        }
+      })
+  
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:'Error whille get all list.'
+      })
+    }
+  },
 
 
   /// blog website

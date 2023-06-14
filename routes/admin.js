@@ -29,6 +29,8 @@ router.get("/getExamDateAndSub", isAunthaticatedAdmin, admin.getExamDateAndSub);
 router.post("/updateExamDateAndSub", isAunthaticatedAdmin, admin.updateExamDateAndSub);
 router.post("/upgradeClass", isAunthaticatedAdmin, admin.upgradeClass)
 router.post("/getAllTeacherAndStaff", isAunthaticatedAdmin, admin.getAllTeacherAndStaff)
+router.post("/addList/:name", isAunthaticatedAdmin, admin.createList)
+router.get("/getAllList", isAunthaticatedAdmin, admin.getAllList)
 
 
 router.post("/addBlogPost", isAunthaticatedAdmin, admin.createBlogPost)

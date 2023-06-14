@@ -90,6 +90,7 @@ module.exports = {
 
     let options2 = {
       authorization: smsapikey,
+      // route : "p", // p for promational // q for quick 3.50 
       // sender_id:"BMMS",
       message:`Welcome to BMM SCHOOL ${name}.Click here http://bmmschool.in`,
       numbers: [data.phoneNumber],

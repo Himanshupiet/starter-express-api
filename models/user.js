@@ -67,7 +67,18 @@ const userSchema = new mongoose.Schema({
     },
     address2:{
       type:String,
-    }
+    },
+    busService:{
+      type:Boolean,
+      default:false
+    },
+    busRoute:{
+     type:String
+    },
+    concession:{
+      type: Number,
+      default: 0
+    },
   },
   document:{
     stPhoto: {
@@ -98,6 +109,7 @@ const userSchema = new mongoose.Schema({
       type:String,
     },
   },
+
   isApproved: {
     type: Boolean,
     default: false,
