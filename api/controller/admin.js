@@ -1661,6 +1661,42 @@ module.exports = {
     }
   },
 
+  updateList: async (req, res) => {
+    console.log("vvvvvvvvvvvvvvvvvvvvvv", req.body)
+    try{
+      let updateList=''
+      if(req.params.name==='vehicleList'){
+        updateList = await  vehicleModel.findByIdAndUpdate({_id: req.params.id},req.body)
+      }
+
+      if(req.params.name==='busRouteFareList'){
+        updateList = await  vehicleRouteFareModel.findByIdAndUpdate({_id: req.params.id},req.body)
+      }
+
+      if(req.params.name==='monthlyFeeList'){
+        updateList = await  monthlyFeeListModel.findByIdAndUpdate({_id: req.params.id},req.body)
+      }
+
+      if(updateList){
+        return res.status(200).json({
+          success: true,
+          message: "Updated successfully.",
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Not updated list, Please try again!",
+        })
+      }
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:'Error whille update list'
+      })
+    }
+  },
+
   getAllList: async (req, res) => {
     try{
       let vehicleList= await vehicleModel.find()

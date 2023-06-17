@@ -31,6 +31,7 @@ router.post("/upgradeClass", isAunthaticatedAdmin, admin.upgradeClass)
 router.post("/getAllTeacherAndStaff", isAunthaticatedAdmin, admin.getAllTeacherAndStaff)
 router.post("/addList/:name", isAunthaticatedAdmin, admin.createList)
 router.get("/getAllList", isAunthaticatedAdmin, admin.getAllList)
+router.post("/updateList/:name/:id", isAunthaticatedAdmin, admin.updateList)
 
 
 router.post("/addBlogPost", isAunthaticatedAdmin, admin.createBlogPost)
