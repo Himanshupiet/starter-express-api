@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema({
       type:Boolean,
       default:false
     },
-    busRoute:{
+    busRouteId:{
      type:String
     },
     concession:{
