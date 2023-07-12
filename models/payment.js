@@ -13,58 +13,88 @@ const payInfo={
 }
 
 const paymentSchema = new mongoose.Schema({
-  monthlyPay: {
-    jan: payInfo,
-    feb: payInfo,
-    mar: payInfo,
-    apr: payInfo,
-    may: payInfo,
-    jun: payInfo,
-    jul: payInfo,
-    aug: payInfo,
-    sep: payInfo,
-    oct: payInfo,
-    nov: payInfo,
-    dec: payInfo
+  // monthlyPay: {
+  //   jan: payInfo,
+  //   feb: payInfo,
+  //   mar: payInfo,
+  //   apr: payInfo,
+  //   may: payInfo,
+  //   jun: payInfo,
+  //   jul: payInfo,
+  //   aug: payInfo,
+  //   sep: payInfo,
+  //   oct: payInfo,
+  //   nov: payInfo,
+  //   dec: payInfo
+  // },
+  // busPay:{
+  //   jan: payInfo,
+  //   feb: payInfo,
+  //   mar: payInfo,
+  //   apr: payInfo,
+  //   may: payInfo,
+  //   jun: payInfo,
+  //   jul: payInfo,
+  //   aug: payInfo,
+  //   sep: payInfo,
+  //   oct: payInfo,
+  //   nov: payInfo,
+  //   dec: payInfo
+  // },
+  
+  april: {
+    type: JSON,
   },
-  busPay:{
-    jan: payInfo,
-    feb: payInfo,
-    mar: payInfo,
-    apr: payInfo,
-    may: payInfo,
-    jun: payInfo,
-    jul: payInfo,
-    aug: payInfo,
-    sep: payInfo,
-    oct: payInfo,
-    nov: payInfo,
-    dec: payInfo
+  may: {
+    type: JSON,
+  },
+  june: {
+    type: JSON,
+  },
+  july: {
+    type: JSON,
+  },
+  august: {
+    type: JSON,
+  },
+  september: {
+    type: JSON,
+  },
+  october: {
+    type: JSON,
+  },
+  november: {
+    type: JSON,
+  },
+  december: {
+    type: JSON,
+  },
+  january: {
+    type: JSON,
+  },
+  february: {
+    type: JSON,
+  },
+  march: {
+    type: JSON,
   },
   other: {
     type: JSON,
   },
+  dueAmount:{
+    type: Number
+  },
+  excessAmount:{
+    type: Number
+  },
+  totalFineAmount:{
+    type: Number
+  },
   oldSessionDue:{
     type: Number
   },
-  feeConcession:{
-    type:Number
-  },
-  monthlyFee:{
-    type:Number
-  },
-  busFee:{
-    type:Number
-  },
-  busFeeActive:{
-    type:Boolean
-  },
   userId: {
     type: String,
-  },
-  isActive: {
-    type: Boolean,
-    default: false,
   },
   created: {
     type: Date,

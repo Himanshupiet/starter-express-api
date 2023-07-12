@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const { userModel } = require("../models/user");
 //const mailgun = require("mailgun-js");
 const CryptoJS = require('crypto-js');
+const {invoiceModel}=require("../models/invoice ");
 //const OneSignal = require('onesignal-node'); 
 // const awsSdk = require("aws-sdk");
 // const s3 = new awsSdk.S3()
@@ -193,6 +194,15 @@ module.exports = {
     }
     return encryptedBase64;
   },
+  newInvoiceIdGenrate: async()=>{
+    let lastInvoice =  await invoiceModel.findOne({},{invoiceId:1, _id:0}).sort({_id:-1})
+    const lastInvoiceIdYear= (lastInvoice && lastInvoice.invoiceId)? lastInvoice.invoiceId.substring(0, 2): new Date().getFullYear()% 100
+    const currentYear = new Date().getFullYear()% 100
+    const invoiceGenNumber =  (parseInt(lastInvoiceIdYear) === currentYear && lastInvoice && lastInvoice.invoiceId)? parseInt(lastInvoice.invoiceId.substring(2)):0
+    const newInvoiceId = currentYear + (invoiceGenNumber+1).toString().padStart(5, '0')
+
+    return newInvoiceId
+  },    
   // notificationSend : async () => {
  
   //     try {

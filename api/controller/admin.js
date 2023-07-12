@@ -11,7 +11,7 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
-const {s3upload, passwordEncryptAES} = require('../../util/helper')
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -24,6 +24,8 @@ const { blogModel } = require("../../models/blog");
 const {vehicleModel}=require("../../models/vehicle");
 const {vehicleRouteFareModel}=require("../../models/vehicleRouteFare");
 const {monthlyFeeListModel}=require("../../models/monthlyFeeList");
+const {paymentModel}=require("../../models/payment");
+const {invoiceModel}=require("../../models/invoice ");
 
 
 const authorization = process.env.SMS_API;
@@ -109,9 +111,15 @@ module.exports = {
         roleParam={'userInfo.roleName':req.body.selectedRole}
       }
 
-      const users = await userModel.find({
+      if(req.body.studentId){
+        searchParam={'_id':req.body.studentId}
+      }
+      let query = {
         $and: [ { deleted: false },searchParam,classParam,roleParam]
-      });
+      }
+
+      console.log("gggggggggggggghhhhhhhhhhhhhhhh", JSON.stringify(query))
+      const users = await userModel.find(query);
       return res.status(200).json({
         success: true,
         users,
@@ -1662,7 +1670,6 @@ module.exports = {
   },
 
   updateList: async (req, res) => {
-    console.log("vvvvvvvvvvvvvvvvvvvvvv", req.body)
     try{
       let updateList=''
       if(req.params.name==='vehicleList'){
@@ -1718,6 +1725,125 @@ module.exports = {
       return res.status(400).json({
         success:false,
         message:'Error whille get all list.'
+      })
+    }
+  },
+
+  addPayment: async (req, res) => {
+    try{
+      let paymentAdded=null
+      const newInvoiceIdGen = await newInvoiceIdGenrate()
+      let newInvoiceInfo= new invoiceModel({})
+      newInvoiceInfo['invoiceInfo'] = {...req.body}
+      newInvoiceInfo['paymentType'] ='Monthly'
+      newInvoiceInfo['paidStatus'] = true
+      newInvoiceInfo['userId'] = req.body.userId
+      newInvoiceInfo['invoiceId'] = newInvoiceIdGen
+      newInvoiceInfo['insertedId'] = req.body.insertedId
+      const newInvoiceCreate = await newInvoiceInfo.save();
+      if(newInvoiceCreate){
+        let paymentFound =  await paymentModel.findOne({userId: req.body.userId})
+        if(paymentFound){
+          //console.log("paymentFound", paymentFound)
+            for(const data of req.body.feeList){
+              if(paymentFound[data.month.toLowerCase()] && paymentFound[data.month.toLowerCase()].paidStatus===true){
+               
+                 res.status(200).json({
+                    success: false,
+                    message: `Payment is already done of this "${data.month}" month.`,
+                  })
+                  await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
+                  return
+                }
+                else{
+                  //console.log("hhhhhhhhhhh")
+                  paymentFound[data.month.toLowerCase()]={
+                    monthlyFee: data.monthlyFee,
+                    busFee:  data.busFee? data.busFee:0,
+                    busRouteId : data.busRouteId? data.busRouteId:0,
+                    paymentReciever: req.body.paymentReciever,
+                    paidStatus: true,
+                    submittedDate : req.body.submittedDate,
+                    invioceId: newInvoiceCreate.invoiceId,
+                    receiptNumber: req.body.receiptNumber 
+                  }
+                }
+            }
+            paymentFound['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
+            paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
+            paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
+            paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
+            // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
+            // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
+            paymentFound.modified = new Date()
+            paymentAdded = await paymentModel.findByIdAndUpdate({_id: paymentFound._id},paymentFound)
+        }else{
+          let newPaymentInfo= new paymentModel({})
+          req.body.feeList.forEach(data=>
+            newPaymentInfo[data.month.toLowerCase()]={
+                  monthlyFee: data.monthlyFee,
+                  busFee:  data.busFee? data.busFee:0,
+                  busRouteId : data.busRouteId? data.busRouteId:0,
+                  paymentReciever: req.body.paymentReciever,
+                  submittedDate : req.body.submittedDate,
+                  paidStatus: true,
+                  invioceId: newInvoiceCreate.invoiceId,
+                  receiptNumber: req.body.receiptNumber 
+            }
+          )
+          newPaymentInfo['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
+          newPaymentInfo['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
+          newPaymentInfo['totalConcession'] = req.body.concession? req.body.concession:0
+          newPaymentInfo['totalFineAmount']= req.body.fineAmount? req.body.fineAmount:0
+          newPaymentInfo['userId'] = req.body.userId
+          newPaymentInfo['session'] = req.body.session
+          // newPaymentInfo['totalPaidAmount'] = req.body.paidAmount
+          // newPaymentInfo['totalAmount'] = req.body.totalAmount
+  
+          paymentAdded = await newPaymentInfo.save();
+        }
+      }
+      if(paymentAdded){
+        return res.status(200).json({
+          success: true,
+          message: "Payment Added successfully.",
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Payment not added, Please try again!",
+        })
+      }
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:'Error whille payment adding.'
+      })
+    }
+  },
+
+  gePaymentDetail: async (req, res) => {
+    try{
+      let payDetail= await paymentModel.find({})
+ 
+      if(payDetail){
+        return res.status(200).json({
+          success: true,
+          message: "Payment detail get successfully.",
+          data: payDetail
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Payment detail not found"
+        })
+      }
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success:false,
+        message:'Error whille geting payment detail'
       })
     }
   },
