@@ -136,6 +136,7 @@ module.exports = {
   getAllStudents: async (req, res) => {
     try {
       const searchStr= req.body.searchStr
+      let studentAprroveParam = {$and:[{deleted:false},{isApproved:true}]}
       let searchParam={}
       let classParam={}
        let filterOptionParam={}
@@ -177,11 +178,14 @@ module.exports = {
         if(req.body.filterOption==='No Aadhar'){
           filterOptionParam={'userInfo.aadharNumber':''}
         }
+        if(req.body.filterOption==='Deactive'){
+          studentAprroveParam={$and:[{deleted:false},{isApproved:true},{isActive:false}]}
+        }
 
       }
       const condParam={
         $and: [
-          activeParam,
+          studentAprroveParam,
           {
             'userInfo.roleName':'STUDENT'
           },
@@ -360,14 +364,14 @@ module.exports = {
 
         if(req.body.task==='isApproved'){
           datatoUpdate={
-            isApproved: req.body.isApproved && req.body.isApproved==="true"? true:false,
+            isApproved: req.body.isApproved,
             modified: new Date(),
           }
         }
     
         if(req.body.task==='isActive'){
           datatoUpdate={
-            isActive: req.body.isActive && req.body.isActive==="true"? true:false,
+            isActive: req.body.isActive ,
             modified: new Date(),
           }
         }

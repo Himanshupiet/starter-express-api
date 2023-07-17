@@ -79,6 +79,9 @@ const userSchema = new mongoose.Schema({
       type: Number,
       default: 0
     },
+    session:{
+      type:String
+     },
   },
   document:{
     stPhoto: {
