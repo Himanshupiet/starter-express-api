@@ -80,7 +80,8 @@ const userSchema = new mongoose.Schema({
       default: 0
     },
     session:{
-      type:String
+      type:String,
+      default: "2023-24",
      },
   },
   document:{
