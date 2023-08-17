@@ -1613,7 +1613,8 @@ module.exports = {
       })
       if(totalStudent && totalStudent.length>0){
         for(student of totalStudent){
-
+          // session add karna hai
+          // old 10 class ke liye puran seeion rhne dena hai
            await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass})
              
           }

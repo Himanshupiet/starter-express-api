@@ -202,7 +202,20 @@ module.exports = {
     const newInvoiceId = currentYear + (invoiceGenNumber+1).toString().padStart(5, '0')
 
     return newInvoiceId
-  },    
+  }, 
+  currentSession :()=>{
+    const currentDate= new Date()
+    const currentYear = currentDate.getFullYear()
+    const currentMonth= currentDate.getMonth()
+    let session=''
+    if(currentMonth>=3){
+        session = `${(currentYear).toString()}-${(currentYear+1).toString().substring(2)}`
+    }else if(currentMonth<3 ){
+        session = `${(currentYear-1).toString()}-${(currentYear).toString().substring(2)}`
+    }
+    console.log("session", session)
+    return session
+  },
   // notificationSend : async () => {
  
   //     try {

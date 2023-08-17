@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const {currentSession}=require("../util/helper");
 
 const userSchema = new mongoose.Schema({
   userInfo: {
@@ -79,9 +80,12 @@ const userSchema = new mongoose.Schema({
       type: Number,
       default: 0
     },
+    admissionDate: {
+      type: String,
+    },
     session:{
       type:String,
-      default: "2023-24",
+      default: currentSession(),
      },
   },
   document:{
