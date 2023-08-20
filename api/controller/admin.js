@@ -139,8 +139,9 @@ module.exports = {
       let studentAprroveParam = {$and:[{deleted:false},{isApproved:true}]}
       let searchParam={}
       let classParam={}
-       let filterOptionParam={}
+      let filterOptionParam={}
       let dataFilterParam={}
+      let studentById={}
       let sortingOption={'created':'desc'}
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
@@ -183,6 +184,9 @@ module.exports = {
         }
 
       }
+      if(req.body.studentId){
+        studentById={'_id': req.body.studentId}
+      }
       const condParam={
         $and: [
           studentAprroveParam,
@@ -191,7 +195,8 @@ module.exports = {
           },
           searchParam,
           classParam,
-          filterOptionParam
+          filterOptionParam,
+          studentById
         ],
       }
       if(req.body.sortByClass){
@@ -1740,7 +1745,8 @@ module.exports = {
       const newInvoiceIdGen = await newInvoiceIdGenrate()
       let newInvoiceInfo= new invoiceModel({})
       newInvoiceInfo['invoiceInfo'] = {...req.body}
-      newInvoiceInfo['paymentType'] ='Monthly'
+      newInvoiceInfo['invoiceType'] ='MONTHLY'
+      newInvoiceInfo['transactionType'] ='credit'
       newInvoiceInfo['paidStatus'] = true
       newInvoiceInfo['userId'] = req.body.userId
       newInvoiceInfo['invoiceId'] = newInvoiceIdGen

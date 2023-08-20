@@ -8,6 +8,7 @@ const invoiceSchema = new mongoose.Schema({
   invoiceType: {
     require: true,
     type: String,
+    enum : ['MONTHLY','BOOKS','HALF_EXAM','FINAL_EXAM','TIE_BELT_DIARY']
   },
   paidStatus: {
     type: Boolean,
@@ -24,6 +25,11 @@ const invoiceSchema = new mongoose.Schema({
   insertedId: {
     require: true,
     type: String,
+  },
+  transactionType: {
+    require: true,
+    type: String,
+    enum:['debit','credit']
   },
   created: {
     type: Date,
