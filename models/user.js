@@ -155,5 +155,5 @@ userSchema.pre("save", function (next) {
   next();
 });
 
-exports.userModel = mongoose.model("User", userSchema);
+exports.userModel = mongoose.model("user", userSchema);
 exports.userSchema = userSchema;

@@ -26,6 +26,10 @@ const invoiceSchema = new mongoose.Schema({
     require: true,
     type: String,
   },
+  amount: {
+    require: true,
+    type: Number,
+  },
   transactionType: {
     require: true,
     type: String,

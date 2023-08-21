@@ -1530,14 +1530,21 @@ module.exports = {
   getAdminDashboardData:async(req, res)=>{
     try{
       let dashBoardData={}
+      let todayTransaction={
+        totalCredit: 0,
+        toatlDebit:0,
+        onlineCredit:0,
+        cashCredit:0,
+        cashDebit: 0
+      }
       const todayDate = req.query.todayDate
       //console.log("todayDateeeeeeeeeeeeeeeee",  todayDate)
       const totalStudent= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'}]}).countDocuments()
       const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
       let date = new Date(todayDate)
       let date_end = new Date(todayDate)
-      let startDate = new Date(date.setDate(date.getDate()-1));
-      let endDate= new Date(date_end.setDate(date_end.getDate()))
+      let startDate = new Date(date.setDate(date.getDate()));
+      let endDate= new Date(date_end.setDate(date_end.getDate()+1))
       startDate.setUTCHours(18);
       startDate.setUTCMinutes(30);
       startDate.setSeconds(0);
@@ -1546,14 +1553,14 @@ module.exports = {
       endDate.setUTCMinutes(30);
       endDate.setSeconds(0);
       endDate.setMilliseconds(0);
-      params = {
+      const todayParams = {
           'created': {
               "$gte": startDate,
               "$lte":  endDate
           }
       };
-      console.log(JSON.stringify(params))
-     const userr = await userModel.find({params})
+      console.log(JSON.stringify(todayParams))
+     const userr = await userModel.find(todayParams)
      console.log("=================>",userr)
       const birthDayUser=  await userModel.aggregate([
         { 
@@ -1583,11 +1590,32 @@ module.exports = {
           }
         }
       ])
+       const todayInvoice = await  invoiceModel.find(todayParams)
+       if(todayInvoice && todayInvoice.length>0){
+          for (const it of todayInvoice) {
+                if(it.transactionType && it.transactionType==='credit'){
+                 todayTransaction.totalCredit= Number(todayTransaction.totalCredit)+ Number(it.amount)
+                   if(it.invoiceInfo && it.invoiceInfo.payment && it.invoiceInfo.payment.length>0){
+                        for (const payInfo of it.invoiceInfo.payment) {
+                              if(payInfo && payInfo.payMode.toLowerCase()==='cash'){
+                                todayTransaction.cashCredit = Number(todayTransaction.cashCredit) + Number(payInfo.amount)
+                              }
+                              if(payInfo && payInfo.payMode.toLowerCase()==='online'){
+                                todayTransaction.cashCredit = Number(todayTransaction.cashCredit) + Number(payInfo.amount)
+                              }
+                        }
+                    }
+              }
+          }
+        }
+       
+      
 
       dashBoardData={
         totalStudent:totalStudent,
         totalTeacher:totalTeacher,
-        todayBirthday:birthDayUser
+        todayBirthday:birthDayUser,
+        todayTransaction:todayTransaction
       }
 
       if(dashBoardData){
@@ -1749,6 +1777,7 @@ module.exports = {
       newInvoiceInfo['transactionType'] ='credit'
       newInvoiceInfo['paidStatus'] = true
       newInvoiceInfo['userId'] = req.body.userId
+      newInvoiceInfo['amount'] = req.body.paidAmount
       newInvoiceInfo['invoiceId'] = newInvoiceIdGen
       newInvoiceInfo['insertedId'] = req.body.insertedId
       const newInvoiceCreate = await newInvoiceInfo.save();
