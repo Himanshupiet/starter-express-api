@@ -122,6 +122,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isPaymentReciever:{
+    type: Boolean,
+    default: false,
+  },
   isActive: {
     type: Boolean,
     default: false,

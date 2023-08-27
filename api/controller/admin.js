@@ -11,7 +11,7 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate} = require('../../util/helper')
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -26,6 +26,10 @@ const {vehicleRouteFareModel}=require("../../models/vehicleRouteFare");
 const {monthlyFeeListModel}=require("../../models/monthlyFeeList");
 const {paymentModel}=require("../../models/payment");
 const {invoiceModel}=require("../../models/invoice ");
+const fastcsv = require("fast-csv");
+const fs = require("fs");
+const {payOptionModel}=require("../../models/payOption");
+
 
 
 const authorization = process.env.SMS_API;
@@ -400,6 +404,56 @@ module.exports = {
       return res.status(500).json({
         success: false,
         message: "Error while update status",
+        error: err.message,
+      });
+    }
+  },
+  updatePaymentRecieverUser:  (req, res, next) => {
+    try{
+
+        userModel.findOne({ 'userInfo.userId': req.body.userId }, async (err, response) => {
+          if (err) {
+            next(err);
+          }else{
+            const role= response.userInfo.roleName
+            if(role==='ADMIN' || role==='ACCOUNTANT'){
+              response['isPaymentReciever'] = req.body.status
+              response.modified = new Date()
+              response.save()
+              return res.status(200).json({
+                success: true,
+                message: "Update status successfully.",
+              });
+            }else{
+              return res.status(200).json({
+                success: false,
+                message: "Can't update as payment reciever. Contact to Admin"
+              })
+            }
+          }
+        })
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Error while update status",
+      error: err.message,
+    });
+  }
+  },
+  getPaymentRecieverUser: async (req, res) => {
+    try {
+      let allPaymentRecieverUser = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{isPaymentReciever:true}]})
+      return res.status(200).json({
+        success: true,
+        message: "Payment Reciever List successfully.",
+        data: allPaymentRecieverUser
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Payment Reciever not found.",
         error: err.message,
       });
     }
@@ -1596,15 +1650,15 @@ module.exports = {
                 if(it.transactionType && it.transactionType==='credit'){
                  todayTransaction.totalCredit= Number(todayTransaction.totalCredit)+ Number(it.amount)
                    if(it.invoiceInfo && it.invoiceInfo.payment && it.invoiceInfo.payment.length>0){
-                        for (const payInfo of it.invoiceInfo.payment) {
-                              if(payInfo && payInfo.payMode.toLowerCase()==='cash'){
-                                todayTransaction.cashCredit = Number(todayTransaction.cashCredit) + Number(payInfo.amount)
-                              }
-                              if(payInfo && payInfo.payMode.toLowerCase()==='online'){
-                                todayTransaction.cashCredit = Number(todayTransaction.cashCredit) + Number(payInfo.amount)
-                              }
-                        }
-                    }
+                      for (const payInfo of it.invoiceInfo.payment) {
+                          if(payInfo && payInfo.payModeId.toString()==='Cash'){
+                            todayTransaction.cashCredit = Number(todayTransaction.cashCredit) + Number(payInfo.amount)
+                          }
+                          if(payInfo && payInfo.payModeId.toString()!=='Cash'){
+                            todayTransaction.onlineCredit = Number(todayTransaction.onlineCredit) + Number(payInfo.amount)
+                          }
+                      }
+                  }
               }
           }
         }
@@ -1687,6 +1741,12 @@ module.exports = {
         })
         newListCreated = await newInfo.save();
       }
+      if(req.params.name==='createPayOption'){
+        const newInfo= new payOptionModel({
+          ...req.body
+        })
+        newListCreated = await newInfo.save();
+      }
       if(newListCreated){
         return res.status(200).json({
           success: true,
@@ -1722,6 +1782,10 @@ module.exports = {
         updateList = await  monthlyFeeListModel.findByIdAndUpdate({_id: req.params.id},req.body)
       }
 
+      if(req.params.name==='updatePayOption'){
+        updateList = await  payOptionModel.findByIdAndUpdate({_id: req.params.id},req.body)
+      }
+
       if(updateList){
         return res.status(200).json({
           success: true,
@@ -1747,6 +1811,8 @@ module.exports = {
       let vehicleList= await vehicleModel.find()
       let busRouteFareList= await vehicleRouteFareModel.find()
       let monthlyFeeList= await monthlyFeeListModel.find()
+      let payOptionList= await payOptionModel.find()
+      let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) // 918732 Anshu kumar id
       
       return res.status(200).json({
         success: true,
@@ -1754,7 +1820,9 @@ module.exports = {
         data:{
           vehicleList,
           busRouteFareList,
-          monthlyFeeList
+          monthlyFeeList,
+          payOptionList,
+          paymentRecieverUserList
         }
       })
   
@@ -1780,6 +1848,7 @@ module.exports = {
       newInvoiceInfo['amount'] = req.body.paidAmount
       newInvoiceInfo['invoiceId'] = newInvoiceIdGen
       newInvoiceInfo['insertedId'] = req.body.insertedId
+      newInvoiceInfo['session']= req.body.session
       const newInvoiceCreate = await newInvoiceInfo.save();
       if(newInvoiceCreate){
         let paymentFound =  await paymentModel.findOne({userId: req.body.userId})
@@ -1801,7 +1870,7 @@ module.exports = {
                     monthlyFee: data.monthlyFee,
                     busFee:  data.busFee? data.busFee:0,
                     busRouteId : data.busRouteId? data.busRouteId:0,
-                    paymentReciever: req.body.paymentReciever,
+                    paymentRecieverId: req.body.paymentRecieverId,
                     paidStatus: true,
                     submittedDate : req.body.submittedDate,
                     invioceId: newInvoiceCreate.invoiceId,
@@ -1824,7 +1893,7 @@ module.exports = {
                   monthlyFee: data.monthlyFee,
                   busFee:  data.busFee? data.busFee:0,
                   busRouteId : data.busRouteId? data.busRouteId:0,
-                  paymentReciever: req.body.paymentReciever,
+                  paymentRecieverId: req.body.paymentRecieverId,
                   submittedDate : req.body.submittedDate,
                   paidStatus: true,
                   invioceId: newInvoiceCreate.invoiceId,
@@ -1887,6 +1956,146 @@ module.exports = {
       })
     }
   },
+
+  createBuckup: async (req, res) => {
+
+    let url = URL;
+    let csv
+
+    mongodb.connect(
+      url,
+      { useNewUrlParser: true, useUnifiedTopology: true },
+      (err, client) => {
+        if (err) throw err;
+    
+        client
+          .db("bmms")
+          .collection("users")
+          .find({})
+          .toArray((err, data) => {
+            if (err) throw err;
+            
+            console.log(data);
+            const ws = fs.createWriteStream("users.csv");
+            // TODO: write data to CSV file
+            csv = fastcsv
+            .write(data, { headers: true })
+            .on("finish", function() {
+              console.log("Write to users.csv successfully!");
+            })
+            .pipe(ws);
+             //sendDailyBackupEmail(data)
+            client.close();
+          });
+
+          res.setHeader('Content-disposition', 'attachment; filename=' + 'users.csv');
+          res.set('Content-Type', 'text/csv');
+          res.status(200).send(csv);
+      }
+    );
+
+    // try {
+    //   // console.log("response", response);
+    //   const conn = mongoose.createConnection(URL, {
+    //     useNewUrlParser: true,
+    //     useUnifiedTopology: true,
+    //   });
+    //   conn.on("open", function () {
+    //     conn.db.listCollections().toArray(function (err, allCollectionNames) {
+    //       if (err) {
+    //         console.log(err);
+    //         return res.status(200).json({
+    //           success: false,
+    //           message: "Backup collection not get.",
+    //         });
+    //       }
+    //       // let collections = allCollectionNames
+    //       //   .map((data) => {
+    //       //     return { dbName: data.name };
+    //       //   })
+    //       //   .filter((fdata) => fdata.dbName.includes("FundingSource_"));
+    //       conn.close();
+
+    //       return res.status(200).json({
+    //         success: true,
+    //         message: "Backup collection get Successfully",
+    //         allCollectionNames,
+    //       });
+    //     });
+    //   });
+    // } catch (err) {
+    //   console.log(err);
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Something went wrong",
+    //     error: err.response,
+    //   });
+    // }
+
+    // try {
+    //   let curr_date1 = moment.tz(Date.now(), "Asia/Kolkata");
+    //   let dd = curr_date1.date() - 1;
+    //   let mm = curr_date1.month() + 1;
+    //   let yyyy = curr_date1.year();
+    //   let collectionName = `users${dd}_${mm}_${yyyy}`;
+    //   userModel.aggregate([{ $out: collectionName }], (err, response) => {
+    //     if (err) {
+    //       console.log("err", err);
+    //       return res.status(200).json({
+    //         success: false,
+    //         message: "Backup not created.",
+    //       });
+    //     } else {
+    //       const conn = mongoose.createConnection(URL, {
+    //         useNewUrlParser: true,
+    //         useUnifiedTopology: true,
+    //       });
+    //       conn.on("open", function () {
+    //         conn.db
+    //           .listCollections()
+    //           .toArray(function (err, allCollectionNames) {
+    //             if (err) {
+    //               console.log(err);
+    //               return res.status(200).json({
+    //                 success: false,
+    //                 message: "Backup not created.",
+    //               });
+    //             }
+    //             // let collections = allCollectionNames
+    //             //   .map((data) => data.name)
+    //             //   .filter((fdata) => fdata.includes("FundingSource_"));
+    //             conn.close();
+    //             // let todayCollection = collections.find(
+    //             //   (data) => data == collectionName
+    //             // );
+    //             // console.log("todayCollection", todayCollection);
+    //             if (allCollectionNames) {
+    //               return res.status(200).json({
+    //                 success: true,
+    //                 message: "Backup Successfully",
+    //                 allCollectionNames,
+    //               });
+    //             } else {
+    //               return res.status(200).json({
+    //                 success: false,
+    //                 message: "Backup not created.",
+    //               });
+    //             }
+    //           });
+    //       });
+    //     }
+    //   });
+    // } catch (err) {
+    //   console.log(err);
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Something went wrong",
+    //     error: err.response,
+    //   });
+    // }
+  },
+
+  
 
 
   /// blog website

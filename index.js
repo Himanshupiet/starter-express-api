@@ -13,7 +13,7 @@ const { roleModel } = require("./models/role");
 const { userModel } = require("./models/user");
 const { cronjobModel } = require("./models/cronjob");
 const fileUpload = require('express-fileupload')
-const { decryptAES } = require("./util/helper");
+const { decryptAES, sendDailyBackupEmail } = require("./util/helper");
 
 const bcrypt = require("bcryptjs");
 const api = process.env.API_URL;
@@ -71,7 +71,8 @@ mongoose
     dbName: mongoDbName,
   })
   .then(() => {
-    //notificationSend()
+     //sendDailyBackupEmail()
+    // notificationSend()
 
     const getAdmin = async () => {
       try {

@@ -35,6 +35,10 @@ const invoiceSchema = new mongoose.Schema({
     type: String,
     enum:['debit','credit']
   },
+  session:{
+    require: true,
+    type: String
+  },
   created: {
     type: Date,
   },

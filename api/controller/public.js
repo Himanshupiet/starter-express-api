@@ -55,7 +55,7 @@ module.exports = {
           });
         }
         const roleExist = await roleModel.findOne({ _id: user.userInfo.roleId });
-        if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER")) isAdmin = true;
+        if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT")) isAdmin = true;
         const expireDay=  isAdmin?"1d":"100d"
         const tokenGen = jwt.sign(
           {
