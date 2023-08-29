@@ -1597,14 +1597,14 @@ module.exports = {
       const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
       let date = new Date(todayDate)
       let date_end = new Date(todayDate)
-      let startDate = new Date(date.setDate(date.getDate()-1));
-      let endDate= new Date(date_end.setDate(date_end.getDate()))
-      startDate.setUTCHours(0);
-      startDate.setUTCMinutes(0);
+      let startDate = new Date(date.setDate(date.getDate()));
+      let endDate= new Date(date_end.setDate(date_end.getDate()+1))
+      startDate.setUTCHours(18);
+      startDate.setUTCMinutes(30);
       startDate.setSeconds(0);
       startDate.setMilliseconds(0);
-      endDate.setUTCHours(0);
-      endDate.setUTCMinutes(0);
+      endDate.setUTCHours(18);
+      endDate.setUTCMinutes(30);
       endDate.setSeconds(0);
       endDate.setMilliseconds(0);
       const todayParams = {
