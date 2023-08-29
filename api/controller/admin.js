@@ -122,7 +122,7 @@ module.exports = {
         $and: [ { deleted: false },searchParam,classParam,roleParam]
       }
 
-      console.log("gggggggggggggghhhhhhhhhhhhhhhh", JSON.stringify(query))
+      //console.log("gggggggggggggghhhhhhhhhhhhhhhh", JSON.stringify(query))
       const users = await userModel.find(query);
       return res.status(200).json({
         success: true,
@@ -130,7 +130,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "User not found.",
         error: err.message,
@@ -215,7 +215,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Student not found.",
         error: err.message,
@@ -259,7 +259,7 @@ module.exports = {
           users,
         });
       }else{
-        return res.status(400).json({
+        return res.status(401).json({
           success: false,
           message: "User not found.",
           error: err.message,
@@ -268,7 +268,7 @@ module.exports = {
    
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "User not found.",
         error: err.message,
@@ -284,7 +284,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "user not found.",
         error: err.message,
@@ -306,7 +306,7 @@ module.exports = {
       }
       let user =  await userModel.findOne({_id:req.params.id});
       if(!user){
-        return res.status(400).json({
+        return res.status(401).json({
           success: false,
           message: "user not found.",
           error: err.message,
@@ -451,7 +451,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Payment Reciever not found.",
         error: err.message,
@@ -477,7 +477,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -599,7 +599,7 @@ module.exports = {
 
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -878,7 +878,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -1121,7 +1121,7 @@ module.exports = {
      
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -1158,7 +1158,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "User not found.",
         error: err.message,
@@ -1175,7 +1175,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "user not found.",
         error: err.message,
@@ -1235,7 +1235,7 @@ module.exports = {
     });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "user not found.",
         error: err.message,
@@ -1273,7 +1273,7 @@ module.exports = {
     }
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Error while creating exam.",
         error: err.message,
@@ -1304,7 +1304,7 @@ module.exports = {
      
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Error while exam update.",
         error: err.message,
@@ -1321,7 +1321,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Error while get exam.",
         error: err.message,
@@ -1358,7 +1358,7 @@ module.exports = {
         })
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:"Error while get exam "
       })
@@ -1374,7 +1374,7 @@ module.exports = {
         })
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:"Error while get exam "
       })
@@ -1408,7 +1408,7 @@ module.exports = {
       })
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:"Error while get exam "
       })
@@ -1471,7 +1471,7 @@ module.exports = {
      
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:"Error while get exam"
       })
@@ -1501,7 +1501,7 @@ module.exports = {
    
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:'Error whille create new result entry permission.'
       })
@@ -1516,7 +1516,7 @@ module.exports = {
         data:getResultEntryPerData
       })
     }catch(err){
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:'Error whille create new result entry permission.'
       })
@@ -1552,7 +1552,7 @@ module.exports = {
      
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Error while update.",
         error: err.message,
@@ -1575,7 +1575,7 @@ module.exports = {
       }
   
     }catch(err){
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:'Error whille deleting result entry permission.'
       })
@@ -1597,14 +1597,14 @@ module.exports = {
       const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
       let date = new Date(todayDate)
       let date_end = new Date(todayDate)
-      let startDate = new Date(date.setDate(date.getDate()));
-      let endDate= new Date(date_end.setDate(date_end.getDate()+1))
-      startDate.setUTCHours(18);
-      startDate.setUTCMinutes(30);
+      let startDate = new Date(date.setDate(date.getDate()-1));
+      let endDate= new Date(date_end.setDate(date_end.getDate()))
+      startDate.setUTCHours(0);
+      startDate.setUTCMinutes(0);
       startDate.setSeconds(0);
       startDate.setMilliseconds(0);
-      endDate.setUTCHours(18);
-      endDate.setUTCMinutes(30);
+      endDate.setUTCHours(0);
+      endDate.setUTCMinutes(0);
       endDate.setSeconds(0);
       endDate.setMilliseconds(0);
       const todayParams = {
@@ -1681,7 +1681,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Error while get dashboard data.",
         error: err.message,
@@ -1760,7 +1760,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:'Error whille create new list'
       })
@@ -1799,7 +1799,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:'Error whille update list'
       })
@@ -1828,7 +1828,7 @@ module.exports = {
   
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:'Error whille get all list.'
       })
@@ -1925,7 +1925,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:'Error whille payment adding.'
       })
@@ -1950,9 +1950,46 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(400).json({
+      return res.status(401).json({
         success:false,
         message:'Error whille geting payment detail'
+      })
+    }
+  },
+
+  getAllInvoice: async(req, res)=>{
+    try{
+      let invoiceDetail= await invoiceModel.find({})
+ 
+      if(invoiceDetail && invoiceDetail.length>0){
+        let allInvoice=[]
+          for (let it of invoiceDetail) {
+             let recieverData 
+              if(it.invoiceInfo.paymentRecieverId &&  it.invoiceType==='MONTH')
+              recieverData = await userModel.find({_id: it.invoiceInfo.paymentRecieverId})
+             let userData
+             if( it.invoiceInfo.userId && it.invoiceType==='MONTH'){
+                userData =  await userModel.findOne({'userInfo.userId': it.invoiceInfo.userId})
+             }
+             it['recieverName'] =   recieverData.userInfo.fullName
+             allInvoice.push(it)
+          }
+        return res.status(200).json({
+          success: true,
+          message: "Invoice detail get successfully.",
+          data: allInvoice
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Invoice detail not found"
+        })
+      }
+    }catch(err){
+      console.log(err)
+      return res.status(401).json({
+        success:false,
+        message:'Error whille geting invoice detail'
       })
     }
   },
@@ -2025,7 +2062,7 @@ module.exports = {
     //   });
     // } catch (err) {
     //   console.log(err);
-    //   return res.status(400).json({
+    //   return res.status(401).json({
     //     success: false,
     //     message: "Something went wrong",
     //     error: err.response,
@@ -2087,7 +2124,7 @@ module.exports = {
     //   });
     // } catch (err) {
     //   console.log(err);
-    //   return res.status(400).json({
+    //   return res.status(401).json({
     //     success: false,
     //     message: "Something went wrong",
     //     error: err.response,
@@ -2170,7 +2207,7 @@ module.exports = {
         (err, data) => {
           if (err) {
             next();
-            return res.status(400).json({
+            return res.status(401).json({
               success: false,
               message: " Something went wrong.",
               error: err.message,
@@ -2185,7 +2222,7 @@ module.exports = {
       );
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2234,7 +2271,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2287,7 +2324,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2377,7 +2414,7 @@ module.exports = {
       // }
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2416,7 +2453,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2455,7 +2492,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2544,7 +2581,7 @@ module.exports = {
       // };
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2568,7 +2605,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
