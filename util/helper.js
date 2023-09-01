@@ -332,42 +332,42 @@ module.exports = {
   },
 
   sendDailyBackupEmail:(file)=>{
-    transporter.verify(function (error, success) {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log("Server is ready to take our messages");
-      }
-    });
-    async function main() {
-      // send mail with defined transport object
-      const info = await transporter.sendMail({
-        from: '"Fred Foo 👻" <info@bmmschool.in>', // sender address
-        to: "bmmsbkg@gmail.com", // list of receivers
-        subject: "Hello ✔", // Subject line
-        text: "Hello world?", // plain text body
-        html: "<b>Hello world?</b>", // html body
-        attachments: [
-          {   // stream as an attachment
-            filename: 'text4.txt',
-            content: fs.createReadStream(JSON.stringify(file))
-        },
-        ],
-      });
+    // transporter.verify(function (error, success) {
+    //   if (error) {
+    //     console.log(error);
+    //   } else {
+    //     console.log("Server is ready to take our messages");
+    //   }
+    // });
+    // async function main() {
+    //   // send mail with defined transport object
+    //   const info = await transporter.sendMail({
+    //     from: '"Fred Foo 👻" <info@bmmschool.in>', // sender address
+    //     to: "bmmsbkg@gmail.com", // list of receivers
+    //     subject: "Hello ✔", // Subject line
+    //     text: "Hello world?", // plain text body
+    //     html: "<b>Hello world?</b>", // html body
+    //     attachments: [
+    //       {   // stream as an attachment
+    //         filename: 'text4.txt',
+    //         content: fs.createReadStream(JSON.stringify(file))
+    //     },
+    //     ],
+    //   });
     
-      //console.log("Message sent: %s", info.messageId);
-      // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
+    //   //console.log("Message sent: %s", info.messageId);
+    //   // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
     
-      //
-      // NOTE: You can go to https://forwardemail.net/my-account/emails to see your email delivery status and preview
-      //       Or you can use the "preview-email" npm package to preview emails locally in browsers and iOS Simulator
-      //       <https://github.com/forwardemail/preview-email>
-      //
-    }
+    //   //
+    //   // NOTE: You can go to https://forwardemail.net/my-account/emails to see your email delivery status and preview
+    //   //       Or you can use the "preview-email" npm package to preview emails locally in browsers and iOS Simulator
+    //   //       <https://github.com/forwardemail/preview-email>
+    //   //
+    // }
     
-    main().catch(
-      console.error
-      );
+    // main().catch(
+    //   console.error
+    //   );
   },
 
 

@@ -37,7 +37,7 @@ router.get("/gePaymentDetail", isAunthaticatedAdmin, admin.gePaymentDetail)
 router.get("/getPaymentRecieverUser", isAunthaticatedAdmin, admin.getPaymentRecieverUser) 
 router.post("/updatePaymentRecieverUser", isAunthaticatedAdmin, admin.updatePaymentRecieverUser)
 router.get("/getAllInvoice", isAunthaticatedAdmin, admin.getAllInvoice)
-router.get("/createBackup", isAunthaticatedAdmin, admin.createBuckup)
+//router.get("/createBackup", isAunthaticatedAdmin, admin.createBuckup)
 
 
 router.post("/addBlogPost", isAunthaticatedAdmin, admin.createBlogPost)

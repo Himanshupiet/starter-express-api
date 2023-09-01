@@ -130,7 +130,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "User not found.",
         error: err.message,
@@ -215,7 +215,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Student not found.",
         error: err.message,
@@ -259,7 +259,7 @@ module.exports = {
           users,
         });
       }else{
-        return res.status(401).json({
+        return res.status(400).json({
           success: false,
           message: "User not found.",
           error: err.message,
@@ -268,7 +268,7 @@ module.exports = {
    
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "User not found.",
         error: err.message,
@@ -284,7 +284,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "user not found.",
         error: err.message,
@@ -306,7 +306,7 @@ module.exports = {
       }
       let user =  await userModel.findOne({_id:req.params.id});
       if(!user){
-        return res.status(401).json({
+        return res.status(400).json({
           success: false,
           message: "user not found.",
           error: err.message,
@@ -451,7 +451,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Payment Reciever not found.",
         error: err.message,
@@ -477,7 +477,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -599,7 +599,7 @@ module.exports = {
 
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -878,7 +878,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -1121,7 +1121,7 @@ module.exports = {
      
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -1158,7 +1158,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "User not found.",
         error: err.message,
@@ -1175,7 +1175,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "user not found.",
         error: err.message,
@@ -1235,7 +1235,7 @@ module.exports = {
     });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "user not found.",
         error: err.message,
@@ -1273,7 +1273,7 @@ module.exports = {
     }
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Error while creating exam.",
         error: err.message,
@@ -1304,7 +1304,7 @@ module.exports = {
      
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Error while exam update.",
         error: err.message,
@@ -1321,7 +1321,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Error while get exam.",
         error: err.message,
@@ -1358,7 +1358,7 @@ module.exports = {
         })
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:"Error while get exam "
       })
@@ -1374,7 +1374,7 @@ module.exports = {
         })
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:"Error while get exam "
       })
@@ -1408,7 +1408,7 @@ module.exports = {
       })
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:"Error while get exam "
       })
@@ -1471,7 +1471,7 @@ module.exports = {
      
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:"Error while get exam"
       })
@@ -1501,7 +1501,7 @@ module.exports = {
    
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille create new result entry permission.'
       })
@@ -1516,7 +1516,7 @@ module.exports = {
         data:getResultEntryPerData
       })
     }catch(err){
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille create new result entry permission.'
       })
@@ -1552,7 +1552,7 @@ module.exports = {
      
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Error while update.",
         error: err.message,
@@ -1575,7 +1575,7 @@ module.exports = {
       }
   
     }catch(err){
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille deleting result entry permission.'
       })
@@ -1681,7 +1681,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Error while get dashboard data.",
         error: err.message,
@@ -1712,7 +1712,7 @@ module.exports = {
         message: "class upgraded successfully",
       });
     } catch (error) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "class not upgraded",
         error: error.message,
@@ -1760,7 +1760,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille create new list'
       })
@@ -1799,7 +1799,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille update list'
       })
@@ -1828,7 +1828,7 @@ module.exports = {
   
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille get all list.'
       })
@@ -1925,7 +1925,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille payment adding.'
       })
@@ -1950,7 +1950,7 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille geting payment detail'
       })
@@ -1987,150 +1987,150 @@ module.exports = {
       }
     }catch(err){
       console.log(err)
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:'Error whille geting invoice detail'
       })
     }
   },
 
-  createBuckup: async (req, res) => {
+  // createBuckup: async (req, res) => {
 
-    let url = URL;
-    let csv
+  //   let url = URL;
+  //   let csv
 
-    mongodb.connect(
-      url,
-      { useNewUrlParser: true, useUnifiedTopology: true },
-      (err, client) => {
-        if (err) throw err;
+  //   mongodb.connect(
+  //     url,
+  //     { useNewUrlParser: true, useUnifiedTopology: true },
+  //     (err, client) => {
+  //       if (err) throw err;
     
-        client
-          .db("bmms")
-          .collection("users")
-          .find({})
-          .toArray((err, data) => {
-            if (err) throw err;
+  //       client
+  //         .db("bmms")
+  //         .collection("users")
+  //         .find({})
+  //         .toArray((err, data) => {
+  //           if (err) throw err;
             
-            console.log(data);
-            const ws = fs.createWriteStream("users.csv");
-            // TODO: write data to CSV file
-            csv = fastcsv
-            .write(data, { headers: true })
-            .on("finish", function() {
-              console.log("Write to users.csv successfully!");
-            })
-            .pipe(ws);
-             //sendDailyBackupEmail(data)
-            client.close();
-          });
+  //           console.log(data);
+  //           const ws = fs.createWriteStream("users.csv");
+  //           // TODO: write data to CSV file
+  //           csv = fastcsv
+  //           .write(data, { headers: true })
+  //           .on("finish", function() {
+  //             console.log("Write to users.csv successfully!");
+  //           })
+  //           .pipe(ws);
+  //            //sendDailyBackupEmail(data)
+  //           client.close();
+  //         });
 
-          res.setHeader('Content-disposition', 'attachment; filename=' + 'users.csv');
-          res.set('Content-Type', 'text/csv');
-          res.status(200).send(csv);
-      }
-    );
+  //         res.setHeader('Content-disposition', 'attachment; filename=' + 'users.csv');
+  //         res.set('Content-Type', 'text/csv');
+  //         res.status(200).send(csv);
+  //     }
+  //   );
 
-    // try {
-    //   // console.log("response", response);
-    //   const conn = mongoose.createConnection(URL, {
-    //     useNewUrlParser: true,
-    //     useUnifiedTopology: true,
-    //   });
-    //   conn.on("open", function () {
-    //     conn.db.listCollections().toArray(function (err, allCollectionNames) {
-    //       if (err) {
-    //         console.log(err);
-    //         return res.status(200).json({
-    //           success: false,
-    //           message: "Backup collection not get.",
-    //         });
-    //       }
-    //       // let collections = allCollectionNames
-    //       //   .map((data) => {
-    //       //     return { dbName: data.name };
-    //       //   })
-    //       //   .filter((fdata) => fdata.dbName.includes("FundingSource_"));
-    //       conn.close();
+  //   // try {
+  //   //   // console.log("response", response);
+  //   //   const conn = mongoose.createConnection(URL, {
+  //   //     useNewUrlParser: true,
+  //   //     useUnifiedTopology: true,
+  //   //   });
+  //   //   conn.on("open", function () {
+  //   //     conn.db.listCollections().toArray(function (err, allCollectionNames) {
+  //   //       if (err) {
+  //   //         console.log(err);
+  //   //         return res.status(200).json({
+  //   //           success: false,
+  //   //           message: "Backup collection not get.",
+  //   //         });
+  //   //       }
+  //   //       // let collections = allCollectionNames
+  //   //       //   .map((data) => {
+  //   //       //     return { dbName: data.name };
+  //   //       //   })
+  //   //       //   .filter((fdata) => fdata.dbName.includes("FundingSource_"));
+  //   //       conn.close();
 
-    //       return res.status(200).json({
-    //         success: true,
-    //         message: "Backup collection get Successfully",
-    //         allCollectionNames,
-    //       });
-    //     });
-    //   });
-    // } catch (err) {
-    //   console.log(err);
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Something went wrong",
-    //     error: err.response,
-    //   });
-    // }
+  //   //       return res.status(200).json({
+  //   //         success: true,
+  //   //         message: "Backup collection get Successfully",
+  //   //         allCollectionNames,
+  //   //       });
+  //   //     });
+  //   //   });
+  //   // } catch (err) {
+  //   //   console.log(err);
+  //   //   return res.status(400).json({
+  //   //     success: false,
+  //   //     message: "Something went wrong",
+  //   //     error: err.response,
+  //   //   });
+  //   // }
 
-    // try {
-    //   let curr_date1 = moment.tz(Date.now(), "Asia/Kolkata");
-    //   let dd = curr_date1.date() - 1;
-    //   let mm = curr_date1.month() + 1;
-    //   let yyyy = curr_date1.year();
-    //   let collectionName = `users${dd}_${mm}_${yyyy}`;
-    //   userModel.aggregate([{ $out: collectionName }], (err, response) => {
-    //     if (err) {
-    //       console.log("err", err);
-    //       return res.status(200).json({
-    //         success: false,
-    //         message: "Backup not created.",
-    //       });
-    //     } else {
-    //       const conn = mongoose.createConnection(URL, {
-    //         useNewUrlParser: true,
-    //         useUnifiedTopology: true,
-    //       });
-    //       conn.on("open", function () {
-    //         conn.db
-    //           .listCollections()
-    //           .toArray(function (err, allCollectionNames) {
-    //             if (err) {
-    //               console.log(err);
-    //               return res.status(200).json({
-    //                 success: false,
-    //                 message: "Backup not created.",
-    //               });
-    //             }
-    //             // let collections = allCollectionNames
-    //             //   .map((data) => data.name)
-    //             //   .filter((fdata) => fdata.includes("FundingSource_"));
-    //             conn.close();
-    //             // let todayCollection = collections.find(
-    //             //   (data) => data == collectionName
-    //             // );
-    //             // console.log("todayCollection", todayCollection);
-    //             if (allCollectionNames) {
-    //               return res.status(200).json({
-    //                 success: true,
-    //                 message: "Backup Successfully",
-    //                 allCollectionNames,
-    //               });
-    //             } else {
-    //               return res.status(200).json({
-    //                 success: false,
-    //                 message: "Backup not created.",
-    //               });
-    //             }
-    //           });
-    //       });
-    //     }
-    //   });
-    // } catch (err) {
-    //   console.log(err);
-    //   return res.status(401).json({
-    //     success: false,
-    //     message: "Something went wrong",
-    //     error: err.response,
-    //   });
-    // }
-  },
+  //   // try {
+  //   //   let curr_date1 = moment.tz(Date.now(), "Asia/Kolkata");
+  //   //   let dd = curr_date1.date() - 1;
+  //   //   let mm = curr_date1.month() + 1;
+  //   //   let yyyy = curr_date1.year();
+  //   //   let collectionName = `users${dd}_${mm}_${yyyy}`;
+  //   //   userModel.aggregate([{ $out: collectionName }], (err, response) => {
+  //   //     if (err) {
+  //   //       console.log("err", err);
+  //   //       return res.status(200).json({
+  //   //         success: false,
+  //   //         message: "Backup not created.",
+  //   //       });
+  //   //     } else {
+  //   //       const conn = mongoose.createConnection(URL, {
+  //   //         useNewUrlParser: true,
+  //   //         useUnifiedTopology: true,
+  //   //       });
+  //   //       conn.on("open", function () {
+  //   //         conn.db
+  //   //           .listCollections()
+  //   //           .toArray(function (err, allCollectionNames) {
+  //   //             if (err) {
+  //   //               console.log(err);
+  //   //               return res.status(200).json({
+  //   //                 success: false,
+  //   //                 message: "Backup not created.",
+  //   //               });
+  //   //             }
+  //   //             // let collections = allCollectionNames
+  //   //             //   .map((data) => data.name)
+  //   //             //   .filter((fdata) => fdata.includes("FundingSource_"));
+  //   //             conn.close();
+  //   //             // let todayCollection = collections.find(
+  //   //             //   (data) => data == collectionName
+  //   //             // );
+  //   //             // console.log("todayCollection", todayCollection);
+  //   //             if (allCollectionNames) {
+  //   //               return res.status(200).json({
+  //   //                 success: true,
+  //   //                 message: "Backup Successfully",
+  //   //                 allCollectionNames,
+  //   //               });
+  //   //             } else {
+  //   //               return res.status(200).json({
+  //   //                 success: false,
+  //   //                 message: "Backup not created.",
+  //   //               });
+  //   //             }
+  //   //           });
+  //   //       });
+  //   //     }
+  //   //   });
+  //   // } catch (err) {
+  //   //   console.log(err);
+  //   //   return res.status(400).json({
+  //   //     success: false,
+  //   //     message: "Something went wrong",
+  //   //     error: err.response,
+  //   //   });
+  //   // }
+  // },
 
   
 
@@ -2153,7 +2153,7 @@ module.exports = {
         message: "New Blog Post created",
       });
     } catch (error) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Blog Post not created.",
         error: error.message,
@@ -2168,7 +2168,7 @@ module.exports = {
         message: "Delete Blog Post successfuly",
       });
     } catch (error) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Error while deleting blog post.",
         error: error.message,
@@ -2184,7 +2184,7 @@ module.exports = {
         message: "Blog Post updated",
       });
     } catch (error) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Blog Post not updated.",
         error: error.message,
@@ -2207,7 +2207,7 @@ module.exports = {
         (err, data) => {
           if (err) {
             next();
-            return res.status(401).json({
+            return res.status(400).json({
               success: false,
               message: " Something went wrong.",
               error: err.message,
@@ -2222,7 +2222,7 @@ module.exports = {
       );
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2271,7 +2271,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2324,7 +2324,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2414,7 +2414,7 @@ module.exports = {
       // }
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2453,7 +2453,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2492,7 +2492,7 @@ module.exports = {
       });
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2581,7 +2581,7 @@ module.exports = {
       // };
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
@@ -2605,7 +2605,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
