@@ -1994,80 +1994,85 @@ module.exports = {
     }
   },
 
-  // createBuckup: async (req, res) => {
+  createBuckup: async (req, res) => {
 
-  //   let url = URL;
-  //   let csv
+    let url = URL;
+    let csv
 
-  //   mongodb.connect(
-  //     url,
-  //     { useNewUrlParser: true, useUnifiedTopology: true },
-  //     (err, client) => {
-  //       if (err) throw err;
+    // mongodb.connect(
+    //   url,
+    //   { useNewUrlParser: true, useUnifiedTopology: true },
+    //   (err, client) => {
+    //     if (err) throw err;
     
-  //       client
-  //         .db("bmms")
-  //         .collection("users")
-  //         .find({})
-  //         .toArray((err, data) => {
-  //           if (err) throw err;
+    //     client
+    //       .db("bmms")
+    //       .collection("users")
+    //       .find({})
+    //       .toArray((err, data) => {
+    //         if (err) throw err;
             
-  //           console.log(data);
-  //           const ws = fs.createWriteStream("users.csv");
-  //           // TODO: write data to CSV file
-  //           csv = fastcsv
-  //           .write(data, { headers: true })
-  //           .on("finish", function() {
-  //             console.log("Write to users.csv successfully!");
-  //           })
-  //           .pipe(ws);
-  //            //sendDailyBackupEmail(data)
-  //           client.close();
-  //         });
+    //         console.log(data);
+    //         const ws = fs.createWriteStream("users.csv");
+    //         // TODO: write data to CSV file
+    //         csv = fastcsv
+    //         .write(data, { headers: true })
+    //         .on("finish", function() {
+    //           console.log("Write to users.csv successfully!");
+    //         })
+    //         .pipe(ws);
+    //          //sendDailyBackupEmail(data)
+    //         client.close();
+    //       });
 
-  //         res.setHeader('Content-disposition', 'attachment; filename=' + 'users.csv');
-  //         res.set('Content-Type', 'text/csv');
-  //         res.status(200).send(csv);
-  //     }
-  //   );
+    //       res.setHeader('Content-disposition', 'attachment; filename=' + 'users.csv');
+    //       res.set('Content-Type', 'text/csv');
+    //       res.status(200).send(csv);
+    //   }
+    // );
 
-  //   // try {
-  //   //   // console.log("response", response);
-  //   //   const conn = mongoose.createConnection(URL, {
-  //   //     useNewUrlParser: true,
-  //   //     useUnifiedTopology: true,
-  //   //   });
-  //   //   conn.on("open", function () {
-  //   //     conn.db.listCollections().toArray(function (err, allCollectionNames) {
-  //   //       if (err) {
-  //   //         console.log(err);
-  //   //         return res.status(200).json({
-  //   //           success: false,
-  //   //           message: "Backup collection not get.",
-  //   //         });
-  //   //       }
-  //   //       // let collections = allCollectionNames
-  //   //       //   .map((data) => {
-  //   //       //     return { dbName: data.name };
-  //   //       //   })
-  //   //       //   .filter((fdata) => fdata.dbName.includes("FundingSource_"));
-  //   //       conn.close();
+    return res.status(200).json({
+      success: false,
+      message: "backup close"
+    })
 
-  //   //       return res.status(200).json({
-  //   //         success: true,
-  //   //         message: "Backup collection get Successfully",
-  //   //         allCollectionNames,
-  //   //       });
-  //   //     });
-  //   //   });
-  //   // } catch (err) {
-  //   //   console.log(err);
-  //   //   return res.status(400).json({
-  //   //     success: false,
-  //   //     message: "Something went wrong",
-  //   //     error: err.response,
-  //   //   });
-  //   // }
+    // try {
+    //   // console.log("response", response);
+    //   const conn = mongoose.createConnection(URL, {
+    //     useNewUrlParser: true,
+    //     useUnifiedTopology: true,
+    //   });
+    //   conn.on("open", function () {
+    //     conn.db.listCollections().toArray(function (err, allCollectionNames) {
+    //       if (err) {
+    //         console.log(err);
+    //         return res.status(200).json({
+    //           success: false,
+    //           message: "Backup collection not get.",
+    //         });
+    //       }
+    //       // let collections = allCollectionNames
+    //       //   .map((data) => {
+    //       //     return { dbName: data.name };
+    //       //   })
+    //       //   .filter((fdata) => fdata.dbName.includes("FundingSource_"));
+    //       conn.close();
+
+    //       return res.status(200).json({
+    //         success: true,
+    //         message: "Backup collection get Successfully",
+    //         allCollectionNames,
+    //       });
+    //     });
+    //   });
+    // } catch (err) {
+    //   console.log(err);
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Something went wrong",
+    //     error: err.response,
+    //   });
+    // }
 
   //   // try {
   //   //   let curr_date1 = moment.tz(Date.now(), "Asia/Kolkata");
@@ -2130,7 +2135,7 @@ module.exports = {
   //   //     error: err.response,
   //   //   });
   //   // }
-  // },
+  },
 
   
 
