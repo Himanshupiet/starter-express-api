@@ -1,4 +1,4 @@
-const { User } = require("../../models/user");
+const { userModel } = require("../../models/user");
 const { Role } = require("../../models/role");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
@@ -6,7 +6,7 @@ const { AuthToken } = require("../../models/authtoken");
 module.exports = {
   getRoilLevelUsers: async (req, res) => {
     try {
-      const userData = await User.findOne({
+      const userData = await userModel.findOne({
         $and: [{ _id: req.params.userId }, { deleted: false }],
       });
       if (userData) {
@@ -18,7 +18,7 @@ module.exports = {
             roids = userData.roiLevel[level];
           }
         }
-        const roilLevelData = await User.find({
+        const roilLevelData = await userModel.find({
           $and: [{ "userInfo.roiId": { $in: roids } }, { deleted: false }],
         });
 
@@ -71,7 +71,7 @@ module.exports = {
     let reffaralRoi = 0;
     let paidAmount = 0;
     try {
-      const userData = await User.findOne({
+      const userData = await userModel.findOne({
         $and: [{ _id: req.params.userId }, { deleted: false }],
       });
       if (userData) {

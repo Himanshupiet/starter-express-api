@@ -1,9 +1,22 @@
+const {cronjobModel}=require("../../models/cronjob");
 const {roleModel}=require("../../models/role");
+const {userModel}=require("../../models/user");
+const {examModel } = require("../../models/exam");
+const {resultModel } = require("../../models/result");
+const {resultEntryPerModel } = require("../../models/resutlEntryPer");
+const {examDateAndSubModel}=require("../../models/examDateAndSub");
+const {vehicleModel}=require("../../models/vehicle");
+const {vehicleRouteFareModel}=require("../../models/vehicleRouteFare");
+const {monthlyFeeListModel}=require("../../models/monthlyFeeList");
+const {paymentModel}=require("../../models/payment");
+const {invoiceModel}=require("../../models/invoice ");
+const {payOptionModel}=require("../../models/payOption");
 const nodemailer = require("nodemailer");
 const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
 todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-console.log("Today India date", todayIndiaDate);
+// console.log("Today India date", todayIndiaDate);
+//console.log("CURRENT TIME: " + moment().format('hh:mm:ss A'));
 const JSZip = require('jszip');
 const zip = new JSZip();
 const transporter = nodemailer.createTransport({
@@ -21,6 +34,28 @@ const transporter = nodemailer.createTransport({
   // }
 });
 
+const mailTo= `hkc.kumar@gmail.com, bmmsbkg@gmail.com`
+
+function createCronJobData(body){
+    cronjobModel.create(body,function (err, response) {
+      if (err) {
+          next(err)
+      } else {
+          res.status(200).json({
+              status: 'success',
+              message: `Daily Backup run`
+          })
+      }
+  })     
+}
+
+let requestBody={
+  jobPerform: `Daily Backup Mail Send.`,
+  detail: `${mailTo} Daily Backup Mail send successfully.`,
+  scheduleTime: (moment().format('hh:mm:ss A')).toString(),
+  status: 'Success'
+}
+
 
 module.exports = {
     sendDailyBackupEmail: async (req, res) => {
@@ -30,40 +65,81 @@ module.exports = {
       let mm = String(today.getMonth() + 1).padStart(2, '0'); 
       let yyyy = today.getFullYear();
       today = dd + '/' + mm + '/' + yyyy;
-      console.log("todaytoday", today)
-      const userData = await roleModel.find()
-      const userData2 = await roleModel.find()
-      const text= JSON.stringify(userData)
-      const text2= JSON.stringify(userData2)
+      const userData = await userModel.find()
+      const roleData = await roleModel.find()
+      const examData = await examModel.find()
+      const resultData = await resultModel.find()
+      const resultEntryPerData = await resultEntryPerModel.find()
+      const examDateAndSubData = await examDateAndSubModel.find()
+      const vehicleData = await vehicleModel.find()
+      const vehicleRouteFareData = await vehicleRouteFareModel.find()
+      const monthlyFeeListData = await monthlyFeeListModel.find()
+      const paymentData = await paymentModel.find()
+      const invoiceData = await invoiceModel.find()
+      const payOptionData = await payOptionModel.find()
+  
+      
+      zip.file("users.json", JSON.stringify(userData));
+      zip.file("roles.json",JSON.stringify(roleData));
+      zip.file("exams.json", JSON.stringify(examData));
+      zip.file("results.json",JSON.stringify(resultData));
+      zip.file("resultentrypers.json", JSON.stringify(resultEntryPerData));
+      zip.file("examdateandsubs.json",JSON.stringify(examDateAndSubData));
+      zip.file("vehicles.json", JSON.stringify(vehicleData));
+      zip.file("vehicleroutefares.json",JSON.stringify(vehicleRouteFareData));
+      zip.file("monthlyfeelists.json", JSON.stringify(monthlyFeeListData));
+      zip.file("payements.json",JSON.stringify(paymentData));
+      zip.file("invoices.json", JSON.stringify(invoiceData));
+      zip.file("payoptions.json",JSON.stringify(payOptionData));
 
-      zip.file("user.json", text);
-      zip.file("user2.json", text2);
       const buffer = await zip.generateAsync({ type: `nodebuffer` })
 
       if(buffer){
-          const info = await transporter.sendMail({
+          const mailOptions ={
               from: `"Daily Backup ${today}"   <info@bmmschool.in>`, // sender address
-              to: "hkc.kumar@gmail.com",//"bmmsbkg@gmail.com", // list of receivers
+              to: mailTo, // list of receivers
               subject: `Daily Backup ${today}`, // Subject line
               text: "Find atachment", // plain text body
               html: "<b>BM Memorial School</b>", // html body
               attachments: [
-              {   
-                  filename: `Daily_${today}.zip`,
-                  content:  buffer
-              },
+                {   
+                    filename: `Daily_${today}.zip`,
+                    content:  buffer
+                },
               ],
-          });
-          console.log("hhhhhhhhhhhhhhhhhh",JSON.stringify(info, null, 2))
-          if(info.accepted){
-            console.log("Daily Backup Mail send.")
-
-          }else{
-            console.log("Daily Backup Mail not send.")
-
           }
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              requestBody.status= `Fail`
+              requestBody.detail= error.message? error.message: `Error while sending mail`
+              createCronJobData(requestBody)
+         
+            }else{
+              createCronJobData(requestBody)
+            }
+          });
           
-          // hhhhhhhhhhhhhhhhhh {
+      }else{
+        requestBody.status= `Fail`
+        requestBody.detail= err.message? err.message: `Error while creating backup.`
+        createCronJobData(requestBody)
+      }
+    
+    } catch (err) {
+      requestBody.status= `Fail`
+      requestBody.detail= err.message? err.message: `Something went wrong when creating backup/sending mail`
+      createCronJobData(requestBody)
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: "Something went wrong when creating backup/sending mail",
+        error: err.message,
+      });
+    }
+  },
+};
+
+  // hhhhhhhhhhhhhhhhhh {
           //   "accepted": [
           //     "bmmsbkg@gmail.com"
           //   ],
@@ -85,16 +161,3 @@ module.exports = {
           //   },
           //   "messageId": "<b317022a-32f2-e8cb-8740-f203bac5caf6@bmmschool.in>"
           // }
-          
-      }
-    
-    } catch (err) {
-      console.log(err);
-      return res.status(400).json({
-        success: false,
-        message: "Something went wrong",
-        error: err.message,
-      });
-    }
-  },
-};

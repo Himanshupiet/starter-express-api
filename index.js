@@ -4,16 +4,12 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const CronJob = require("cron").CronJob;
-const cron = require("node-cron");
 require("dotenv/config");
-const moment = require("moment-timezone");
 const errorHandler = require("./util/errorHandler");
 const { roleModel } = require("./models/role");
 const { userModel } = require("./models/user");
-const { cronjobModel } = require("./models/cronjob");
 const fileUpload = require('express-fileupload')
-const { decryptAES, sendDailyBackupEmail ,sendDailyBackupEmailCron} = require("./util/helper");
+const { decryptAES} = require("./util/helper");
 
 const bcrypt = require("bcryptjs");
 const api = process.env.API_URL;
@@ -75,9 +71,6 @@ mongoose
     dbName: mongoDbName,
   })
   .then(() => {
-     //sendDailyBackupEmail()
-    // notificationSend()
-    sendDailyBackupEmailCron()
 
     const getAdmin = async () => {
       try {

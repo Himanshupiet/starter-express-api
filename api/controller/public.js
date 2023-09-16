@@ -166,7 +166,7 @@ module.exports = {
 
   getAllUser: async (req, res) => {
     try {
-      let data = await User.find(
+      let data = await userModel.find(
         {
           $and: [
             { deleted: false },

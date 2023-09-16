@@ -5,17 +5,17 @@ const cronjobSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  cronJobTime: {
+  detail: {
     type: String,
     required: true,
   },
-  indiaCronjontime: {
+  scheduleTime: {
+    type: String,
+  },
+  status: {
     type: String,
   },
   created: {
-    type: Date,
-  },
-  modified: {
     type: Date,
   },
   deleted: {
