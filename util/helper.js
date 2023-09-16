@@ -1,4 +1,5 @@
 const fast2sms = require("fast-two-sms");
+var CronJob = require('cron').CronJob;
 const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
 todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
@@ -32,8 +33,7 @@ const transporter = nodemailer.createTransport({
 // const awsSdk = require("aws-sdk");
 // const s3 = new awsSdk.S3()
 
-const DOMAIN =
-  "https://api.mailgun.net/v3/sandboxea9896c664194cff9614608387a91f33.mailgun.org";
+const DOMAIN ="https://api.mailgun.net/v3/sandboxea9896c664194cff9614608387a91f33.mailgun.org";
 require("dotenv/config");
 const smsapikey = process.env.SMS_API;
 const URL = process.env.MONGO_LOCAL_CONN_URL;
@@ -398,6 +398,79 @@ module.exports = {
     main().catch(
       console.error
       );
+  },
+
+  sendDailyBackupEmailCron:async()=>{ 
+    console.log('Before job instantiation');
+    const job = new CronJob('0 */1 * * * *', async function() {
+      const d = new Date();
+      console.log('Every Tenth Minute:', d);
+      let today = new Date(todayIndiaDate);
+      let dd = String(today.getDate()).padStart(2, '0');
+      let mm = String(today.getMonth() + 1).padStart(2, '0'); 
+      let yyyy = today.getFullYear();
+      today = dd + '/' + mm + '/' + yyyy;
+      console.log("todaytoday", today)
+      const userData = await roleModel.find()
+      const userData2 = await roleModel.find()
+      const text= JSON.stringify(userData)
+      const text2= JSON.stringify(userData2)
+  
+      zip.file("user.json", text);
+      zip.file("user2.json", text2);
+      const buffer = await zip.generateAsync({ type: `nodebuffer` })
+  
+      async function main() {
+        const info = await transporter.sendMail({
+          from: `"Daily Backup ${today}"   <info@bmmschool.in>`, // sender address
+          to: "hkc.kumar@gmail.com",//"bmmsbkg@gmail.com", // list of receivers
+          subject: `Daily Backup ${today}`, // Subject line
+          text: "Find atachment", // plain text body
+          html: "<b>BM Memorial School</b>", // html body
+          attachments: [
+            {   
+              filename: `Daily_${today}.zip`,
+              content:  buffer
+            },
+          ],
+        });
+        console.log("hhhhhhhhhhhhhhhhhh",JSON.stringify(info, null, 2))
+      
+        // hhhhhhhhhhhhhhhhhh {
+        //   "accepted": [
+        //     "bmmsbkg@gmail.com"
+        //   ],
+        //   "rejected": [],
+        //   "ehlo": [
+        //     "PIPELINING",
+        //     "8BITMIME",
+        //     "AUTH LOGIN PLAIN CRAM-MD5"
+        //   ],
+        //   "envelopeTime": 131,
+        //   "messageTime": 75,
+        //   "messageSize": 3799,
+        //   "response": "250 Message queued as <b317022a-32f2-e8cb-8740-f203bac5caf6@bmmschool.in>",
+        //   "envelope": {
+        //     "from": "info@bmmschool.in",
+        //     "to": [
+        //       "bmmsbkg@gmail.com"
+        //     ]
+        //   },
+        //   "messageId": "<b317022a-32f2-e8cb-8740-f203bac5caf6@bmmschool.in>"
+        // }
+        
+      }
+      
+      main().catch(
+        console.error
+        );
+    },
+    null,
+    true,
+    // 'America/Los_Angeles'
+    );
+    console.log('After job instantiation');
+    job.start();
   },
 
 
