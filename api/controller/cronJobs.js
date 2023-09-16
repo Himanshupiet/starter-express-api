@@ -37,7 +37,7 @@ const transporter = nodemailer.createTransport({
 const mailTo= `hkc.kumar@gmail.com, bmmsbkg@gmail.com`
 
 function createCronJobData(body){
-    cronjobModel.create(body,function (err, res) {
+    cronjobModel.create(body,function (err, res, next) {
       if (err) {
           next(err)
       } else {
