@@ -1,4 +1,25 @@
-const { Securitylog } = require("../../models/securitylog");
+const {roleModel}=require("../../models/role");
+const nodemailer = require("nodemailer");
+const JSZip = require('jszip');
+const zip = new JSZip();
+const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
+todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+console.log("Today India date", todayIndiaDate);
+const transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    // TODO: replace `user` and `pass` values from <https://forwardemail.net>
+    user: 'geekygeeks14@gmail.com',
+    pass: 'XgUC9AvZr16cyP0H'
+  },
+  // tls: {
+  //   // do not fail on invalid certs
+  //   rejectUnauthorized: false,
+  // }
+});
+
 
 module.exports = {
     sendDailyBackupEmail: async (req, res) => {
