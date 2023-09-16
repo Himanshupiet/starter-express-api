@@ -1,10 +1,11 @@
 const {roleModel}=require("../../models/role");
 const nodemailer = require("nodemailer");
-const JSZip = require('jszip');
-const zip = new JSZip();
+const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
 todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
 console.log("Today India date", todayIndiaDate);
+const JSZip = require('jszip');
+const zip = new JSZip();
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
