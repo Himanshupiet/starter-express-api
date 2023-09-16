@@ -83,14 +83,14 @@ module.exports = {
 
       if(buffer){
           const mailOptions ={
-              from: `"Daily Backup ${today}"   <info@bmmschool.in>`, // sender address
+              from: `"BMMS Daily Backup ${today}"   <info@bmmschool.in>`, // sender address
               to: mailTo, // list of receivers
-              subject: `Daily Backup ${today}`, // Subject line
+              subject: `BMMS Daily Backup ${today}`, // Subject line
               text: "Find atachment", // plain text body
               html: "<b>BM Memorial School</b>", // html body
               attachments: [
                 {   
-                    filename: `Daily_${today}.zip`,
+                    filename: `BMMS_Daily_Backup_${today}.zip`,
                     content:  buffer
                 },
               ],
