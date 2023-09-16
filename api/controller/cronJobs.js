@@ -36,19 +36,6 @@ const transporter = nodemailer.createTransport({
 
 const mailTo= `hkc.kumar@gmail.com, bmmsbkg@gmail.com`
 
-function createCronJobData(body){
-    cronjobModel.create(body,function (err, res, next) {
-      if (err) {
-          next(err)
-      } else {
-          res.status(200).json({
-              status: 'success',
-              message: `Daily Backup run`
-          })
-      }
-  })     
-}
-
 let requestBody={
   jobPerform: `Daily Backup Mail Send.`,
   detail: `${mailTo} Daily Backup Mail send successfully.`,
@@ -58,7 +45,7 @@ let requestBody={
 
 
 module.exports = {
-    sendDailyBackupEmail: async (req, res) => {
+    sendDailyBackupEmail: async (req, res, next) => {
     try {
       let today = new Date(todayIndiaDate);
       let dd = String(today.getDate()).padStart(2, '0');
@@ -112,23 +99,59 @@ module.exports = {
             if (error) {
               requestBody.status= `Fail`
               requestBody.detail= error.message? error.message: `Error while sending mail`
-              createCronJobData(requestBody)
+              cronjobModel.create(requestBody,function (err, response) {
+                if (err) {
+                    next(err)
+                } else {
+                    res.status(200).json({
+                        status: 'success',
+                        message: `Daily Backup run`
+                    })
+                }
+              }) 
          
             }else{
-              createCronJobData(requestBody)
-            }
+              cronjobModel.create(requestBody,function (err, response) {
+                if (err) {
+                    next(err)
+                } else {
+                    res.status(200).json({
+                        status: 'success',
+                        message: `Daily Backup run`
+                    })
+                 }
+                }) 
+              }
           });
           
       }else{
         requestBody.status= `Fail`
         requestBody.detail= err.message? err.message: `Error while creating backup.`
-        createCronJobData(requestBody)
+        cronjobModel.create(requestBody,function (err, response) {
+          if (err) {
+              next(err)
+          } else {
+              res.status(200).json({
+                  status: 'success',
+                  message: `Daily Backup run`
+              })
+           }
+          }) 
       }
     
     } catch (err) {
       requestBody.status= `Fail`
       requestBody.detail= err.message? err.message: `Something went wrong when creating backup/sending mail`
-      createCronJobData(requestBody)
+      cronjobModel.create(requestBody,function (err, response) {
+        if (err) {
+            next(err)
+        } else {
+            res.status(200).json({
+                status: 'success',
+                message: `Daily Backup run`
+            })
+         }
+      }) 
       console.log(err);
       return res.status(400).json({
         success: false,
