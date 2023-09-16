@@ -368,7 +368,15 @@ module.exports = {
           },
         ],
       });
-      console.log("hhhhhhhhhhhhhhhhhh",JSON.stringify(info, null, 2))
+      //console.log("hhhhhhhhhhhhhhhhhh",JSON.stringify(info, null, 2))
+      if(info.accepted){
+        console.log("Daily Backup Mail send.")
+
+      }else{
+        console.log("Daily Backup Mail not send.")
+
+      }
+      
     
       // hhhhhhhhhhhhhhhhhh {
       //   "accepted": [
@@ -434,7 +442,14 @@ module.exports = {
             },
           ],
         });
-        console.log("hhhhhhhhhhhhhhhhhh",JSON.stringify(info, null, 2))
+        //console.log("hhhhhhhhhhhhhhhhhh",JSON.stringify(info, null, 2))
+        if(info.accepted){
+          console.log("Daily Backup Mail send.")
+  
+        }else{
+          console.log("Daily Backup Mail not send.")
+  
+        }
       
         // hhhhhhhhhhhhhhhhhh {
         //   "accepted": [

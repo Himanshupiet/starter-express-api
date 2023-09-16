@@ -55,13 +55,15 @@ const authorize = require("./routes/authorize");
 const admin = require("./routes/admin");
 const user = require("./routes/user");
 const securitylog = require("./routes/secuirtylog");
+const cronJob = require("./routes/cronJob");
 const { passwordEncryptAES } = require("./util/helper");
 
 app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);
 app.use(`${api}/authorize`, authorize);
 app.use(`${api}/admin`, admin);
-// app.use(`${api}/user`, user);
+app.use(`${api}/admin`, admin);
+app.use(`${api}/cron`, cronJob);
 // app.use(`${api}/securitylog`, securitylog);
 
 //Database
