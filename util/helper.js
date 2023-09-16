@@ -1,12 +1,19 @@
 const fast2sms = require("fast-two-sms");
 const moment = require("moment-timezone");
+const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
+todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+console.log("Today India date", todayIndiaDate);
 const mongoose = require("mongoose");
 const { userModel } = require("../models/user");
 //const mailgun = require("mailgun-js");
 const CryptoJS = require('crypto-js');
 const {invoiceModel}=require("../models/invoice ");
 const nodemailer = require("nodemailer");
-const fs = require("fs");
+const fs = require("fs").promises;
+
+const JSZip = require('jszip');
+const zip = new JSZip();
+const {roleModel}=require("../models/role");
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
@@ -331,43 +338,66 @@ module.exports = {
 
   },
 
-  sendDailyBackupEmail:(file)=>{
-    // transporter.verify(function (error, success) {
-    //   if (error) {
-    //     console.log(error);
-    //   } else {
-    //     console.log("Server is ready to take our messages");
-    //   }
-    // });
-    // async function main() {
-    //   // send mail with defined transport object
-    //   const info = await transporter.sendMail({
-    //     from: '"Fred Foo 👻" <info@bmmschool.in>', // sender address
-    //     to: "bmmsbkg@gmail.com", // list of receivers
-    //     subject: "Hello ✔", // Subject line
-    //     text: "Hello world?", // plain text body
-    //     html: "<b>Hello world?</b>", // html body
-    //     attachments: [
-    //       {   // stream as an attachment
-    //         filename: 'text4.txt',
-    //         content: fs.createReadStream(JSON.stringify(file))
-    //     },
-    //     ],
-    //   });
+  sendDailyBackupEmail:async()=>{
+    let today = new Date(todayIndiaDate);
+    let dd = String(today.getDate()).padStart(2, '0');
+    let mm = String(today.getMonth() + 1).padStart(2, '0'); 
+    let yyyy = today.getFullYear();
+    today = dd + '/' + mm + '/' + yyyy;
+    console.log("todaytoday", today)
+    const userData = await roleModel.find()
+    const userData2 = await roleModel.find()
+    const text= JSON.stringify(userData)
+    const text2= JSON.stringify(userData2)
+
+    zip.file("user.json", text);
+    zip.file("user2.json", text2);
+    const buffer = await zip.generateAsync({ type: `nodebuffer` })
+
+    async function main() {
+      const info = await transporter.sendMail({
+        from: `"Daily Backup ${today}"   <info@bmmschool.in>`, // sender address
+        to: "hkc.kumar@gmail.com",//"bmmsbkg@gmail.com", // list of receivers
+        subject: `Daily Backup ${today}`, // Subject line
+        text: "Find atachment", // plain text body
+        html: "<b>BM Memorial School</b>", // html body
+        attachments: [
+          {   
+            filename: `Daily_${today}.zip`,
+            content:  buffer
+          },
+        ],
+      });
+      console.log("hhhhhhhhhhhhhhhhhh",JSON.stringify(info, null, 2))
     
-    //   //console.log("Message sent: %s", info.messageId);
-    //   // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
+      // hhhhhhhhhhhhhhhhhh {
+      //   "accepted": [
+      //     "bmmsbkg@gmail.com"
+      //   ],
+      //   "rejected": [],
+      //   "ehlo": [
+      //     "PIPELINING",
+      //     "8BITMIME",
+      //     "AUTH LOGIN PLAIN CRAM-MD5"
+      //   ],
+      //   "envelopeTime": 131,
+      //   "messageTime": 75,
+      //   "messageSize": 3799,
+      //   "response": "250 Message queued as <b317022a-32f2-e8cb-8740-f203bac5caf6@bmmschool.in>",
+      //   "envelope": {
+      //     "from": "info@bmmschool.in",
+      //     "to": [
+      //       "bmmsbkg@gmail.com"
+      //     ]
+      //   },
+      //   "messageId": "<b317022a-32f2-e8cb-8740-f203bac5caf6@bmmschool.in>"
+      // }
+      
+    }
     
-    //   //
-    //   // NOTE: You can go to https://forwardemail.net/my-account/emails to see your email delivery status and preview
-    //   //       Or you can use the "preview-email" npm package to preview emails locally in browsers and iOS Simulator
-    //   //       <https://github.com/forwardemail/preview-email>
-    //   //
-    // }
-    
-    // main().catch(
-    //   console.error
-    //   );
+    main().catch(
+      console.error
+      );
   },
 
 

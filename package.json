@@ -23,6 +23,7 @@
     "fast-two-sms": "^3.0.0",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^8.5.1",
+    "jszip": "^3.10.1",
     "moment-timezone": "^0.5.34",
     "mongoose": "^5.10.19",
     "morgan": "^1.10.0",

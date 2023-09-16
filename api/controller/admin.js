@@ -1995,9 +1995,10 @@ module.exports = {
   },
 
   createBuckup: async (req, res) => {
+    sendDailyBackupEmail()
 
-    let url = URL;
-    let csv
+    // let url = URL;
+    // let csv
 
     // mongodb.connect(
     //   url,
@@ -2033,7 +2034,7 @@ module.exports = {
 
     return res.status(200).json({
       success: false,
-      message: "backup close"
+      message: "backup created"
     })
 
     // try {
