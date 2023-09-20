@@ -155,7 +155,6 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Something went wrong when creating backup/sending mail",
         error: err.message,
       });
     }
