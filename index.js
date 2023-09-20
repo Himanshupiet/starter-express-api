@@ -58,7 +58,6 @@ app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);
 app.use(`${api}/authorize`, authorize);
 app.use(`${api}/admin`, admin);
-app.use(`${api}/admin`, admin);
 app.use(`${api}/cron`, cronJob);
 // app.use(`${api}/securitylog`, securitylog);
 

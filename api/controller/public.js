@@ -56,8 +56,8 @@ module.exports = {
         }
         const roleExist = await roleModel.findOne({ _id: user.userInfo.roleId });
         if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT")) isAdmin = true;
-        const expireDay=  isAdmin?"1d":"100d"
-        const tokenGen = jwt.sign(
+        const expireDay=  isAdmin?"1m":"100d"
+        const tokenGen = jwt.sig(
           {
             userId: user.id,
             isAdmin: isAdmin,
@@ -81,8 +81,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Error while login-user.",
-        error: err.message,
+        message: err.message,
       });
     }
   },

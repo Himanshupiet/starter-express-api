@@ -124,16 +124,23 @@ module.exports = {
 
       //console.log("gggggggggggggghhhhhhhhhhhhhhhh", JSON.stringify(query))
       const users = await userModel.find(query);
-      return res.status(200).json({
-        success: true,
-        users,
-      });
+      if(users && users.length>0){
+        return res.status(200).json({
+          success: true,
+          message: 'Successfully get all users.',
+          users,
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: 'Users not found.',
+        });
+      }
     } catch (err) {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "User not found.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -209,16 +216,23 @@ module.exports = {
       //console.log("condParammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", JSON.stringify(condParam))
       const users = await userModel.find(condParam,dataFilterParam).sort(sortingOption);
     
-      return res.status(200).json({
-        success: true,
-        users,
-      });
+      if(users && users.length>0){
+        return res.status(200).json({
+          success: true,
+          message: 'Successfully get all students.',
+          users,
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: 'Students not found.',
+        });
+      }
     } catch (err) {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Student not found.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -253,16 +267,16 @@ module.exports = {
       const users = await userModel.find({
         $and: [ { deleted: false },searchParam,classParam,roleParam]
       });
-      if(users.length>0){
+      if(users && users.length>0){
         return res.status(200).json({
           success: true,
+          message: 'Successfully get all teacher and staff',
           users,
         });
       }else{
-        return res.status(400).json({
+        return res.status(200).json({
           success: false,
-          message: "User not found.",
-          error: err.message,
+          message: "Teacher and staff not found.",
         });
       }
    
@@ -270,24 +284,29 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "User not found.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
   deleteUser: async (req, res) => {
     try {
-     await userModel.findOneAndUpdate({_id:req.params.id},{deleted: true, modified:new Date()});
-      return res.status(200).json({
-        success: true,
-        message: "Deleted successfully."
-      });
+    const updatedUser=  await userModel.findOneAndUpdate({_id:req.params.id},{deleted: true, modified:new Date()});
+     if(updatedUser){
+        return res.status(200).json({
+          success: true,
+          message: 'Deleted user successfully',
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Not deleted user.",
+        });
+      }
     } catch (err) {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "user not found.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -306,10 +325,9 @@ module.exports = {
       }
       let user =  await userModel.findOne({_id:req.params.id});
       if(!user){
-        return res.status(400).json({
+        return res.status(200).json({
           success: false,
           message: "user not found.",
-          error: err.message,
         });
       }
       if(req.body.student_document){
@@ -332,17 +350,24 @@ module.exports = {
       if(updatedUser && req.body.passwordChange){
         await AuthToken.deleteMany({ userId: user.userInfo.userId })
       }
-      return res.status(200).json({
-        success: true,
-        message: "Updated successfully.",
-        data:updatedUser
-      });
+      if(updatedUser){
+        return res.status(200).json({
+          success: true,
+          message: "Updated successfully.",
+          data:updatedUser
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Not updated user.",
+        });
+      }
+
     } catch (err) {
       console.log(err);
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        message: "Error while update user.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -401,10 +426,9 @@ module.exports = {
       })
     } catch (err) {
       console.log(err);
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        message: "Error while update status",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -434,39 +458,42 @@ module.exports = {
         })
   } catch (err) {
     console.log(err);
-    return res.status(500).json({
+    return res.status(400).json({
       success: false,
-      message: "Error while update status",
-      error: err.message,
+      message: err.message,
     });
   }
   },
   getPaymentRecieverUser: async (req, res) => {
     try {
       let allPaymentRecieverUser = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{isPaymentReciever:true}]})
-      return res.status(200).json({
-        success: true,
-        message: "Payment Reciever List successfully.",
-        data: allPaymentRecieverUser
-      });
+      if(allPaymentRecieverUser && allPaymentRecieverUser.length>0){
+        return res.status(200).json({
+          success: true,
+          message: "Payment Reciever List successfully.",
+          data:allPaymentRecieverUser
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Payment Reciever List not found.",
+        });
+      }
     } catch (err) {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Payment Reciever not found.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
   getSmsData: async (req, res) => {
     try {
       const { wallet } = await fast2sms.getWalletBalance(authorization);
-      // const smsData = await smsModel.find();
        if (wallet) {
         return res.status(200).json({
           success: true,
           message: "SMS data get Successfully",
-          // data: smsData,
           wallet,
         });
       } else {
@@ -479,8 +506,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Something went wrong",
-        error: err.response,
+        message: err.message,
       });
     }
   },
@@ -601,8 +627,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Something went wrong",
-        error: err.response,
+        message: err.message,
       });
     }
   },
@@ -880,8 +905,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Something went wrong",
-        error: err.response,
+        message: err.message,
       });
     }
   },
@@ -1123,8 +1147,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Something went wrong",
-        error: err.response,
+        message: err.message,
       });
     }
   },
@@ -1152,16 +1175,24 @@ module.exports = {
       const users = await userModel.find({
         $and: [ { deleted: true },searchParam]
       });
-      return res.status(200).json({
-        success: true,
-        users,
-      });
+      if(users && users.length){
+        return res.status(200).json({
+          success: true,
+          message: 'Deleted user get successfully',
+          users,
+        });
+      }else{
+        return res.status(200).json({
+          success: true,
+          message: 'Deleted user not found',
+        });
+      }
+
     } catch (err) {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "User not found.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -1177,8 +1208,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "user not found.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -1226,19 +1256,17 @@ module.exports = {
 
    const reportCount= await userModel.find({$and:[activeParam,queryParam]}).count();
 
-
     return res.status(200).json({
       success: true,
       message: "Report Data get successfully.",
       reportData:repodata,
-      reportCount:reportCount,
+      reportCount:reportCount?reportCount:0,
     });
     } catch (err) {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "user not found.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -1275,8 +1303,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Error while creating exam.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -1306,25 +1333,31 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Error while exam update.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
 
   deleteExam: async (req, res) => {
     try {
-     await examModel.findOneAndUpdate({_id:req.params.id},{deleted:true});
-      return res.status(200).json({
-        success: true,
-        message: "Deleted successfully."
-      });
+    const updatedExam=  await examModel.findOneAndUpdate({_id:req.params.id},{deleted:true});
+      if(updatedExam){
+        return res.status(200).json({
+          success: true,
+          message: "Deleted exam successfully."
+        });
+      }else{
+        return res.status(200).json({
+          success: true,
+          message: "Exam not deleted."
+        });
+      }
+
     } catch (err) {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Error while get exam.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -1346,9 +1379,9 @@ module.exports = {
       //   }
       // }
       const sendData={
-        examsData:getExamsData,
-        teacherData:getTeacherData,
-        resultEntryPerData:getResultEntryPerData
+        examsData:getExamsData? getExamsData:[],
+        teacherData:getTeacherData? getTeacherData:[],
+        resultEntryPerData:getResultEntryPerData? getResultEntryPerData:[]
       }
 
         return res.status(200).json({
@@ -1359,24 +1392,32 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:"Error while get exam "
+        success: false,
+        message: err.message,
       })
     }
   },
   getExamDateAndSub:async(req, res)=>{
     try{
       const getExamsData= await examDateAndSubModel.find({})
+      if(getExamsData){
         return res.status(200).json({
           success: true,
           message: "Exam data get successfully.",
           data: getExamsData
         })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Exam data not found.",
+        })
+      }
+
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:"Error while get exam "
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1409,8 +1450,8 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:"Error while get exam "
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1472,8 +1513,8 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:"Error while get exam"
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1488,10 +1529,18 @@ module.exports = {
           allowedList:req.body.allowedList
         })
         const newResultEntryPer = await resultEntryPerData.save();
-        return res.status(200).json({
-          success: true,
-          message: "created successfully.",
-        })
+        if(newResultEntryPer){
+          return res.status(200).json({
+            success: true,
+            message: "Result entry permisssion created successfully.",
+          })
+        }else{
+          return res.status(200).json({
+            success: false,
+            message: "Result entry permisssion not created.",
+          })
+        }
+     
       }else{
         return res.status(200).json({
           success: false,
@@ -1502,23 +1551,30 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:'Error whille create new result entry permission.'
+        success: false,
+        message: err.message,
       })
     }
   },
   getResultEntryPermission: async(req, res)=>{
     try{
       const getResultEntryPerData = await resultEntryPerModel.find({});
-      return res.status(200).json({
-        success: true,
-        message: "created successfully.",
-        data:getResultEntryPerData
-      })
+      if(getResultEntryPerData && getResultEntryPerData){
+        return res.status(200).json({
+          success: true,
+          message: "Result entry permisssion get successfully.",
+          data:getResultEntryPerData
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Result entry permisssion not found.",
+        })
+      }
     }catch(err){
       return res.status(400).json({
-        success:false,
-        message:'Error whille create new result entry permission.'
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1554,8 +1610,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Error while update.",
-        error: err.message,
+        message: err.message,
       });
     }
   },
@@ -1576,8 +1631,8 @@ module.exports = {
   
     }catch(err){
       return res.status(400).json({
-        success:false,
-        message:'Error whille deleting result entry permission.'
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1683,8 +1738,7 @@ module.exports = {
       console.log(err);
       return res.status(400).json({
         success: false,
-        message: "Error while get dashboard data.",
-        error: err.message,
+        message: err.message,
       });
     }
 
@@ -1714,8 +1768,7 @@ module.exports = {
     } catch (error) {
       return res.status(400).json({
         success: false,
-        message: "class not upgraded",
-        error: error.message,
+        message: err.message,
       });
     }
   },
@@ -1761,8 +1814,8 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:'Error whille create new list'
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1800,8 +1853,8 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:'Error whille update list'
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1829,8 +1882,8 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:'Error whille get all list.'
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1926,8 +1979,8 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:'Error whille payment adding.'
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1951,8 +2004,8 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:'Error whille geting payment detail'
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -1988,8 +2041,8 @@ module.exports = {
     }catch(err){
       console.log(err)
       return res.status(400).json({
-        success:false,
-        message:'Error whille geting invoice detail'
+        success: false,
+        message: err.message,
       })
     }
   },
@@ -2176,8 +2229,7 @@ module.exports = {
     } catch (error) {
       return res.status(400).json({
         success: false,
-        message: "Error while deleting blog post.",
-        error: error.message,
+        message: err.message,
       });
     }
   },
@@ -2192,8 +2244,7 @@ module.exports = {
     } catch (error) {
       return res.status(400).json({
         success: false,
-        message: "Blog Post not updated.",
-        error: error.message,
+        message: err.message,
       });
     }
   },
@@ -2253,7 +2304,7 @@ module.exports = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
         message: "Something went wrong",
         error: err.response,
