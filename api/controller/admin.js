@@ -11,7 +11,7 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail} = require('../../util/helper')
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -37,6 +37,8 @@ const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5","6","7","8"
 const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
 const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
 const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','COMP PRACT','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI SUB ENRICH','ENGLISH SUB ENRICH','MATH SUB ENRICH','SCIENCE SUB ENRICH','SST SUB ENRICH','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK MV','ATTENDANCE']
+const monthList =  ["april", "may", "june", "july", "august", "september", "october", "november", "december","january", "february", "march"] 
+const monthNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
 const performanceList= [
   {grade:'A1', performance:'Outstanding'},
   {grade:'A2', performance:'Excellent'},
@@ -79,6 +81,51 @@ const getPerformance =(grade)=>{
 }
 const percentageMarks= (getTotal, fullMarks)=>{
   return ((Number(getTotal)*100)/Number(fullMarks)).toFixed(2)
+}
+
+checkAdmissionDate=(user, columnMonth)=>{
+  let pay=true
+  if(user.created){
+    let columnMonthIndex=  monthNames.indexOf(columnMonth.toLowerCase())
+    const admissionDate = new Date(user.created)
+    const admissionDay = admissionDate.getDate() 
+    const admissionYear = admissionDate.getFullYear()
+    const admissionMonthIndex = admissionDate.getMonth()
+    let admissionSession=''
+    if(admissionMonthIndex>=3){
+      admissionSession = `${(admissionYear).toString()}-${(admissionYear+1).toString().substring(2)}`
+    }else if(admissionMonthIndex<3 ){
+      admissionSession = `${(admissionYear-1).toString()}-${(admissionYear).toString().substring(2)}`
+    }
+    if(columnMonthIndex>=3 && currentSession()===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=20 || (admissionMonthIndex<3 && admissionMonthIndex<columnMonthIndex )) )){
+      pay= false
+    
+    }
+    else if(columnMonthIndex<3 && admissionMonthIndex<3 && currentSession()===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=20))){
+      pay= false
+    }
+  }
+  return pay
+
+}
+                    //(Sdata, userPayDetail, monthlyFeeList, busRouteFareList)
+const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList )=>{
+  let monthPayData={}
+  for (const month of monthList) {
+    let monthData={}
+    const monthEnable =  checkAdmissionDate(sData, month)
+      if(monthEnable){
+        monthData['monthlyFee']= monthlyFeeList.length>0 && monthlyFeeList.find(data => data.className === sData.userInfo.class)?.monthlyFee
+        monthData['busFee']= sData.userInfo.busService? busRouteFareList.length>0 && busRouteFareList.find(busData => busData._id === sData.userInfo.busRouteId)?.fare: 0
+        monthData['payEnable']=true
+        monthData['paidDone']=userPayDetail && userPayDetail[month]? true: false
+        monthData['amt'] = userPayDetail && userPayDetail[month]? (parseInt(userPayDetail[month].monthlyFee) + parseInt(userPayDetail[month].busFee)):"000"
+      }else{
+        monthData['payEnable']=false
+      }
+      monthPayData[month]= monthData
+  }
+  return monthPayData
 }
 
 const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
@@ -1987,13 +2034,55 @@ module.exports = {
 
   gePaymentDetail: async (req, res) => {
     try{
-      let payDetail= await paymentModel.find({})
- 
-      if(payDetail){
+      let searchStr = req.query.searchStr
+      let searchParam={}
+      let classParam={'userInfo.class':'1 A'}
+      const roleParam={'userInfo.roleName':'STUDENT'}
+      if(req.query.selectedClass){
+        classParam={'userInfo.class':req.query.selectedClass}
+      }
+     
+      if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
+        searchParam={
+          $or:[
+            {'userInfo.fullName': new RegExp(searchStr, 'i')},
+            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
+            {'userInfo.motherName': new RegExp(searchStr, 'i')},
+            {'userInfo.email': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
+            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
+            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
+            {'userInfo.userId':new RegExp(searchStr, 'i')}
+          ]
+        }
+      }
+      
+      let students= await userModel.find({$and:[ activeParam, classParam, roleParam, searchParam]})
+      let busRouteFareList= await vehicleRouteFareModel.find()
+      let monthlyFeeList= await monthlyFeeListModel.find()
+      let payOptionList= await payOptionModel.find()
+      let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) 
+      if(students && students.length){
+        const userIds= students.map(data=> data.userInfo.userId)
+        let payDetail= await paymentModel.find({userId:{$in:[...userIds]}})
+      
+        const newList= students.map(sData=> {
+          let userPayDetail =(payDetail && payDetail.length)? payDetail.find(data=> data.userId ===sData.userInfo.userId): undefined
+                                             //(sData, userPayDetail, monthlyFeeList, busRouteFareList)
+          const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList)
+          return{
+            sData,
+            userPayDetail: userPayDetail? userPayDetail: undefined,
+            ...monthPayDetail,
+            preDueAmount: userPayDetail && userPayDetail.preDueAmount?userPayDetail.preDueAmount:0,
+            preExcessAmount: userPayDetail && userPayDetail.preExcessAmount?userPayDetail.preExcessAmount:0        
+          }
+        })
         return res.status(200).json({
           success: true,
           message: "Payment detail get successfully.",
-          data: payDetail
+          data: newList
         })
       }else{
         return res.status(200).json({

@@ -3,7 +3,7 @@ var CronJob = require('cron').CronJob;
 const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
 todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-console.log("Today India date", todayIndiaDate);
+console.log("Today India date",  moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'));
 const mongoose = require("mongoose");
 const { userModel } = require("../models/user");
 //const mailgun = require("mailgun-js");
@@ -218,9 +218,9 @@ module.exports = {
     return encryptedBase64;
   },
   newInvoiceIdGenrate: async()=>{
+    const currentYear = (Number(moment.tz(Date.now(), "Asia/Kolkata").format('YY')))
     let lastInvoice =  await invoiceModel.findOne({},{invoiceId:1, _id:0}).sort({_id:-1})
-    const lastInvoiceIdYear= (lastInvoice && lastInvoice.invoiceId)? lastInvoice.invoiceId.substring(0, 2): new Date().getFullYear()% 100
-    const currentYear = new Date().getFullYear()% 100
+    const lastInvoiceIdYear= (lastInvoice && lastInvoice.invoiceId)? lastInvoice.invoiceId.substring(0, 2): currentYear
     const invoiceGenNumber =  (parseInt(lastInvoiceIdYear) === currentYear && lastInvoice && lastInvoice.invoiceId)? parseInt(lastInvoice.invoiceId.substring(2)):0
     const newInvoiceId = currentYear + (invoiceGenNumber+1).toString().padStart(5, '0')
 
@@ -228,15 +228,15 @@ module.exports = {
   }, 
   currentSession :()=>{
     const currentDate= new Date()
-    const currentYear = currentDate.getFullYear()
-    const currentMonth= currentDate.getMonth()
+    const currentYear = Number(moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'))
+    const currentMonth= Number(moment.tz(Date.now(), "Asia/Kolkata").format('MM'))
     let session=''
-    if(currentMonth>=3){
+    if(currentMonth>=4){
         session = `${(currentYear).toString()}-${(currentYear+1).toString().substring(2)}`
-    }else if(currentMonth<3 ){
+    }else if(currentMonth<4 ){
         session = `${(currentYear-1).toString()}-${(currentYear).toString().substring(2)}`
     }
-    console.log("session", session)
+    //console.log("session", session)
     return session
   },
   // notificationSend : async () => {

@@ -17,7 +17,7 @@ const {
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
 
-const secret = process.env.secret;
+const SECRET = process.env.SECRET;
 
 module.exports = {
   userlogin: async (req, res) => {
@@ -62,7 +62,7 @@ module.exports = {
             userId: user.id,
             isAdmin: isAdmin,
           },
-          secret,
+          SECRET,
           { expiresIn: expireDay }
         );
         const tokenSave = new AuthToken({

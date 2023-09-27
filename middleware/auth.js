@@ -2,7 +2,7 @@ const { userModel } = require("../models/user");
 const { AuthToken } = require("../models/authtoken");
 const jwt = require("jsonwebtoken");
 require("dotenv/config");
-const secret = process.env.secret;
+const SECRET = process.env.SECRET;
 
 exports.isAunthaticatedAdmin = async (req, res, next) => {
   try {
@@ -14,7 +14,7 @@ exports.isAunthaticatedAdmin = async (req, res, next) => {
     }
     const tokenFound = await AuthToken.findOne({ token: JSON.parse(token) });
     if(tokenFound){
-      jwt.verify(JSON.parse(token), secret, async function(err, decoded) {
+      jwt.verify(JSON.parse(token), SECRET, async function(err, decoded) {
           if (err) {
               //jwt expired // invalid token
               return res.status(401).json({
