@@ -33,7 +33,7 @@ const {payOptionModel}=require("../../models/payOption");
 
 
 const authorization = process.env.SMS_API;
-const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PREP"]
+const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PRE NUR A", "PRE NUR B"]
 const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
 const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
 const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','COMP PRACT','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI SUB ENRICH','ENGLISH SUB ENRICH','MATH SUB ENRICH','SCIENCE SUB ENRICH','SST SUB ENRICH','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK MV','ATTENDANCE']
@@ -719,11 +719,18 @@ module.exports = {
           });
     
       }else if(resultQuery.resultPermissionData.role==='ADMIN'){
-        const fullAttendance =resultQuery.fullAttendance
+       
         const fullMarks =resultQuery.fullMarks
         const classBetween1to10 = resultQuery.classBetween1to10
         const class9to10 = resultQuery.class9to10
         const examType= resultQuery.resultPermissionData.examType
+        const resultYear= resultQuery.resultPermissionData.resultYear
+        console.log("examTypeexamType", examType)
+        console.log("resultYearresultYear", resultYear)
+        const examData = await examModel.findOne({$and:[{examType:examType},{examYear:resultYear}]});
+       
+        console.log("examDataexamData", examData.fullAttendance)
+        const fullAttendance = examData && examData.fullAttendance?examData.fullAttendance:0
         const mainExams =  (examType==='ANNUAL EXAM' || examType==='HALF YEARLY EXAM')?true:false
         let resultParam={}
         let secondResultParam={}
@@ -733,23 +740,23 @@ module.exports = {
             if(mainExams && classBetween1to10){
               if(examType==='ANNUAL EXAM'){
                 resultParam = { 
-                  resultYear:resultQuery.resultPermissionData.resultYear,
+                  resultYear:resultYear,
                   examType:'UNIT TEST-II',
                   class:resultQuery.selectedClass
                 }
                 secondResultParam = {
-                  resultYear:resultQuery.resultPermissionData.resultYear,
+                  resultYear:resultYear,
                   examType:examType,
                   class:resultQuery.selectedClass
                 }
               }else{
                 resultParam = { 
-                  resultYear:resultQuery.resultPermissionData.resultYear,
+                  resultYear:resultYear,
                   examType:'UNIT TEST-I',
                   class:resultQuery.selectedClass
                 }
                 secondResultParam = {
-                  resultYear:resultQuery.resultPermissionData.resultYear,
+                  resultYear:resultYear,
                   examType:examType,
                   class:resultQuery.selectedClass
                 }
@@ -877,7 +884,7 @@ module.exports = {
             
               const resultParam={
                 $and:[
-                {resultYear:resultQuery.resultPermissionData.resultYear},
+                {resultYear:resultYear},
                 {examType:resultQuery.resultPermissionData.examType},
                 {class:resultQuery.selectedClass}
                 ]
@@ -1325,6 +1332,7 @@ module.exports = {
       const examData=new examModel({
         examType: req.body.examType,
         examYear: req.body.examYear,
+        fullAttendance: req.body.fullAttendance,
         created: new Date(),
         modified: new Date()
       })
@@ -1360,6 +1368,9 @@ module.exports = {
       let newUpdate=null
       if(req.body.key==='primary'){
         newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{primary:req.body.value, modified: new Date()});
+      }
+      if(req.body.key==='attendence'){
+        newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{fullAttendance:req.body.fullAttendance, modified: new Date()});
       }
       if(req.body.key==='adminEntryAllow'){
         newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{adminAllowed:req.body.value, modified: new Date()});

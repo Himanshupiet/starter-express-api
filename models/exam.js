@@ -17,6 +17,11 @@ const exam = new mongoose.Schema({
     type:Boolean,
     default:false
   },
+  fullAttendance:{
+    type:Number,
+    //requred:true,
+    default:0
+  },
   created: {
     type: Date,
   },
