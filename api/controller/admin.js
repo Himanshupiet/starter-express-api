@@ -87,7 +87,7 @@ checkAdmissionDate=(user, columnMonth)=>{
   let pay=true
   if(user.created){
     let columnMonthIndex=  monthNames.indexOf(columnMonth.toLowerCase())
-    const admissionDate = new Date(user.created)
+    const admissionDate = new Date(user.userInfo.admissionDate)
     const admissionDay = admissionDate.getDate() 
     const admissionYear = admissionDate.getFullYear()
     const admissionMonthIndex = admissionDate.getMonth()
@@ -725,11 +725,11 @@ module.exports = {
         const class9to10 = resultQuery.class9to10
         const examType= resultQuery.resultPermissionData.examType
         const resultYear= resultQuery.resultPermissionData.resultYear
-        console.log("examTypeexamType", examType)
-        console.log("resultYearresultYear", resultYear)
+        // console.log("examTypeexamType", examType)
+        // console.log("resultYearresultYear", resultYear)
         const examData = await examModel.findOne({$and:[{examType:examType},{examYear:resultYear}]});
        
-        console.log("examDataexamData", examData.fullAttendance)
+        //console.log("examDataexamData", examData.fullAttendance)
         const fullAttendance = examData && examData.fullAttendance?examData.fullAttendance:0
         const mainExams =  (examType==='ANNUAL EXAM' || examType==='HALF YEARLY EXAM')?true:false
         let resultParam={}
