@@ -110,13 +110,21 @@ checkAdmissionDate=(user, columnMonth)=>{
 }
                     //(Sdata, userPayDetail, monthlyFeeList, busRouteFareList)
 const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList )=>{
+  let busFee= 0
+  let monthlyFee=0
+  if(sData.userInfo.busService && busRouteFareList.length>0){
+    busFee= busRouteFareList.find(busData => busData._id.toString() === sData.userInfo.busRouteId)?.fare
+  }
+  if(monthlyFeeList.length>0 ){
+    monthlyFee= monthlyFeeList.find(data => data.className === sData.userInfo.class)?.monthlyFee
+  }
   let monthPayData={}
   for (const month of monthList) {
     let monthData={}
     const monthEnable =  checkAdmissionDate(sData, month)
       if(monthEnable){
-        monthData['monthlyFee']= monthlyFeeList.length>0 && monthlyFeeList.find(data => data.className === sData.userInfo.class)?.monthlyFee
-        monthData['busFee']= sData.userInfo.busService? busRouteFareList.length>0 && busRouteFareList.find(busData => busData._id === sData.userInfo.busRouteId)?.fare: 0
+        monthData['monthlyFee']= monthlyFee
+        monthData['busFee']= busFee
         monthData['payEnable']=true
         monthData['paidDone']=userPayDetail && userPayDetail[month]? true: false
         monthData['amt'] = userPayDetail && userPayDetail[month]? (parseInt(userPayDetail[month].monthlyFee) + parseInt(userPayDetail[month].busFee)):"000"
@@ -2119,12 +2127,12 @@ module.exports = {
           for (let it of invoiceDetail) {
              let recieverData 
               if(it.invoiceInfo.paymentRecieverId &&  it.invoiceType==='MONTH')
-              recieverData = await userModel.find({_id: it.invoiceInfo.paymentRecieverId})
+              recieverData = await userModel.findById({_id: it.invoiceInfo.paymentRecieverId})
              let userData
              if( it.invoiceInfo.userId && it.invoiceType==='MONTH'){
                 userData =  await userModel.findOne({'userInfo.userId': it.invoiceInfo.userId})
              }
-             it['recieverName'] =   recieverData.userInfo.fullName
+             it['recieverName'] = recieverData && recieverData.userInfo &&recieverData.userInfo.fullName? recieverData.userInfo.fullName:'N/A'
              allInvoice.push(it)
           }
         return res.status(200).json({
