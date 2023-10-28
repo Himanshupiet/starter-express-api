@@ -622,10 +622,20 @@ module.exports = {
                   resultEntryFound.attendance2 = it.marks
                 }
               }else{
-                resultEntryFound.subjects[subjectName]=it.marks
+                if(resultEntryFound.subjects){
+                  resultEntryFound.subjects[subjectName]=it.marks
+                }else{
+                  let subjects={
+                    [subjectName]:it.marks
+                  }
+                  resultEntryFound={
+                    ...resultEntryFound,
+                    'subjects':subjects
+                  }
+                }
               }
-      
-             await resultModel.findOneAndUpdate(resultParam,resultEntryFound )
+            await resultModel.findOneAndUpdate(resultParam,resultEntryFound )
+
             }else{
                 let result={
                     subjects:{}
@@ -1718,7 +1728,7 @@ module.exports = {
       const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
       let date = new Date(todayDate)
       let date_end = new Date(todayDate)
-      let startDate = new Date(date.setDate(date.getDate()));
+      let startDate = new Date(date.setDate(date.getDate()-1));
       let endDate= new Date(date_end.setDate(date_end.getDate()+1))
       startDate.setUTCHours(18);
       startDate.setUTCMinutes(30);
@@ -1733,6 +1743,12 @@ module.exports = {
               "$gte": startDate,
               "$lte":  endDate
           }
+      };
+      const invoiceTodayParams = {
+        'invoiceInfo.submittedDate': {
+            "$gte": startDate,
+            "$lte":  endDate
+        }
       };
       console.log(JSON.stringify(todayParams))
      const userr = await userModel.find(todayParams)
@@ -1765,7 +1781,7 @@ module.exports = {
           }
         }
       ])
-       const todayInvoice = await  invoiceModel.find(todayParams)
+       const todayInvoice = await  invoiceModel.find(invoiceTodayParams)
        if(todayInvoice && todayInvoice.length>0){
           for (const it of todayInvoice) {
                 if(it.transactionType && it.transactionType==='credit'){
@@ -1783,6 +1799,28 @@ module.exports = {
               }
           }
         }
+
+      // const  filterParamsTxLedger = [
+      //     {$match: {$and:[{$or:[{'otherInformation.system_mode': {$in:[system_mode,system_mode.toLowerCase()]}},{'app_mode':{$in:[system_mode,system_mode.toLowerCase()]}}]},{$or:[{'otherInformation.helox_type':true},{'capture_type':'api'}]}]}},
+      //     {
+      //         $group: {
+      //             _id: {
+      //                 year: {$year:{$toDate: '$otherInformation.submitingData'}},
+      //                 month: {$month: {$toDate: '$otherInformation.submitingData'}},
+      //                 day: {$dayOfMonth: {$toDate: '$otherInformation.submitingData'}}
+      //             },
+      //             count: {$sum: 1},
+      //             "salesAmount": {$sum: { $toDouble:'$billingInformation.initialAmount'}},
+      //             "salesCount": {$sum: {$cond: [{$gt: ['$billingInformation.initialAmount', 0]}, {$sum: 1}, 0]}},
+      //             'budtenderAmount': {$sum: {$cond: [{$gt:['$billingInformation.budtenderTipAmount', 0]},'$billingInformation.budtenderTipAmount',0] }},
+      //             'budtenderCount': {$sum: {$cond: [{$gt:['$billingInformation.budtenderTipAmount', 0]},{$sum:1},0] }},
+      //             'driverAmount': {$sum: {$cond: [{$gt:['$billingInformation.driverTipAmount', 0]},'$billingInformation.driverTipAmount',0] }},
+      //             'driverCount': {$sum: {$cond: [{$gt:['$billingInformation.driverTipAmount', 0]},{$sum:1},0] }},
+      //         },
+
+      //     },
+      //     //{$sort:{'_id':-1}}
+      // ]
        
       
 
@@ -1963,7 +2001,8 @@ module.exports = {
       newInvoiceInfo['invoiceType'] ='MONTHLY'
       newInvoiceInfo['transactionType'] ='credit'
       newInvoiceInfo['paidStatus'] = true
-      newInvoiceInfo['userId'] = req.body.userId
+      newInvoiceInfo['userId'] = req.body.userId,
+      newInvoiceInfo['class'] = req.body.class,
       newInvoiceInfo['amount'] = req.body.paidAmount
       newInvoiceInfo['invoiceId'] = newInvoiceIdGen
       newInvoiceInfo['insertedId'] = req.body.insertedId
@@ -2120,25 +2159,30 @@ module.exports = {
 
   getAllInvoice: async(req, res)=>{
     try{
-      let invoiceDetail= await invoiceModel.find({})
- 
-      if(invoiceDetail && invoiceDetail.length>0){
+      let invoiceData
+      if(req.query.invoiceId){
+        invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
+      }else{
+        invoiceData= await invoiceModel.find({})
+      }
+      if(invoiceData && invoiceData.length>0){
         let allInvoice=[]
-          for (let it of invoiceDetail) {
-             let recieverData 
-              if(it.invoiceInfo.paymentRecieverId &&  it.invoiceType==='MONTH')
-              recieverData = await userModel.findById({_id: it.invoiceInfo.paymentRecieverId})
-             let userData
-             if( it.invoiceInfo.userId && it.invoiceType==='MONTH'){
-                userData =  await userModel.findOne({'userInfo.userId': it.invoiceInfo.userId})
-             }
-             it['recieverName'] = recieverData && recieverData.userInfo &&recieverData.userInfo.fullName? recieverData.userInfo.fullName:'N/A'
+          for (let it of invoiceData) {
+            if(it.invoiceInfo.userId && it.invoiceType==='MONTHLY'){
+              const userData =  await userModel.findOne({'userInfo.userId': it.invoiceInfo.userId})
+              it.invoiceInfo['userData']= userData
+            }
+              if(it.invoiceInfo.paymentRecieverId && it.invoiceType==='MONTHLY'){
+              const recieverData = await userModel.findOne({'_id': it.invoiceInfo.paymentRecieverId})
+                //console.log("recieverDatarecieverDatarecieverData", recieverData)
+                it.invoiceInfo['recieverName'] = recieverData && recieverData.userInfo &&recieverData.userInfo.fullName? recieverData.userInfo.fullName:'N/A'
+              }
              allInvoice.push(it)
           }
         return res.status(200).json({
           success: true,
           message: "Invoice detail get successfully.",
-          data: allInvoice
+          data: allInvoice.sort((a,b)=> new Date(b.invoiceInfo.submittedDate) - new Date(a.invoiceInfo.submittedDate))
         })
       }else{
         return res.status(200).json({
