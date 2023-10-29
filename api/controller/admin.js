@@ -625,16 +625,13 @@ module.exports = {
                 if(resultEntryFound.subjects){
                   resultEntryFound.subjects[subjectName]=it.marks
                 }else{
-                  let subjects={
+                  let resultEntryData=resultEntryFound
+                  resultEntryData['subjects']={
                     [subjectName]:it.marks
-                  }
-                  resultEntryFound={
-                    ...resultEntryFound,
-                    'subjects':subjects
                   }
                 }
               }
-            await resultModel.findOneAndUpdate(resultParam,resultEntryFound )
+              await resultModel.findOneAndUpdate(resultParam,resultEntryFound )
 
             }else{
                 let result={
