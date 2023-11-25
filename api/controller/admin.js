@@ -296,9 +296,7 @@ module.exports = {
       const searchStr= req.body.searchStr
       let searchParam={}
       let classParam={}
-      let roleParam=   {
-        'userInfo.roleName':'TEACHER'
-      }
+      let roleParam=   {$or:[{'userInfo.roleName':'TEACHER'},{'userInfo.roleName':'ACCOUNTANT'}]}
        if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
          searchParam={
           $or:[
