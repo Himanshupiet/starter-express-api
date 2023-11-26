@@ -2155,10 +2155,17 @@ module.exports = {
   getAllInvoice: async(req, res)=>{
     try{
       let invoiceData
+      let limit = (req.query.limit && parseInt(req.query.limit) > 0 )? parseInt(req.query.limit):10
+      let pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber) : 0 ;
+      let totalCount=0
+      let pageSize=0
+      let order = {'submittedDate':  "desc"}
       if(req.query.invoiceId){
         invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
       }else{
-        invoiceData= await invoiceModel.find({})
+        totalCount= await invoiceModel.find({}).countDocuments()
+        invoiceData= await invoiceModel.find({}).sort(order).limit(limit).skip(limit * pageNumber)
+        
       }
       if(invoiceData && invoiceData.length>0){
         let allInvoice=[]
@@ -2177,7 +2184,9 @@ module.exports = {
         return res.status(200).json({
           success: true,
           message: "Invoice detail get successfully.",
-          data: allInvoice.sort((a,b)=> new Date(b.invoiceInfo.submittedDate) - new Date(a.invoiceInfo.submittedDate))
+          data: allInvoice.sort((a,b)=> new Date(b.invoiceInfo.submittedDate) - new Date(a.invoiceInfo.submittedDate)),
+          pageSize:totalCount>0? Math.floor(totalCount/limit)+1:0,
+          totalCount:totalCount
         })
       }else{
         return res.status(200).json({
