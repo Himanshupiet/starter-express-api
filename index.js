@@ -64,6 +64,7 @@ app.use(`${api}/cron`, cronJob);
 //Database
 mongoose
   .connect(mongoUrl, {
+    serverSelectionTimeoutMS: 9000,
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useFindAndModify: false,
