@@ -6,7 +6,8 @@ const SECRET = process.env.SECRET;
 
 exports.isAunthaticatedAdmin = async (req, res, next) => {
   try {
-    const token = req.headers.authorization;
+    const token = req.headers.authorization?req.headers.authorization.includes('"')?req.headers.authorization:JSON.stringify(req.headers.authorization):null;
+    //console.log("tokentokentoken", token)
     if (!token) {
       return res.status(401).json({
         message: "Header token not found.",

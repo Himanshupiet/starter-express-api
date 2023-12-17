@@ -6,7 +6,7 @@ const SECRET = process.env.SECRET;
 
 module.exports = {
   logout: async (req, res) => {
-    const token= req.headers.authorization
+    const token = req.headers.authorization?req.headers.authorization.includes('"')?req.headers.authorization:JSON.stringify(req.headers.authorization):null;
     // console.log("tokennnnnn", token)
     // const decode2 = jwt.verify(JSON.parse(token), SECRET);
     // console.log("decode2", decode2)

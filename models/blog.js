@@ -3,28 +3,48 @@ const mongoose = require("mongoose")
 const blogSchema = new mongoose.Schema({
     postId:{
         type: String,
-        required: true,
+        //required: true,
     },
     title:{
         type: String,
-        required: true,
-    },
-    subTitle:{
-        type:String,
-    },
-    content:{
-        type: String,
-        require: true
+        //required: true,
     },
     postImageUrl:{
-        type: String
+      type: String
     },
-    tags:{
-      type: JSON,
+    alias:{
+      type:Boolean,
+      default:false
+    },
+    aliasUrl:{
+      type:String,
+    },
+    altTag:{
+      type:String,
+    },
+    blogContent:{
+        type: String,
+        //require: true
+    },
+    blogMetaTag:{
+      type: String,
+    },
+    canonicalUrl:{
+      type: String,
     },
     category:{
         type: String,
     },
+    faq:{
+      type: String,
+    },
+    metaKeyword:{
+      type: String,
+    },
+    schemaMarkUp:{
+      type: String,
+    },
+    tags:[],
     author:{
       type: String,
     },

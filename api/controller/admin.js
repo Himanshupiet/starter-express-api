@@ -2158,14 +2158,12 @@ module.exports = {
       let limit = (req.query.limit && parseInt(req.query.limit) > 0 )? parseInt(req.query.limit):10
       let pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber) : 0 ;
       let totalCount=0
-      let pageSize=0
-      let order = {'submittedDate':  "desc"}
+      let order = {'invoiceInfo.submittedDate':"desc"}
       if(req.query.invoiceId){
         invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
       }else{
         totalCount= await invoiceModel.find({}).countDocuments()
-        invoiceData= await invoiceModel.find({}).sort(order).limit(limit).skip(limit * pageNumber)
-        
+        invoiceData= await invoiceModel.find({}).sort({'created':"desc"}).limit(limit).skip(limit * pageNumber)
       }
       if(invoiceData && invoiceData.length>0){
         let allInvoice=[]
@@ -2362,7 +2360,7 @@ module.exports = {
       //     category:req.body.category,
       //   }
       // )
-      newBlogPost.save()
+      await newBlogPost.save()
       return res.status(200).json({
         success: true,
         message: "New Blog Post created",
