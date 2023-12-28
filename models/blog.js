@@ -5,11 +5,14 @@ const blogSchema = new mongoose.Schema({
         type: String,
         //required: true,
     },
+    slugTitle:{
+        type: String
+    },
     title:{
         type: String,
         //required: true,
     },
-    postImageUrl:{
+    bannerImageUrl:{
       type: String
     },
     alias:{
@@ -47,6 +50,10 @@ const blogSchema = new mongoose.Schema({
     tags:[],
     author:{
       type: String,
+    },
+    viewCount:{
+      type: Number,
+      default: 0
     },
     created: {
         type: Date,

@@ -56,15 +56,25 @@ module.exports = {
         }
         const roleExist = await roleModel.findOne({ _id: user.userInfo.roleId });
         if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT")) isAdmin = true;
+        const blogWeb= (user && user.userInfo && user.userInfo.userId &&  user.userInfo.userId ==='918732')? true:false 
         const expireDay=  isAdmin?"1d":"100d"
-        const tokenGen = jwt.sign(
-          {
-            userId: user.id,
-            isAdmin: isAdmin,
-          },
-          SECRET,
-          { expiresIn: expireDay }
-        );
+        let tokenGen =  blogWeb?
+                  jwt.sign(
+                    {
+                      userId: user.id,
+                      isAdmin: isAdmin,
+                    },
+                    SECRET,
+                  )
+                :
+                  jwt.sign(
+                    {
+                      userId: user.id,
+                      isAdmin: isAdmin,
+                    },
+                    SECRET,
+                    { expiresIn:expireDay}
+                  )
         const tokenSave = new AuthToken({
           token: tokenGen,
           userId: user.id
@@ -198,13 +208,21 @@ module.exports = {
   },
   getBlogPost: async (req, res) => {
     try {
-      console.log("eq.param",req.params)
-      const data= await blogModel.findOne({postId:req.params.postId})
-      return res.status(200).json({
-        success: true,
-        message: "Get Blog Post successfuly",
-        data
-      });
+
+      const data = await blogModel.findOne({slugTitle:req.params.slugTitle})
+      if(data){
+        await blogModel.findOneAndUpdate({_id:data._id},{viewCount: Number(data.viewCount)+1})
+        return res.status(200).json({
+          success: true,
+          message: "Get Blog Post successfuly",
+          data
+        });
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Blog not found",
+        });
+      }
     } catch (error) {
       return res.status(401).json({
         success: false,

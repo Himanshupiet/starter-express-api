@@ -29,10 +29,13 @@ const {invoiceModel}=require("../../models/invoice ");
 const fastcsv = require("fast-csv");
 const fs = require("fs");
 const {payOptionModel}=require("../../models/payOption");
+let slugify = require('slugify')
+const {default: Axios}=require('axios');
 
 
 
 const authorization = process.env.SMS_API;
+const UPLOAD_IMAGE_URL = process.env.UPLOAD_IMAGE_URL
 const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PRE NUR A", "PRE NUR B"]
 const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
 const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
@@ -2350,8 +2353,56 @@ module.exports = {
 
   /// blog website
   createBlogPost: async (req, res) => {
+
+    let blogReqBody = req.body
     try {
-      let newBlogPost = new blogModel(req.body)
+      // function slugify(str) {
+      //   return String(str)
+      //     .normalize('NFKD') // split accented characters into their base characters and diacritical marks
+      //     .replace(/[\u0300-\u036f]/g, '') // remove all the accents, which happen to be all in the \u03xx UNICODE block.
+      //     .trim() // trim leading or trailing whitespace
+      //     .toLowerCase() // convert to lowercase
+      //     .replace(/[^a-z0-9 -]/g, '') // remove non-alphanumeric characters
+      //     .replace(/\s+/g, '-') // replace spaces with hyphens
+      //     .replace(/-+/g, '-'); // remove consecutive hyphens
+      // }
+      let title = blogReqBody.title
+      let slugTitle= ''
+      if(!title){
+        return res.status(400).json({
+          success: false,
+          message: "Title required.",
+        });
+      }
+      if(title){
+        slugTitle = slugify(title, {
+          replacement: '-',  // replace spaces with replacement character, defaults to `-`
+          remove: undefined, // remove characters that match regex, defaults to `undefined`
+          lower: true,       // convert to lower case, defaults to `false`
+          strict: false,     // strip special characters except replacement, defaults to `false`
+          locale: 'en',      // language code of the locale to use
+          trim: true,        // trim leading and trailing replacement chars, defaults to `true`
+          remove: /[*+~.()'"!:@]/g       
+        })
+        if(slugTitle){
+          const foundSlug= await blogModel.find({slugTitle:slugTitle})
+          if(foundSlug && foundSlug.length>0){
+            return res.status(400).json({
+              success: false,
+              message: "Title already exist.",
+            });
+          }
+        }else{
+          return res.status(400).json({
+            success: false,
+            message: "Title not proper string.",
+          });
+        }
+      }
+ 
+      blogReqBody['slugTitle']= slugTitle
+
+      let newBlogPost = new blogModel(blogReqBody)
       //   {
       //     title:req.body.title,
       //     subTitle:req.body.subTitle,
