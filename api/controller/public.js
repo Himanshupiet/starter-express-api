@@ -152,7 +152,7 @@ module.exports = {
           const sms = await sendSms(sendSMSandEmaildata);
           //const sms= true
        
-          if (sms) {
+          if (!sms) {
             let userData = await newUser.save();
             return res.status(200).json({
               success: true,
