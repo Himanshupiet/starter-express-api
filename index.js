@@ -62,7 +62,8 @@ app.use(`${api}/cron`, cronJob);
 // app.use(`${api}/securitylog`, securitylog);
 
 //Database
-mongoose
+const connectToMongo = async() => {
+await mongoose
   .connect(mongoUrl, {
     serverSelectionTimeoutMS: 9000,
     useNewUrlParser: true,
@@ -119,6 +120,8 @@ mongoose
   .catch((err) => {
     console.log(err);
   });
+}
+connectToMongo()
 
 //Server
 app.listen(PORT || 3010, () => {
