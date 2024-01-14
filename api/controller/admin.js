@@ -1967,7 +1967,7 @@ module.exports = {
       let busRouteFareList= await vehicleRouteFareModel.find()
       let monthlyFeeList= await monthlyFeeListModel.find()
       let payOptionList= await payOptionModel.find()
-      let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) // 918732 Anshu kumar id
+      let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['topadmin']}}]}) // 918732 Anshu kumar id
       
       return res.status(200).json({
         success: true,
