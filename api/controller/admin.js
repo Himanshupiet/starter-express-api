@@ -2131,8 +2131,8 @@ module.exports = {
             sData,
             userPayDetail: userPayDetail? userPayDetail: undefined,
             ...monthPayDetail,
-            preDueAmount: userPayDetail && userPayDetail.preDueAmount?userPayDetail.preDueAmount:0,
-            preExcessAmount: userPayDetail && userPayDetail.preExcessAmount?userPayDetail.preExcessAmount:0        
+            preDueAmount: userPayDetail && userPayDetail.dueAmount?userPayDetail.dueAmount:0,
+            preExcessAmount: userPayDetail && userPayDetail.excessAmount?userPayDetail.excessAmount:0        
           }
         })
         return res.status(200).json({
@@ -2161,12 +2161,14 @@ module.exports = {
       let limit = (req.query.limit && parseInt(req.query.limit) > 0 )? parseInt(req.query.limit):10
       let pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber) : 0 ;
       let totalCount=0
-      let order = {'invoiceInfo.submittedDate':"desc"}
+      let order = {'invoiceInfo.submittedDate':"asc"}
+
       if(req.query.invoiceId){
         invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
       }else{
+        order={'created':'desc'}
         totalCount= await invoiceModel.find({}).countDocuments()
-        invoiceData= await invoiceModel.find({}).sort({'created':"desc"}).limit(limit).skip(limit * pageNumber)
+        invoiceData= await invoiceModel.find({}).sort(order).limit(limit).skip(limit * pageNumber)
       }
       if(invoiceData && invoiceData.length>0){
         let allInvoice=[]

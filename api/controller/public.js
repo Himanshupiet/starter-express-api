@@ -56,7 +56,7 @@ module.exports = {
         }
         const roleExist = await roleModel.findOne({ _id: user.userInfo.roleId });
         if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT")) isAdmin = true;
-        const blogWeb= (user && user.userInfo && user.userInfo.userId &&  user.userInfo.userId ==='918732')? true:false 
+        const blogWeb= (user && user.userInfo && user.userInfo.userId &&  user.userInfo.userId ==='topadmin')? true:false 
         const expireDay=  isAdmin?"1d":"100d"
         let tokenGen =  blogWeb?
                   jwt.sign(
