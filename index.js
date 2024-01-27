@@ -80,7 +80,7 @@ await mongoose
         if (topAdminRole) {
           topAdminRoleId = topAdminRole._id;
         } else {
-          let newTopAdminRole = new Role({
+          let newTopAdminRole = new roleModel({
             roleName: "TOPADMIN",
           });
           const newTopAdminRoleCreated = await newTopAdminRole.save();
@@ -100,7 +100,7 @@ await mongoose
                 fatherName:"1",
                 class:"1",
                 dob:new Date(),
-                // password: passwordEncryptAES("password removed"),
+                password: passwordEncryptAES("password removed"),
                 phoneNumber1: "1234567890",
                 roleId: topAdminRoleId,
                 roleName: "TOPADMIN",

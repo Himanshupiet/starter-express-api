@@ -1,47 +1,6 @@
 const mongoose = require("mongoose");
-const payInfo={
-  entryData: Date,
-  paid: Boolean,
-  due: Number,
-  amountPay: Number,
-  active: Boolean,
-  amount:Number,
-  concession: Number,
-  fine: Number,
-  paidDate: Date,
-  recieverName:String
-}
 
 const paymentSchema = new mongoose.Schema({
-  // monthlyPay: {
-  //   jan: payInfo,
-  //   feb: payInfo,
-  //   mar: payInfo,
-  //   apr: payInfo,
-  //   may: payInfo,
-  //   jun: payInfo,
-  //   jul: payInfo,
-  //   aug: payInfo,
-  //   sep: payInfo,
-  //   oct: payInfo,
-  //   nov: payInfo,
-  //   dec: payInfo
-  // },
-  // busPay:{
-  //   jan: payInfo,
-  //   feb: payInfo,
-  //   mar: payInfo,
-  //   apr: payInfo,
-  //   may: payInfo,
-  //   jun: payInfo,
-  //   jul: payInfo,
-  //   aug: payInfo,
-  //   sep: payInfo,
-  //   oct: payInfo,
-  //   nov: payInfo,
-  //   dec: payInfo
-  // },
-  
   april: {
     type: JSON,
   },
@@ -96,6 +55,9 @@ const paymentSchema = new mongoose.Schema({
   userId: {
     type: String,
   },
+  session: {
+    type: String,
+  },
   created: {
     type: Date,
   },
@@ -125,5 +87,5 @@ paymentSchema.pre("save", function (next) {
   next();
 });
 
-exports.paymentModel = mongoose.model("payement", paymentSchema);
+exports.paymentModel = mongoose.model("payment", paymentSchema);
 exports.paymentSchema = paymentSchema;

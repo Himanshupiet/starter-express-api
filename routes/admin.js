@@ -3,46 +3,51 @@ const router = express.Router();
 const admin = require("../api/controller/admin");
 const { isAunthaticatedAdmin } = require("../middleware/auth");
 
-router.post("/getAllUser", isAunthaticatedAdmin, admin.getAllUsers);
-router.post("/getAllstudent", isAunthaticatedAdmin, admin.getAllStudents);
-router.get("/deleteUser/:id",isAunthaticatedAdmin, admin.deleteUser)
-router.post("/updateUser/:id",isAunthaticatedAdmin, admin.updateUserById)
-router.post("/updateStatus", isAunthaticatedAdmin, admin.updateStatus);
-router.get("/getSmsData", isAunthaticatedAdmin, admin.getSmsData);
-router.post("/submitResult", isAunthaticatedAdmin, admin.submitResult);
-router.post("/getResult", isAunthaticatedAdmin, admin.getResult);
-router.post("/oldExamResult", isAunthaticatedAdmin, admin.oldExamResult)
-router.post("/getDeletedUser", isAunthaticatedAdmin, admin.getDeletedUser);
-router.delete("/permanentDeleteUser/:id", isAunthaticatedAdmin, admin.permanentDeleteUser);
-router.post("/reportData", isAunthaticatedAdmin, admin.reportData);
-router.post("/createExam", isAunthaticatedAdmin, admin.createExam);
-router.get("/getExamData", isAunthaticatedAdmin, admin.getExam);
-router.post("/updateExam", isAunthaticatedAdmin, admin.updateExam);
-router.delete("/deleteExam", isAunthaticatedAdmin, admin.deleteExam);
-router.get("/getExamPermission", isAunthaticatedAdmin, admin.getExamPermission);
-router.post("/resultEntryPer",isAunthaticatedAdmin, admin.createResultEntryPermission)
-router.post("/updateResultEntryPer",isAunthaticatedAdmin, admin.updateResultEntryPermission)
-router.get("/adminDashboardData", isAunthaticatedAdmin, admin.getAdminDashboardData);
-router.post("/uploadDocumentS3", isAunthaticatedAdmin, admin.uploadDocumentS3);
-router.delete("/deleteExamPermission/:id", isAunthaticatedAdmin, admin.deleteResultEntryPermission);
-router.get("/getExamDateAndSub", isAunthaticatedAdmin, admin.getExamDateAndSub);
-router.post("/updateExamDateAndSub", isAunthaticatedAdmin, admin.updateExamDateAndSub);
-router.post("/upgradeClass", isAunthaticatedAdmin, admin.upgradeClass)
-router.post("/getAllTeacherAndStaff", isAunthaticatedAdmin, admin.getAllTeacherAndStaff)
-router.post("/addList/:name", isAunthaticatedAdmin, admin.createList)
-router.get("/getAllList", isAunthaticatedAdmin, admin.getAllList)
-router.post("/updateList/:name/:id", isAunthaticatedAdmin, admin.updateList)
-router.post("/addPayment", isAunthaticatedAdmin, admin.addPayment)
-router.get("/gePaymentDetail", isAunthaticatedAdmin, admin.gePaymentDetail)
-router.get("/getPaymentRecieverUser", isAunthaticatedAdmin, admin.getPaymentRecieverUser) 
-router.post("/updatePaymentRecieverUser", isAunthaticatedAdmin, admin.updatePaymentRecieverUser)
-router.get("/getAllInvoice", isAunthaticatedAdmin, admin.getAllInvoice)
 router.get("/createBackup", admin.createBuckup)
+// router with aunthenticate
+router.use(isAunthaticatedAdmin)
+router.post("/getAllUser",  admin.getAllUsers);
+router.post("/getAllstudent",  admin.getAllStudents);
+router.get("/deleteUser/:id", admin.deleteUser)
+router.post("/updateUser/:id", admin.updateUserById)
+router.post("/updateStatus",  admin.updateStatus);
+router.get("/getSmsData",  admin.getSmsData);
+router.post("/submitResult",  admin.submitResult);
+router.post("/getResult",  admin.getResult);
+router.post("/oldExamResult",  admin.oldExamResult)
+router.post("/getDeletedUser",  admin.getDeletedUser);
+router.delete("/permanentDeleteUser/:id",  admin.permanentDeleteUser);
+router.post("/reportData",  admin.reportData);
+router.post("/createExam",  admin.createExam);
+router.get("/getExamData",  admin.getExam);
+router.post("/updateExam",  admin.updateExam);
+router.delete("/deleteExam",  admin.deleteExam);
+router.get("/getExamPermission",  admin.getExamPermission);
+router.post("/resultEntryPer", admin.createResultEntryPermission)
+router.post("/updateResultEntryPer", admin.updateResultEntryPermission)
+router.get("/adminDashboardData",  admin.getAdminDashboardData);
+router.post("/uploadDocumentS3",  admin.uploadDocumentS3);
+router.delete("/deleteExamPermission/:id",  admin.deleteResultEntryPermission);
+router.get("/getExamDateAndSub",  admin.getExamDateAndSub);
+router.post("/updateExamDateAndSub",  admin.updateExamDateAndSub);
+router.post("/upgradeClass",  admin.upgradeClass)
+router.post("/getAllTeacherAndStaff",  admin.getAllTeacherAndStaff)
+router.post("/addList/:name",  admin.createList)
+router.get("/getAllList",  admin.getAllList)
+router.post("/updateList/:name/:id",  admin.updateList)
+router.post("/addPayment",  admin.addPayment)
+router.get("/gePaymentDetail",  admin.gePaymentDetail)
+router.get("/getPaymentRecieverUser",  admin.getPaymentRecieverUser) 
+router.post("/updatePaymentRecieverUser",  admin.updatePaymentRecieverUser)
+router.get("/getAllInvoice",  admin.getAllInvoice)
+router.get("/getInvoicesByUserId",  admin.getInvoicesByUserId)
+router.post("/deleteTransaction",  admin.deleteTransaction)
 
+// router for blog
 
-router.post("/addBlogPost", isAunthaticatedAdmin, admin.createBlogPost)
-router.post("/deleteBlogPost", isAunthaticatedAdmin, admin.deleteBlogPost)
-router.post("/updateBlogPost", isAunthaticatedAdmin, admin.updateBlogPost)
+router.post("/addBlogPost",  admin.createBlogPost)
+router.post("/deleteBlogPost",  admin.deleteBlogPost)
+router.post("/updateBlogPost",  admin.updateBlogPost)
 
 
 

@@ -75,7 +75,7 @@ module.exports = {
       zip.file("vehicles.json", JSON.stringify(vehicleData));
       zip.file("vehicleroutefares.json",JSON.stringify(vehicleRouteFareData));
       zip.file("monthlyfeelists.json", JSON.stringify(monthlyFeeListData));
-      zip.file("payements.json",JSON.stringify(paymentData));
+      zip.file("payments.json",JSON.stringify(paymentData));
       zip.file("invoices.json", JSON.stringify(invoiceData));
       zip.file("payoptions.json",JSON.stringify(payOptionData));
 

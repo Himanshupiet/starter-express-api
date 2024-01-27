@@ -90,22 +90,25 @@ checkAdmissionDate=(user, columnMonth)=>{
   let pay=true
   if(user.created){
     let columnMonthIndex=  monthNames.indexOf(columnMonth.toLowerCase())
-    const admissionDate = new Date(user.userInfo.admissionDate)
-    const admissionDay = admissionDate.getDate() 
-    const admissionYear = admissionDate.getFullYear()
-    const admissionMonthIndex = admissionDate.getMonth()
-    let admissionSession=''
-    if(admissionMonthIndex>=3){
-      admissionSession = `${(admissionYear).toString()}-${(admissionYear+1).toString().substring(2)}`
-    }else if(admissionMonthIndex<3 ){
-      admissionSession = `${(admissionYear-1).toString()}-${(admissionYear).toString().substring(2)}`
-    }
-    if(columnMonthIndex>=3 && currentSession()===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=20 || (admissionMonthIndex<3 && admissionMonthIndex<columnMonthIndex )) )){
-      pay= false
-    
-    }
-    else if(columnMonthIndex<3 && admissionMonthIndex<3 && currentSession()===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=20))){
-      pay= false
+    if(user.userInfo.admissionDate){
+        const admissionDate = new Date(user.userInfo.admissionDate)
+        //console.log("admissionDateadmissionDate",admissionDate)
+        const admissionDay = admissionDate.getDate()
+        //console.log("admissionDay",admissionDay) 
+        const admissionYear = admissionDate.getFullYear()
+        const admissionMonthIndex = admissionDate.getMonth()
+        let admissionSession=''
+        if(admissionMonthIndex>=3){
+          admissionSession = `${(admissionYear).toString()}-${(admissionYear+1).toString().substring(2)}`
+        }else if(admissionMonthIndex<3 ){
+          admissionSession = `${(admissionYear-1).toString()}-${(admissionYear).toString().substring(2)}`
+        }
+        if(columnMonthIndex>=3 && currentSession()===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=21 || (admissionMonthIndex<3 && admissionMonthIndex<columnMonthIndex )) )){
+          pay= false
+        
+        }else if(columnMonthIndex<3 && admissionMonthIndex<3 && currentSession()===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=21))){
+          pay= false
+        }
     }
   }
   return pay
@@ -522,7 +525,7 @@ module.exports = {
   },
   getPaymentRecieverUser: async (req, res) => {
     try {
-      let allPaymentRecieverUser = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{isPaymentReciever:true}]})
+      let allPaymentRecieverUser = await userModel.find({$and:[{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{isPaymentReciever:true}]})
       if(allPaymentRecieverUser && allPaymentRecieverUser.length>0){
         return res.status(200).json({
           success: true,
@@ -1726,7 +1729,7 @@ module.exports = {
       const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
       let date = new Date(todayDate)
       let date_end = new Date(todayDate)
-      let startDate = new Date(date.setDate(date.getDate()-1));
+      let startDate = new Date(date.setDate(date.getDate()));
       let endDate= new Date(date_end.setDate(date_end.getDate()+1))
       startDate.setUTCHours(18);
       startDate.setUTCMinutes(30);
@@ -1736,21 +1739,22 @@ module.exports = {
       endDate.setUTCMinutes(30);
       endDate.setSeconds(0);
       endDate.setMilliseconds(0);
-      const todayParams = {
-          'created': {
-              "$gte": startDate,
-              "$lte":  endDate
-          }
-      };
+      // const todayParams = {
+      //     'created': {
+      //         "$gte": startDate,
+      //         "$lte":  endDate
+      //     }
+      // };
       const invoiceTodayParams = {
-        'invoiceInfo.submittedDate': {
-            "$gte": startDate,
-            "$lte":  endDate
+        $expr: {
+          $and: [
+              { $gte: [{ $toDate: "$invoiceInfo.submittedDate" }, startDate] },
+              { $lte: [{ $toDate: "$invoiceInfo.submittedDate" }, endDate] }
+          ]
         }
       };
-      console.log(JSON.stringify(todayParams))
-     const userr = await userModel.find(todayParams)
-     console.log("=================>",userr)
+      console.log(JSON.stringify(invoiceTodayParams))
+ 
       const birthDayUser=  await userModel.aggregate([
         { 
           $match: {
@@ -1779,7 +1783,8 @@ module.exports = {
           }
         }
       ])
-       const todayInvoice = await  invoiceModel.find(invoiceTodayParams)
+       const todayInvoice = await  invoiceModel.find({$and:[{deleted:false},invoiceTodayParams]})
+       console.log("todayInvoice",todayInvoice)
        if(todayInvoice && todayInvoice.length>0){
           for (const it of todayInvoice) {
                 if(it.transactionType && it.transactionType==='credit'){
@@ -1968,7 +1973,7 @@ module.exports = {
       let monthlyFeeList= await monthlyFeeListModel.find()
       let payOptionList= await payOptionModel.find()
       let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['topadmin']}}]}) // 918732 Anshu kumar id
-      
+      let allStudentUserId = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.userId": 1})
       return res.status(200).json({
         success: true,
         message: "Get list successfully.",
@@ -1977,7 +1982,8 @@ module.exports = {
           busRouteFareList,
           monthlyFeeList,
           payOptionList,
-          paymentRecieverUserList
+          paymentRecieverUserList,
+          allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
         }
       })
   
@@ -2029,7 +2035,7 @@ module.exports = {
                     paymentRecieverId: req.body.paymentRecieverId,
                     paidStatus: true,
                     submittedDate : req.body.submittedDate,
-                    invioceId: newInvoiceCreate.invoiceId,
+                    invoiceId: newInvoiceCreate.invoiceId,
                     receiptNumber: req.body.receiptNumber 
                   }
                 }
@@ -2052,7 +2058,7 @@ module.exports = {
                   paymentRecieverId: req.body.paymentRecieverId,
                   submittedDate : req.body.submittedDate,
                   paidStatus: true,
-                  invioceId: newInvoiceCreate.invoiceId,
+                  invoiceId: newInvoiceCreate.invoiceId,
                   receiptNumber: req.body.receiptNumber 
             }
           )
@@ -2090,14 +2096,16 @@ module.exports = {
 
   gePaymentDetail: async (req, res) => {
     try{
-      let searchStr = req.query.searchStr
+
+      let searchStr = req.query.searchStr? (req.query.searchStr).trim():''
       let searchParam={}
+      let userIdParam={}
       let classParam={'userInfo.class':'1 A'}
       const roleParam={'userInfo.roleName':'STUDENT'}
       if(req.query.selectedClass){
         classParam={'userInfo.class':req.query.selectedClass}
       }
-     
+
       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
         searchParam={
           $or:[
@@ -2113,17 +2121,25 @@ module.exports = {
           ]
         }
       }
+      if(req.query.userId){
+          classParam={}
+          searchParam={}
+          userIdParam={'userInfo.userId': req.query.userId}
+      }
       
-      let students= await userModel.find({$and:[ activeParam, classParam, roleParam, searchParam]})
+      let students= await userModel.find({$and:[ activeParam, classParam, roleParam, searchParam, userIdParam]})
       let busRouteFareList= await vehicleRouteFareModel.find()
       let monthlyFeeList= await monthlyFeeListModel.find()
-      let payOptionList= await payOptionModel.find()
-      let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) 
+      //let payOptionList= await payOptionModel.find()
+   
+      //let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) 
       if(students && students.length){
         const userIds= students.map(data=> data.userInfo.userId)
         let payDetail= await paymentModel.find({userId:{$in:[...userIds]}})
       
-        const newList= students.map(sData=> {
+        const newList=  await Promise.all(students.map(async(sData)=> {
+          let condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
+          const invoiceData = await invoiceModel.find(condInvParam)
           let userPayDetail =(payDetail && payDetail.length)? payDetail.find(data=> data.userId ===sData.userInfo.userId): undefined
                                              //(sData, userPayDetail, monthlyFeeList, busRouteFareList)
           const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList)
@@ -2132,9 +2148,10 @@ module.exports = {
             userPayDetail: userPayDetail? userPayDetail: undefined,
             ...monthPayDetail,
             preDueAmount: userPayDetail && userPayDetail.dueAmount?userPayDetail.dueAmount:0,
-            preExcessAmount: userPayDetail && userPayDetail.excessAmount?userPayDetail.excessAmount:0        
+            preExcessAmount: userPayDetail && userPayDetail.excessAmount?userPayDetail.excessAmount:0,   
+            userInvoiceDetail: invoiceData
           }
-        })
+        }))
         return res.status(200).json({
           success: true,
           message: "Payment detail get successfully.",
@@ -2204,6 +2221,93 @@ module.exports = {
         message: err.message,
       })
     }
+  },
+  getInvoicesByUserId: async(req, res)=>{
+    try{
+
+      //const invoiceAll= await invoiceModel.find({})
+     
+      // let invIds=[]
+      // for (const it of invoiceAll) {
+      //     if(it.invoiceInfo.paidAmount!==it.invoiceInfo.totalGrandAmount){
+      //       invIds.push(it.userId)
+      //     }
+      // }
+      //console.log("invIdsinvIdsinvIds", new Set( invIds))
+        let condParam ={$and:[{'userId': req.query.userId},{'session': req.query.session}]}
+        //let condParam ={$and:[{'userId': req.query.userId}]}
+
+        const invoiceData = await invoiceModel.find(condParam)
+          return res.status(200).json({
+            success: true,
+            message: "Invoice detail get successfully.",
+            data: invoiceData
+          })
+      }catch(err){
+        console.log(err)
+        return res.status(400).json({
+          success: false,
+          message: err.message,
+        })
+      }
+  },
+
+  deleteTransaction:async(req, res)=>{
+        try {
+          await paymentModel.updateMany({},
+              
+                { $set: {session:"2023-24"} }
+              
+            )
+          const invoiceData= await invoiceModel.findOne({invoiceId: req.body.invoiceId})
+          if(invoiceData && invoiceData.invoiceType==='MONTHLY' && req.body.session){
+            const paymentData= await paymentModel.findOne({$and:[{'userId': invoiceData.userId},{session: req.body.session}]})
+            if(paymentData){
+              let copyOfPaymentData= JSON.parse(JSON.stringify(paymentData))
+              let unsetMonthParam={$unset:{}}
+              for (const it of invoiceData.invoiceInfo.feeList) {
+                  
+                  //delete copyOfPaymentData[it.month]
+              }
+              copyOfPaymentData.dueAmount = Number(copyOfPaymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount)
+              copyOfPaymentData.excessAmount = Number(copyOfPaymentData.excessAmount) - Number(invoiceData.invoiceInfo.dueAmount)
+              copyOfPaymentData.totalFineAmount = Number(copyOfPaymentData.totalFineAmount) - Number(invoiceData.invoiceInfo.fineAmount)
+
+              console.log("paymentDatapaymentData",copyOfPaymentData)
+
+              const updatedPayement = await paymentModel.findOneAndUpdate({'_id': paymentData._id},copyOfPaymentData)
+              if(updatedPayement){
+                  await invoiceModel.findOneAndUpdate({'_id': invoiceData._id},{deleted: true})
+                  return res.status(200).json({
+                    success: true,
+                    message: "payment updated successfully"
+                  })
+              }else{
+                return res.status(200).json({
+                  success: false,
+                  message: "payment not updated."
+                })
+              }
+            }else{
+              return res.status(200).json({
+                success: false,
+                message: "payment data not found."
+              })
+            }
+
+          }else{
+            return res.status(200).json({
+              success: false,
+              message: "Invoice detail not found."
+            })
+          }
+        } catch (err) {
+          console.log(err)
+          return res.status(400).json({
+            success: false,
+            message: err.message,
+          })
+        }
   },
 
   createBuckup: async (req, res) => {
