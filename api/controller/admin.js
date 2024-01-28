@@ -2013,7 +2013,7 @@ module.exports = {
       newInvoiceInfo['session']= req.body.session
       const newInvoiceCreate = await newInvoiceInfo.save();
       if(newInvoiceCreate){
-        let paymentFound =  await paymentModel.findOne({userId: req.body.userId})
+        let paymentFound =  await paymentModel.findOne({$and:[{userId: req.body.userId},{session: req.body.session}]})
         if(paymentFound){
           //console.log("paymentFound", paymentFound)
             for(const data of req.body.feeList){
@@ -2141,7 +2141,7 @@ module.exports = {
           let condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
           const invoiceData = await invoiceModel.find(condInvParam)
           let userPayDetail =(payDetail && payDetail.length)? payDetail.find(data=> data.userId ===sData.userInfo.userId): undefined
-                                             //(sData, userPayDetail, monthlyFeeList, busRouteFareList)
+                                              //(sData, userPayDetail, monthlyFeeList, busRouteFareList)
           const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList)
           return{
             sData,
@@ -2254,28 +2254,29 @@ module.exports = {
 
   deleteTransaction:async(req, res)=>{
         try {
-          await paymentModel.updateMany({},
-              
-                { $set: {session:"2023-24"} }
-              
-            )
           const invoiceData= await invoiceModel.findOne({invoiceId: req.body.invoiceId})
           if(invoiceData && invoiceData.invoiceType==='MONTHLY' && req.body.session){
             const paymentData= await paymentModel.findOne({$and:[{'userId': invoiceData.userId},{session: req.body.session}]})
             if(paymentData){
-              let copyOfPaymentData= JSON.parse(JSON.stringify(paymentData))
-              let unsetMonthParam={$unset:{}}
+              let unsetMonthName={}
               for (const it of invoiceData.invoiceInfo.feeList) {
-                  
-                  //delete copyOfPaymentData[it.month]
+                unsetMonthName={
+                 ...unsetMonthName,
+                 [it.month]: ""
+                }
               }
-              copyOfPaymentData.dueAmount = Number(copyOfPaymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount)
-              copyOfPaymentData.excessAmount = Number(copyOfPaymentData.excessAmount) - Number(invoiceData.invoiceInfo.dueAmount)
-              copyOfPaymentData.totalFineAmount = Number(copyOfPaymentData.totalFineAmount) - Number(invoiceData.invoiceInfo.fineAmount)
-
-              console.log("paymentDatapaymentData",copyOfPaymentData)
-
-              const updatedPayement = await paymentModel.findOneAndUpdate({'_id': paymentData._id},copyOfPaymentData)
+              const updatePaymentData= {
+                'dueAmount' : Number(paymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount),
+                'excessAmount' : Number(paymentData.excessAmount) - Number(invoiceData.invoiceInfo.dueAmount),
+                'totalFineAmount' : Number(paymentData.totalFineAmount) - Number(invoiceData.invoiceInfo.fineAmount),
+                '$unset': unsetMonthName
+              }
+              const updatedPayement = await paymentModel.findOneAndUpdate({'_id': paymentData._id},updatePaymentData,{new: true})
+              // delete payemet data if no month available
+              // const allKeys = Object.keys(JSON.parse(JSON.stringify(updatedPayement)))
+              // if(allKeys.some( key => monthList.includes(key))===false){
+              //   await paymentModel.deleteOne({'_id': paymentData._id})
+              // }
               if(updatedPayement){
                   await invoiceModel.findOneAndUpdate({'_id': invoiceData._id},{deleted: true})
                   return res.status(200).json({
@@ -2283,10 +2284,10 @@ module.exports = {
                     message: "payment updated successfully"
                   })
               }else{
-                return res.status(200).json({
-                  success: false,
-                  message: "payment not updated."
-                })
+                  return res.status(200).json({
+                    success: false,
+                    message: "payment not updated."
+                  })
               }
             }else{
               return res.status(200).json({
