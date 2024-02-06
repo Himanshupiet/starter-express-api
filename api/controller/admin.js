@@ -1729,8 +1729,8 @@ module.exports = {
       const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
       let date = new Date(todayDate)
       let date_end = new Date(todayDate)
-      let startDate = new Date(date.setDate(date.getDate()));
-      let endDate= new Date(date_end.setDate(date_end.getDate()+1))
+      let startDate = new Date(date.setDate(date.getDate()-1));
+      let endDate= new Date(date_end.setDate(date_end.getDate()))
       startDate.setUTCHours(18);
       startDate.setUTCMinutes(30);
       startDate.setSeconds(0);
@@ -2096,7 +2096,7 @@ module.exports = {
 
   gePaymentDetail: async (req, res) => {
     try{
-
+      
       let searchStr = req.query.searchStr? (req.query.searchStr).trim():''
       let searchParam={}
       let userIdParam={}
@@ -2178,12 +2178,12 @@ module.exports = {
       let limit = (req.query.limit && parseInt(req.query.limit) > 0 )? parseInt(req.query.limit):10
       let pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber) : 0 ;
       let totalCount=0
-      let order = {'invoiceInfo.submittedDate':"asc"}
+      let order = {'invoiceInfo.submittedDate':"desc"}
 
       if(req.query.invoiceId){
         invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
       }else{
-        order={'created':'desc'}
+        //order={'created':'desc'}
         totalCount= await invoiceModel.find({}).countDocuments()
         invoiceData= await invoiceModel.find({}).sort(order).limit(limit).skip(limit * pageNumber)
       }
