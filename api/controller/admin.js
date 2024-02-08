@@ -2267,7 +2267,7 @@ module.exports = {
               }
               const updatePaymentData= {
                 'dueAmount' : Number(paymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount),
-                'excessAmount' : Number(paymentData.excessAmount) - Number(invoiceData.invoiceInfo.dueAmount),
+                'excessAmount' : Number(paymentData.excessAmount) - Number(invoiceData.invoiceInfo.excessAmount),
                 'totalFineAmount' : Number(paymentData.totalFineAmount) - Number(invoiceData.invoiceInfo.fineAmount),
                 '$unset': unsetMonthName
               }
