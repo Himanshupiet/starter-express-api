@@ -2265,10 +2265,13 @@ module.exports = {
                  [it.month]: ""
                 }
               }
+              const dueAmount =  Number(paymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount)
+              const excessAmount = Number(paymentData.excessAmount) - Number(invoiceData.invoiceInfo.excessAmount)
+              const totalFineAmount = Number(paymentData.totalFineAmount) - Number(invoiceData.invoiceInfo.fineAmount)
               const updatePaymentData= {
-                'dueAmount' : Number(paymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount),
-                'excessAmount' : Number(paymentData.excessAmount) - Number(invoiceData.invoiceInfo.excessAmount),
-                'totalFineAmount' : Number(paymentData.totalFineAmount) - Number(invoiceData.invoiceInfo.fineAmount),
+                'dueAmount' :  dueAmount>0? dueAmount: 0,
+                'excessAmount' : excessAmount>0? excessAmount: 0,
+                'totalFineAmount' : totalFineAmount>0?totalFineAmount:0,
                 '$unset': unsetMonthName
               }
               const updatedPayement = await paymentModel.findOneAndUpdate({'_id': paymentData._id},updatePaymentData,{new: true})
