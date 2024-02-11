@@ -2067,7 +2067,7 @@ module.exports = {
           }else{
             let newPaymentInfo= new paymentModel({})
             if(submitType==='MONTHLY'){
-                for(const data of req.body.feeList){
+                req.body.feeList.forEach(data=>
                   newPaymentInfo[data.month.toLowerCase()]={
                         monthlyFee: data.monthlyFee,
                         busFee:  data.busFee? data.busFee:0,
@@ -2078,7 +2078,7 @@ module.exports = {
                         invoiceId: newInvoiceCreate.invoiceId,
                         receiptNumber: req.body.receiptNumber 
                   }
-                }
+                )
                 newPaymentInfo['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
                 newPaymentInfo['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
                 newPaymentInfo['totalConcession'] = req.body.concession? req.body.concession:0
@@ -2107,7 +2107,7 @@ module.exports = {
                 newPaymentInfo['totalFineAmount']= 0
                 newPaymentInfo['userId'] = req.body.userId
                 newPaymentInfo['session'] = req.body.session
-              }
+            }
             paymentAdded = await newPaymentInfo.save();
           }
       }
@@ -2220,7 +2220,7 @@ module.exports = {
       if(req.query.invoiceId){
         invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
       }else{
-        //order={'created':'desc'}
+        order={'created':'desc'}
         totalCount= await invoiceModel.find({}).countDocuments()
         invoiceData= await invoiceModel.find({}).sort(order).limit(limit).skip(limit * pageNumber)
       }
