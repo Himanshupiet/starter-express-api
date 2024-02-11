@@ -10,6 +10,10 @@ const monthlyFeeListSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  examFee: {
+    type: Number,
+    required: false,
+  },
   created: {
     type: Date,
   },

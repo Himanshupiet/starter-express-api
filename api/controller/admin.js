@@ -2000,9 +2000,10 @@ module.exports = {
     try{
       let paymentAdded=null
       const newInvoiceIdGen = await newInvoiceIdGenrate()
+      const submitType= req.body.submitType
       let newInvoiceInfo= new invoiceModel({})
       newInvoiceInfo['invoiceInfo'] = {...req.body}
-      newInvoiceInfo['invoiceType'] ='MONTHLY'
+      newInvoiceInfo['invoiceType'] = submitType
       newInvoiceInfo['transactionType'] ='credit'
       newInvoiceInfo['paidStatus'] = true
       newInvoiceInfo['userId'] = req.body.userId,
@@ -2014,65 +2015,101 @@ module.exports = {
       const newInvoiceCreate = await newInvoiceInfo.save();
       if(newInvoiceCreate){
         let paymentFound =  await paymentModel.findOne({$and:[{userId: req.body.userId},{session: req.body.session}]})
-        if(paymentFound){
-          //console.log("paymentFound", paymentFound)
-            for(const data of req.body.feeList){
-              if(paymentFound[data.month.toLowerCase()] && paymentFound[data.month.toLowerCase()].paidStatus===true){
-               
-                 res.status(200).json({
-                    success: false,
-                    message: `Payment is already done of this "${data.month}" month.`,
-                  })
-                  await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
-                  return
+          if(paymentFound){
+              if(submitType==='MONTHLY'){
+                for(const data of req.body.feeList){
+                  if(paymentFound[data.month.toLowerCase()] && paymentFound[data.month.toLowerCase()].paidStatus===true){
+                  
+                    res.status(200).json({
+                        success: false,
+                        message: `Payment is already done of this "${data.month}" month.`,
+                      })
+                      await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
+                      return
+                    }
+                    else{
+                      //console.log("hhhhhhhhhhh")
+                      paymentFound[data.month.toLowerCase()]={
+                        monthlyFee: data.monthlyFee,
+                        busFee:  data.busFee? data.busFee:0,
+                        busRouteId : data.busRouteId? data.busRouteId:0,
+                        paymentRecieverId: req.body.paymentRecieverId,
+                        paidStatus: true,
+                        submittedDate : req.body.submittedDate,
+                        invoiceId: newInvoiceCreate.invoiceId,
+                        receiptNumber: req.body.receiptNumber 
+                      }
+                    }
                 }
-                else{
-                  //console.log("hhhhhhhhhhh")
-                  paymentFound[data.month.toLowerCase()]={
-                    monthlyFee: data.monthlyFee,
-                    busFee:  data.busFee? data.busFee:0,
-                    busRouteId : data.busRouteId? data.busRouteId:0,
-                    paymentRecieverId: req.body.paymentRecieverId,
-                    paidStatus: true,
-                    submittedDate : req.body.submittedDate,
-                    invoiceId: newInvoiceCreate.invoiceId,
-                    receiptNumber: req.body.receiptNumber 
+                paymentFound['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
+                paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
+                paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
+                paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
+              }
+              if(submitType==='EXAM_FEE'){
+                for(const data of req.body.otherFeeList){
+                    paymentFound.other=[...paymentFound.other,{
+                      name: data.name,
+                      amount: Number(data.amount),
+                      paymentRecieverId: req.body.paymentRecieverId,
+                      paidStatus: true,
+                      submittedDate : req.body.submittedDate,
+                      invoiceId: newInvoiceCreate.invoiceId,
+                      receiptNumber: req.body.receiptNumber 
+                    }
+                  ]
+                }
+              }
+              // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
+              // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
+              paymentFound.modified = new Date()
+              paymentAdded = await paymentModel.findByIdAndUpdate({_id: paymentFound._id},paymentFound)
+          }else{
+            let newPaymentInfo= new paymentModel({})
+            if(submitType==='MONTHLY'){
+                for(const data of req.body.feeList){
+                  newPaymentInfo[data.month.toLowerCase()]={
+                        monthlyFee: data.monthlyFee,
+                        busFee:  data.busFee? data.busFee:0,
+                        busRouteId : data.busRouteId? data.busRouteId:0,
+                        paymentRecieverId: req.body.paymentRecieverId,
+                        submittedDate : req.body.submittedDate,
+                        paidStatus: true,
+                        invoiceId: newInvoiceCreate.invoiceId,
+                        receiptNumber: req.body.receiptNumber 
                   }
                 }
+                newPaymentInfo['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
+                newPaymentInfo['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
+                newPaymentInfo['totalConcession'] = req.body.concession? req.body.concession:0
+                newPaymentInfo['totalFineAmount']= req.body.fineAmount? req.body.fineAmount:0
+                newPaymentInfo['userId'] = req.body.userId
+                newPaymentInfo['session'] = req.body.session
+                // newPaymentInfo['totalPaidAmount'] = req.body.paidAmount
+                // newPaymentInfo['totalAmount'] = req.body.totalAmount
             }
-            paymentFound['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
-            paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
-            paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
-            paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
-            // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
-            // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
-            paymentFound.modified = new Date()
-            paymentAdded = await paymentModel.findByIdAndUpdate({_id: paymentFound._id},paymentFound)
-        }else{
-          let newPaymentInfo= new paymentModel({})
-          req.body.feeList.forEach(data=>
-            newPaymentInfo[data.month.toLowerCase()]={
-                  monthlyFee: data.monthlyFee,
-                  busFee:  data.busFee? data.busFee:0,
-                  busRouteId : data.busRouteId? data.busRouteId:0,
-                  paymentRecieverId: req.body.paymentRecieverId,
-                  submittedDate : req.body.submittedDate,
-                  paidStatus: true,
-                  invoiceId: newInvoiceCreate.invoiceId,
-                  receiptNumber: req.body.receiptNumber 
-            }
-          )
-          newPaymentInfo['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
-          newPaymentInfo['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
-          newPaymentInfo['totalConcession'] = req.body.concession? req.body.concession:0
-          newPaymentInfo['totalFineAmount']= req.body.fineAmount? req.body.fineAmount:0
-          newPaymentInfo['userId'] = req.body.userId
-          newPaymentInfo['session'] = req.body.session
-          // newPaymentInfo['totalPaidAmount'] = req.body.paidAmount
-          // newPaymentInfo['totalAmount'] = req.body.totalAmount
-  
-          paymentAdded = await newPaymentInfo.save();
-        }
+            if(submitType==='EXAM_FEE'){
+                for(const data of req.body.otherFeeList){
+                  newPaymentInfo.other=[{
+                      name: data.name,
+                      amount: Number(data.amount),
+                      paymentRecieverId: req.body.paymentRecieverId,
+                      paidStatus: true,
+                      submittedDate : req.body.submittedDate,
+                      invoiceId: newInvoiceCreate.invoiceId,
+                      receiptNumber: req.body.receiptNumber 
+                    },
+                  ]
+                }
+                newPaymentInfo['dueAmount'] = 0
+                newPaymentInfo['excessAmount'] = 0
+                newPaymentInfo['totalConcession'] = 0
+                newPaymentInfo['totalFineAmount']= 0
+                newPaymentInfo['userId'] = req.body.userId
+                newPaymentInfo['session'] = req.body.session
+              }
+            paymentAdded = await newPaymentInfo.save();
+          }
       }
       if(paymentAdded){
         return res.status(200).json({
@@ -2255,14 +2292,21 @@ module.exports = {
   deleteTransaction:async(req, res)=>{
         try {
           const invoiceData= await invoiceModel.findOne({invoiceId: req.body.invoiceId})
-          if(invoiceData && invoiceData.invoiceType==='MONTHLY' && req.body.session){
+          if(invoiceData && req.body.session && (invoiceData.invoiceType==='MONTHLY'|| invoiceData.invoiceType==='EXAM_FEE') ){
             const paymentData= await paymentModel.findOne({$and:[{'userId': invoiceData.userId},{session: req.body.session}]})
             if(paymentData){
               let unsetMonthName={}
-              for (const it of invoiceData.invoiceInfo.feeList) {
-                unsetMonthName={
-                 ...unsetMonthName,
-                 [it.month]: ""
+              if(invoiceData.invoiceInfo.feeList){
+                for (const it of invoiceData.invoiceInfo.feeList) {
+                  unsetMonthName={
+                   ...unsetMonthName,
+                   [it.month]: ""
+                  }
+                }
+              }
+              if(invoiceData.invoiceInfo.otherFeeList){
+                for (const it of invoiceData.invoiceInfo.otherFeeList) {
+                  paymentData.other= paymentData.other.filter(data=> data.name!==it.name )
                 }
               }
               const dueAmount =  Number(paymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount)
@@ -2272,6 +2316,7 @@ module.exports = {
                 'dueAmount' :  dueAmount>0? dueAmount: 0,
                 'excessAmount' : excessAmount>0? excessAmount: 0,
                 'totalFineAmount' : totalFineAmount>0?totalFineAmount:0,
+                'other':paymentData.other,
                 '$unset': unsetMonthName
               }
               const updatedPayement = await paymentModel.findOneAndUpdate({'_id': paymentData._id},updatePaymentData,{new: true})

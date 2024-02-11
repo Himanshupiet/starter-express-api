@@ -72,7 +72,9 @@ await mongoose
     dbName: mongoDbName,
   })
   .then(() => {
-
+    app.listen(PORT || 3010, () => {
+      console.log(`server is running http://localhost:${PORT}`);
+    });
     const getAdmin = async () => {
       try {
         let topAdminRoleId = "";
@@ -123,7 +125,7 @@ await mongoose
 }
 connectToMongo()
 
-//Server
-app.listen(PORT || 3010, () => {
-  console.log(`server is running http://localhost:${PORT}`);
-});
+// //Server
+// app.listen(PORT || 3010, () => {
+//   console.log(`server is running http://localhost:${PORT}`);
+// });

@@ -8,7 +8,7 @@ const invoiceSchema = new mongoose.Schema({
   invoiceType: {
     require: true,
     type: String,
-    enum : ['MONTHLY','BOOKS','HALF_EXAM','FINAL_EXAM','TIE_BELT_DIARY']
+    enum : ['MONTHLY','BOOKS','EXAM_FEE','TIE_BELT_DIARY']
   },
   paidStatus: {
     type: Boolean,
