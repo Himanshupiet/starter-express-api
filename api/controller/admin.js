@@ -2001,6 +2001,12 @@ module.exports = {
       let paymentAdded=null
       const newInvoiceIdGen = await newInvoiceIdGenrate()
       const submitType= req.body.submitType
+      if(!submitType){
+        return res.status(200).json({
+          success: false,
+          message: "Submit type not found, Please try again!",
+        })
+      }
       let newInvoiceInfo= new invoiceModel({})
       newInvoiceInfo['invoiceInfo'] = {...req.body}
       newInvoiceInfo['invoiceType'] = submitType
