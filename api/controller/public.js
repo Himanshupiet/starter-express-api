@@ -152,18 +152,18 @@ module.exports = {
           const sms = await sendSms(sendSMSandEmaildata);
           //const sms= true
        
-          // if (!sms) {
+          if (sms) {
             let userData = await newUser.save();
             return res.status(200).json({
               success: true,
               message: "Registration successful.",
             });
-          // } else {
-          //   return res.status(200).json({
-          //     success: false,
-          //     message: "Mobile mumber is not valid",
-          //   });
-          // }
+          } else {
+            return res.status(200).json({
+              success: false,
+              message: "Mobile mumber is not valid",
+            });
+          }
     } catch (err) {
       return res.status(400).json({
         success: false,
