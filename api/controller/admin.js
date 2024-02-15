@@ -2053,8 +2053,25 @@ module.exports = {
                 paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
               }
               if(submitType==='EXAM_FEE'){
-                for(const data of req.body.otherFeeList){
-                    paymentFound.other=[...paymentFound.other,{
+                if(paymentFound.other &&paymentFound.other.length>0 ){
+                  let othertPay=[]
+                  for(const data of req.body.otherFeeList){
+                    othertPay=[{
+                        name: data.name,
+                        amount: Number(data.amount),
+                        paymentRecieverId: req.body.paymentRecieverId,
+                        paidStatus: true,
+                        submittedDate : req.body.submittedDate,
+                        invoiceId: newInvoiceCreate.invoiceId,
+                        receiptNumber: req.body.receiptNumber 
+                      }
+                    ]
+                  }
+                  paymentFound.other=[...paymentFound.other, ...othertPay]
+                  
+                }else{
+                  for(const data of req.body.otherFeeList){
+                    paymentFound.other=[{
                       name: data.name,
                       amount: Number(data.amount),
                       paymentRecieverId: req.body.paymentRecieverId,
@@ -2065,6 +2082,8 @@ module.exports = {
                     }
                   ]
                 }
+                }
+             
               }
               // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
               // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
