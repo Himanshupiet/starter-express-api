@@ -2252,11 +2252,11 @@ module.exports = {
       if(invoiceData && invoiceData.length>0){
         let allInvoice=[]
           for (let it of invoiceData) {
-            if(it.invoiceInfo.userId && it.invoiceType==='MONTHLY'){
+            if(it.invoiceInfo.userId && (it.invoiceType==='MONTHLY' || it.invoiceType==='EXAM_FEE')){
               const userData =  await userModel.findOne({'userInfo.userId': it.invoiceInfo.userId})
               it.invoiceInfo['userData']= userData
             }
-              if(it.invoiceInfo.paymentRecieverId && it.invoiceType==='MONTHLY'){
+              if(it.invoiceInfo.paymentRecieverId && (it.invoiceType==='MONTHLY' || it.invoiceType==='EXAM_FEE')){
               const recieverData = await userModel.findOne({'_id': it.invoiceInfo.paymentRecieverId})
                 //console.log("recieverDatarecieverDatarecieverData", recieverData)
                 it.invoiceInfo['recieverName'] = recieverData && recieverData.userInfo &&recieverData.userInfo.fullName? recieverData.userInfo.fullName:'N/A'
