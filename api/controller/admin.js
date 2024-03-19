@@ -350,17 +350,17 @@ module.exports = {
   deleteUser: async (req, res) => {
     try {
     const updatedUser=  await userModel.findOneAndUpdate({_id:req.params.id},{deleted: true, modified:new Date()});
-     if(updatedUser){
-        return res.status(200).json({
-          success: true,
-          message: 'Deleted user successfully',
-        });
-      }else{
+    //  if(updatedUser){
+    //     return res.status(200).json({
+    //       success: true,
+    //       message: 'Deleted user successfully',
+    //     });
+    //   }else{
         return res.status(200).json({
           success: false,
           message: "Not deleted user.",
         });
-      }
+      //}
     } catch (err) {
       console.log(err);
       return res.status(400).json({
