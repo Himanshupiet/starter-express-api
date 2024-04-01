@@ -2163,6 +2163,7 @@ module.exports = {
       let searchParam={}
       let userIdParam={}
       let classParam={'userInfo.class':'1 A'}
+      let sessionParam= {'session':req.query.session}
       const roleParam={'userInfo.roleName':'STUDENT'}
       if(req.query.selectedClass){
         classParam={'userInfo.class':req.query.selectedClass}
@@ -2197,7 +2198,7 @@ module.exports = {
       //let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) 
       if(students && students.length){
         const userIds= students.map(data=> data.userInfo.userId)
-        let payDetail= await paymentModel.find({userId:{$in:[...userIds]}})
+        let payDetail= await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, sessionParam]})
       
         const newList=  await Promise.all(students.map(async(sData)=> {
           let condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}

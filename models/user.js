@@ -88,6 +88,13 @@ const userSchema = new mongoose.Schema({
     busRouteId:{
      type:String
     },
+    feeFree:{
+      type:Boolean,
+      default:false
+    },
+    reasonForFreeFee:{
+      type: String,
+    },
     concession:{
       type: Number,
       default: 0
