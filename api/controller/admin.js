@@ -237,6 +237,9 @@ module.exports = {
           'userInfo.phoneNumber2': 0,  
           'userInfo.aadharNumber': 0,
         }
+        sortingOption={
+          created: 1
+        }
       }
 
       if(req.body.selectedClass){
