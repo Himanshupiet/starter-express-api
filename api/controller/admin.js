@@ -208,7 +208,7 @@ module.exports = {
   getAllStudents: async (req, res) => {
     try {
       const searchStr= req.body.searchStr
-      let studentAprroveParam = {$and:[{deleted:false},{isApproved:true}]}
+      let studentAprroveParam = activeParam //{$and:[{deleted:false},{isApproved:true}]}
       let searchParam={}
       let classParam={}
       let filterOptionParam={}
@@ -271,7 +271,8 @@ module.exports = {
           searchParam,
           classParam,
           filterOptionParam,
-          studentById
+          studentById,
+          {'userInfo.session': '2024-25'}
         ],
       }
       if(req.body.sortByClass){
@@ -281,6 +282,49 @@ module.exports = {
       const users = await userModel.find(condParam,dataFilterParam).sort(sortingOption);
     
       if(users && users.length>0){
+     
+        // for (const it of users) {
+        // // await userModel.findOneAndUpdate({_id: it._id},{'userInfo.session':'2023-24'})
+        //          //const stClass = it.userInfo.class
+        //         // let newStClass=''
+        //         // if(stClass =='10'){newStClass= '9'}else
+        //         // if(stClass =='9') {newStClass= '8'}else
+        //         // if(stClass =='8') {newStClass= '7'}else
+        //         // if(stClass =='7') {newStClass= '6'}else
+        //         // if(stClass =='6') {newStClass= '5'}else
+        //         // if(stClass =='5') {newStClass= '4 A'}else
+        //         // if(stClass =='4 A') {newStClass= '3 A'}else
+        //         // if(stClass =='4 B') {newStClass= '3 B'}else
+        //         // if(stClass =='3 A') {newStClass= '2 A'}else
+        //         // if(stClass =='3 B') {newStClass= '2 B'}else
+        //         // if(stClass =='2 A') {newStClass= '1 A'}else
+        //         // if(stClass =='2 B') {newStClass= '1 B'}else
+        //         // if(stClass =='1 A') {newStClass= 'UKG A'}else
+        //         // if(stClass =='1 B') {newStClass= 'UKG B'}else
+        //         // if(stClass =='UKG A') {newStClass= 'LKG A'}else
+        //         // if(stClass =='UKG B') {newStClass= 'LKG B'}else
+        //         // if(stClass =='LKG A') {newStClass= 'NUR A'}else
+        //         // if(stClass =='LKG B') {newStClass= 'NUR B'}else
+        //         // if(stClass =='NUR A') {newStClass= 'PRE NUR A'}else
+        //         // if(stClass =='NUR B') {newStClass= 'PRE NUR B'}
+                
+        //    const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: it.userInfo.userId},{session:'2023-24'}]},{class: it.userInfo.class})
+
+        //    if(!payFound){
+        //     const newPaymentData = paymentModel({
+        //       userId:it.userInfo.userId,
+        //       session:'2023-24',
+        //       class:it.userInfo.class,
+        //       dueAmount: 0,
+        //       excessAmount:0,
+        //       totalFineAmount:0
+        //     })
+            
+        //       const  newPaymentDataCreated = await newPaymentData.save()
+        //    }
+
+          
+        // }
         return res.status(200).json({
           success: true,
           message: 'Successfully get all students.',
@@ -352,18 +396,19 @@ module.exports = {
   },
   deleteUser: async (req, res) => {
     try {
-    //const updatedUser=  await userModel.findOneAndUpdate({_id:req.params.id},{deleted: true, modified:new Date()});
-    //  if(updatedUser){
-    //     return res.status(200).json({
-    //       success: true,
-    //       message: 'Deleted user successfully',
-    //     });
-    //   }else{
+    const updatedUser=  await userModel.findOneAndUpdate({_id:req.params.id},{deleted: true, modified:new Date()});
+     if(updatedUser){
+        await paymentModel.findOneAndUpdate({'userId': updatedUser.userInfo.userId},{deleted: true, modified:new Date()})
+        return res.status(200).json({
+          success: true,
+          message: 'Deleted user successfully',
+        });
+      }else{
         return res.status(200).json({
           success: false,
           message: "Not deleted user.",
         });
-      //}
+      }
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -385,13 +430,14 @@ module.exports = {
             req.body.roleId = getNewRoleData._id.toString()
           }
       }
-      let user =  await userModel.findOne({_id:req.params.id});
-      if(!user){
+      const userData =  await userModel.findOne({_id:req.params.id});
+      if(!userData){
         return res.status(200).json({
           success: false,
           message: "user not found.",
         });
       }
+      let user = JSON.parse(JSON.stringify(userData))
       if(req.body.student_document){
         user['document']={
           ...user['document'],
@@ -413,6 +459,23 @@ module.exports = {
         await AuthToken.deleteMany({ userId: user.userInfo.userId })
       }
       if(updatedUser){
+        if(userData && userData.userInfo.class !== updatedUser.userInfo.class && updatedUser.userInfo.roleName==='STUDENT'){
+          await paymentModel.findOneAndUpdate({'userId': updatedUser.userInfo.userId},{'class': updatedUser.userInfo.class})
+        }
+        if(updatedUser.userInfo.roleName==='STUDENT'){
+          const foundPayment = await paymentModel.findOne({'userId': updatedUser.userInfo.userId})
+          if(!foundPayment){
+            const newPaymentData = paymentModel({
+              userId:updatedUser.userInfo.userId,
+              session: currentSession(),
+              class:updatedUser.userInfo.class,
+              dueAmount: 0,
+              excessAmount:0,
+              totalFineAmount:0
+            })
+            const  newPaymentDataCreated = await newPaymentData.save()
+          }
+        }
         return res.status(200).json({
           success: true,
           message: "Updated successfully.",
@@ -449,7 +512,8 @@ module.exports = {
       try{
       const userId = req.body.userId;
       let datatoUpdate={}
-      if(req.body.recover){
+      const recoverTrue= req.body.recover
+      if(recoverTrue){
         datatoUpdate={
           isActive:true,
           isApproved: true,
@@ -473,12 +537,15 @@ module.exports = {
         }
       }
 
-       userModel.findOneAndUpdate({ 'userInfo.userId': userId },datatoUpdate, async (err, response) => {
+        userModel.findOneAndUpdate({ 'userInfo.userId': userId },datatoUpdate, async (err, response) => {
         if (err) {
           next(err);
         }else{
           if(datatoUpdate.isActive ===false || datatoUpdate.isApproved===false){
             await AuthToken.deleteMany({ userId: userId })
+          }
+          if(recoverTrue && response && response.userInfo.roleName==='STUDENT'){
+            await paymentModel.findOneAndUpdate({'userId': updatedUser.userInfo.userId},{deleted: false, modified:new Date()})
           }
           return res.status(200).json({
             success: true,
@@ -1864,10 +1931,9 @@ module.exports = {
       })
       if(totalStudent && totalStudent.length>0){
         for(student of totalStudent){
-          // session add karna hai
-          // old 10 class ke liye puran seeion rhne dena hai
-           await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass})
-             
+        
+          // old 10 class ke liye purana seeion rhne dena hai
+           await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass, 'userInfo.session':currentSession()})
           }
       }
         

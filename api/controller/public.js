@@ -12,7 +12,8 @@ const {
   encryptAES,
   decryptAES,
   passwordEncryptAES,
-  passwordDecryptAES
+  passwordDecryptAES,
+  currentSession
 
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
@@ -154,6 +155,18 @@ module.exports = {
        
           if (sms) {
             let userData = await newUser.save();
+            if(userData && userData.userInfo && userData.userInfo.roleName==='STUDENT'){
+              const newPaymentData = paymentModel({
+                userId:userData.userInfo.userId,
+                session: currentSession(),
+                class:userData.userInfo.class,
+                dueAmount: 0,
+                excessAmount:0,
+                totalFineAmount:0
+              })
+              const  newPaymentDataCreated = await newPaymentData.save()
+            }
+     
             return res.status(200).json({
               success: true,
               message: "Registration successful.",

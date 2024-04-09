@@ -58,6 +58,9 @@ const paymentSchema = new mongoose.Schema({
   session: {
     type: String,
   },
+  class: {
+    type: String,
+  },
   created: {
     type: Date,
   },
