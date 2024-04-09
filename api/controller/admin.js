@@ -272,7 +272,7 @@ module.exports = {
           classParam,
           filterOptionParam,
           studentById,
-          {'userInfo.session': '2024-25'}
+          {'userInfo.session': currentSession()}
         ],
       }
       if(req.body.sortByClass){
@@ -283,9 +283,9 @@ module.exports = {
     
       if(users && users.length>0){
      
-        // for (const it of users) {
+       //for (const it of users) {
         // // await userModel.findOneAndUpdate({_id: it._id},{'userInfo.session':'2023-24'})
-        //          //const stClass = it.userInfo.class
+        // const stClass = it.userInfo.class
         //         // let newStClass=''
         //         // if(stClass =='10'){newStClass= '9'}else
         //         // if(stClass =='9') {newStClass= '8'}else
@@ -308,23 +308,20 @@ module.exports = {
         //         // if(stClass =='NUR A') {newStClass= 'PRE NUR A'}else
         //         // if(stClass =='NUR B') {newStClass= 'PRE NUR B'}
                 
-        //    const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: it.userInfo.userId},{session:'2023-24'}]},{class: it.userInfo.class})
-
-        //    if(!payFound){
-        //     const newPaymentData = paymentModel({
-        //       userId:it.userInfo.userId,
-        //       session:'2023-24',
-        //       class:it.userInfo.class,
-        //       dueAmount: 0,
-        //       excessAmount:0,
-        //       totalFineAmount:0
-        //     })
+      //   const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: it.userInfo.userId},{session:'2024-25'}]},{class: it.userInfo.class})
+      //      if(!payFound){
+      //       const newPaymentData = paymentModel({
+      //         userId:it.userInfo.userId,
+      //         session:'2024-25',
+      //         class:it.userInfo.class,
+      //         dueAmount: 0,
+      //         excessAmount:0,
+      //         totalFineAmount:0
+      //       })
             
-        //       const  newPaymentDataCreated = await newPaymentData.save()
-        //    }
-
-          
-        // }
+      //    const  newPaymentDataCreated = await newPaymentData.save()
+      //   }
+      //  }
         return res.status(200).json({
           success: true,
           message: 'Successfully get all students.',
@@ -508,32 +505,34 @@ module.exports = {
 
   },
 
-  updateStatus:  (req, res, next) => {
+  updateStatus: async (req, res, next) => {
       try{
       const userId = req.body.userId;
-      let datatoUpdate={}
+      
+      const user= await userModel.findOne({ 'userInfo.userId': userId })
+      if(!user){
+        return res.status(200).json({
+          success: false,
+          message: "User not found."
+        })
+      }
+      let datatoUpdate = JSON.parse(JSON.stringify(user))
       const recoverTrue= req.body.recover
       if(recoverTrue){
-        datatoUpdate={
-          isActive:true,
-          isApproved: true,
-          modified: new Date(),
-          deleted:false,
-        }
+        datatoUpdate.isActive=true
+        datatoUpdate.isApproved= true
+        datatoUpdate.modified= new Date()
+        datatoUpdate.deleted=false
+        datatoUpdate.userInfo.session= currentSession()
       }else{
-
         if(req.body.task==='isApproved'){
-          datatoUpdate={
-            isApproved: req.body.isApproved,
-            modified: new Date(),
-          }
+            datatoUpdate.isApproved = req.body.isApproved
+            datatoUpdate.modified = new Date()
         }
     
         if(req.body.task==='isActive'){
-          datatoUpdate={
-            isActive: req.body.isActive ,
-            modified: new Date(),
-          }
+            datatoUpdate.isActive = req.body.isActive 
+            datatoUpdate.modified = new Date()
         }
       }
 
@@ -545,7 +544,20 @@ module.exports = {
             await AuthToken.deleteMany({ userId: userId })
           }
           if(recoverTrue && response && response.userInfo.roleName==='STUDENT'){
-            await paymentModel.findOneAndUpdate({'userId': updatedUser.userInfo.userId},{deleted: false, modified:new Date()})
+            const foundPayment = await paymentModel.findOne({$and:[{session:response.userInfo.session},{'userId': response.userInfo.userId}]})
+            if(!foundPayment){
+              const newPaymentData = paymentModel({
+                userId:updatedUser.userInfo.userId,
+                session:response.userInfo.session,
+                class:updatedUser.userInfo.class,
+                dueAmount: 0,
+                excessAmount:0,
+                totalFineAmount:0
+              })
+              const  newPaymentDataCreated = await newPaymentData.save()
+            }
+              await paymentModel.updateMany({'userId': response.userInfo.userId},{deleted: false, modified:new Date()})
+            
           }
           return res.status(200).json({
             success: true,
@@ -1854,7 +1866,7 @@ module.exports = {
         }
       ])
        const todayInvoice = await  invoiceModel.find({$and:[{deleted:false},invoiceTodayParams]})
-       console.log("todayInvoice",todayInvoice)
+       //console.log("todayInvoice",todayInvoice)
        if(todayInvoice && todayInvoice.length>0){
           for (const it of todayInvoice) {
                 if(it.transactionType && it.transactionType==='credit'){
@@ -1933,7 +1945,20 @@ module.exports = {
         for(student of totalStudent){
         
           // old 10 class ke liye purana seeion rhne dena hai
-           await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass, 'userInfo.session':currentSession()})
+          const currSession = currentSession()
+           await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass, 'userInfo.session':currSession})
+           const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: student.userInfo.userId},{session:currSession}]},{class: student.userInfo.class})
+           if(!payFound){
+            const newPaymentData = paymentModel({
+              userId:it.userInfo.userId,
+              session:currSession,
+              class:it.userInfo.class,
+              dueAmount: 0,
+              excessAmount:0,
+              totalFineAmount:0
+            })
+              const  newPaymentDataCreated = await newPaymentData.save()
+            }
           }
       }
         
