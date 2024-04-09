@@ -460,10 +460,10 @@ module.exports = {
       }
       if(updatedUser){
         if(userData && userData.userInfo.class !== updatedUser.userInfo.class && updatedUser.userInfo.roleName==='STUDENT'){
-          await paymentModel.findOneAndUpdate({'userId': updatedUser.userInfo.userId},{'class': updatedUser.userInfo.class})
+          await paymentModel.findOneAndUpdate({$and:[{session:updatedUser.userInfo.session},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class })
         }
         if(updatedUser.userInfo.roleName==='STUDENT'){
-          const foundPayment = await paymentModel.findOne({'userId': updatedUser.userInfo.userId})
+          const foundPayment = await paymentModel.findOne({$and:[{session:updatedUser.userInfo.session},{'userId': updatedUser.userInfo.userId}]})
           if(!foundPayment){
             const newPaymentData = paymentModel({
               userId:updatedUser.userInfo.userId,
@@ -518,7 +518,7 @@ module.exports = {
           isActive:true,
           isApproved: true,
           modified: new Date(),
-          deleted:false
+          deleted:false,
         }
       }else{
 
