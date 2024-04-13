@@ -86,7 +86,7 @@ const percentageMarks= (getTotal, fullMarks)=>{
   return ((Number(getTotal)*100)/Number(fullMarks)).toFixed(2)
 }
 
-checkAdmissionDate=(user, columnMonth)=>{
+checkAdmissionDate=(user, columnMonth, session)=>{
   let pay=true
   if(user.created){
     let columnMonthIndex=  monthNames.indexOf(columnMonth.toLowerCase())
@@ -103,10 +103,10 @@ checkAdmissionDate=(user, columnMonth)=>{
         }else if(admissionMonthIndex<3 ){
           admissionSession = `${(admissionYear-1).toString()}-${(admissionYear).toString().substring(2)}`
         }
-        if(columnMonthIndex>=3 && currentSession()===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=21 || (admissionMonthIndex<3 && admissionMonthIndex<columnMonthIndex )) )){
+        if(columnMonthIndex>=3 && session===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=21 || (admissionMonthIndex<3 && admissionMonthIndex<columnMonthIndex )) )){
           pay= false
         
-        }else if(columnMonthIndex<3 && admissionMonthIndex<3 && currentSession()===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=21))){
+        }else if(columnMonthIndex<3 && admissionMonthIndex<3 && session ===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=21))){
           pay= false
         }
     }
@@ -114,20 +114,21 @@ checkAdmissionDate=(user, columnMonth)=>{
   return pay
 
 }
-                    //(Sdata, userPayDetail, monthlyFeeList, busRouteFareList)
-const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList )=>{
+                    //(Sdata, userPayDetail, monthlyFeeList, busRouteFareList, session)
+const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, session )=>{
   let busFee= 0
   let monthlyFee=0
   if(sData.userInfo.busService && busRouteFareList.length>0){
     busFee= busRouteFareList.find(busData => busData._id.toString() === sData.userInfo.busRouteId)?.fare
   }
   if(monthlyFeeList.length>0 ){
-    monthlyFee= monthlyFeeList.find(data => data.className === sData.userInfo.class)?.monthlyFee
+    //console.log("userPayDetail.class",userPayDetail.class)
+    monthlyFee= monthlyFeeList.find(data => data.className === userPayDetail.class)?.monthlyFee
   }
   let monthPayData={}
   for (const month of monthList) {
     let monthData={}
-    const monthEnable =  checkAdmissionDate(sData, month)
+    const monthEnable =  checkAdmissionDate(sData, month, session)
       if(monthEnable){
         monthData['monthlyFee']= monthlyFee
         monthData['busFee']= busFee
@@ -2119,13 +2120,11 @@ module.exports = {
               if(submitType==='MONTHLY'){
                 for(const data of req.body.feeList){
                   if(paymentFound[data.month.toLowerCase()] && paymentFound[data.month.toLowerCase()].paidStatus===true){
-                  
-                    res.status(200).json({
+                      await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
+                      return res.status(200).json({
                         success: false,
                         message: `Payment is already done of this "${data.month}" month.`,
                       })
-                      await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
-                      return
                     }
                     else{
                       //console.log("hhhhhhhhhhh")
@@ -2204,6 +2203,7 @@ module.exports = {
                 newPaymentInfo['totalFineAmount']= req.body.fineAmount? req.body.fineAmount:0
                 newPaymentInfo['userId'] = req.body.userId
                 newPaymentInfo['session'] = req.body.session
+                newPaymentInfo['class'] = req.body.class
                 // newPaymentInfo['totalPaidAmount'] = req.body.paidAmount
                 // newPaymentInfo['totalAmount'] = req.body.totalAmount
             }
@@ -2226,6 +2226,7 @@ module.exports = {
                 newPaymentInfo['totalFineAmount']= 0
                 newPaymentInfo['userId'] = req.body.userId
                 newPaymentInfo['session'] = req.body.session
+                newPaymentInfo['class'] = req.body.class
             }
             paymentAdded = await newPaymentInfo.save();
           }
@@ -2250,17 +2251,19 @@ module.exports = {
     }
   },
 
-  gePaymentDetail: async (req, res) => {
+  getPaymentDetail: async (req, res) => {
     try{
-      
+      let reqSession= req.query.session
       let searchStr = req.query.searchStr? (req.query.searchStr).trim():''
       let searchParam={}
       let userIdParam={}
+      let deletedParam = {'deleted':false}
       let classParam={'userInfo.class':'1 A'}
       let sessionParam= {'session':req.query.session}
       const roleParam={'userInfo.roleName':'STUDENT'}
       if(req.query.selectedClass){
-        classParam={'userInfo.class':req.query.selectedClass}
+        //classParam={'userInfo.class':req.query.selectedClass}
+        classParam={'class':req.query.selectedClass}
       }
 
       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
@@ -2281,38 +2284,132 @@ module.exports = {
       if(req.query.userId){
           classParam={}
           searchParam={}
-          userIdParam={'userInfo.userId': req.query.userId}
+          //userIdParam={'userInfo.userId': req.query.userId}
+          userIdParam={'userId': req.query.userId}
       }
       
-      let students= await userModel.find({$and:[ activeParam, classParam, roleParam, searchParam, userIdParam]})
-      let busRouteFareList= await vehicleRouteFareModel.find()
-      let monthlyFeeList= await monthlyFeeListModel.find()
+      //let students= await userModel.find({$and:[ activeParam, classParam, roleParam, searchParam, userIdParam]})
+      const busRouteFareList = await vehicleRouteFareModel.find()
+      const monthlyFeeList = await monthlyFeeListModel.find()
       //let payOptionList= await payOptionModel.find()
    
       //let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) 
-      if(students && students.length){
-        const userIds= students.map(data=> data.userInfo.userId)
-        let payDetail= await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, sessionParam]})
+      // if(students && students.length){
+      //   const userIds= students.map(data=> data.userInfo.userId)
+      //   let payDetail= await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, sessionParam]})
       
-        const newList=  await Promise.all(students.map(async(sData)=> {
-          let condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
+      //   const newList=  await Promise.all(students.map(async(sData)=> {
+      //     let condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
+      //     const invoiceData = await invoiceModel.find(condInvParam)
+      //     let userPayDetail =(payDetail && payDetail.length)? payDetail.find(data=> data.userId ===sData.userInfo.userId): undefined
+      //                                         //(sData, userPayDetail, monthlyFeeList, busRouteFareList)
+      //     const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList)
+      //     return{
+      //       sData,
+      //       userPayDetail: userPayDetail? userPayDetail: undefined,
+      //       ...monthPayDetail,
+      //       preDueAmount: userPayDetail && userPayDetail.dueAmount?userPayDetail.dueAmount:0,
+      //       preExcessAmount: userPayDetail && userPayDetail.excessAmount?userPayDetail.excessAmount:0,   
+      //       userInvoiceDetail: invoiceData
+      //     }
+      //   }))
+      //   return res.status(200).json({
+      //     success: true,
+      //     message: "Payment detail get successfully.",
+      //     data: newList
+      //   })
+      // }else{
+      //   return res.status(200).json({
+      //     success: false,
+      //     message: "Payment detail not found"
+      //   })
+      // }
+      let list =[]
+      const allPayDetail= await paymentModel.find({$and:[sessionParam, classParam, userIdParam, deletedParam]})
+     
+      if(allPayDetail && allPayDetail.length>0){
+        const userIds= allPayDetail.map(data=> data.userId)
+        const allStudents = await userModel.find({'userInfo.userId': {$in:[...userIds]}})
+
+          const allPreviousPayDetail = reqSession===currentSession()? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:'2023-24'}]}):undefined
+        
+        for (const it of allPayDetail) {
+          let prevAmtDue=0
+          const sData= allStudents.find(data=> data.userInfo.userId=== it.userId)
+          const previousPayDetail = reqSession===currentSession()? allPreviousPayDetail.find(data=> data.userId=== it.userId) || undefined : undefined
+          const condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
           const invoiceData = await invoiceModel.find(condInvParam)
-          let userPayDetail =(payDetail && payDetail.length)? payDetail.find(data=> data.userId ===sData.userInfo.userId): undefined
-                                              //(sData, userPayDetail, monthlyFeeList, busRouteFareList)
-          const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList)
-          return{
-            sData,
-            userPayDetail: userPayDetail? userPayDetail: undefined,
-            ...monthPayDetail,
-            preDueAmount: userPayDetail && userPayDetail.dueAmount?userPayDetail.dueAmount:0,
-            preExcessAmount: userPayDetail && userPayDetail.excessAmount?userPayDetail.excessAmount:0,   
-            userInvoiceDetail: invoiceData
+          const userPayDetail = it
+                                             //(sData, userPayDetail, monthlyFeeList, busRouteFareList, session)
+          const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList, reqSession)
+
+          if(previousPayDetail){
+            const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, monthlyFeeList, busRouteFareList, '2023-24')   
+            let paidAmt = 0
+            let dueAmt=0
+            const feeData= monthlyFeeList.find(data=> data.className===previousPayDetail.class)
+            if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
+                if(!previousPayDetail.other.find(data=> data.name=='ANNUAL EXAM')){
+                  dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
+                }
+                if(!previousPayDetail.other.find(data=> data.name=='HALF YEARLY EXAM')){
+                  dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
+                }
+            }else{
+              dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
+              dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
+            }
+           
+            monthList.map(mData=>{
+              if(prevMonthPayDetail[mData].payEnable){
+                if(prevMonthPayDetail[mData].paidDone){
+                 // paidAmt+=prevMonthPayDetail[mData].amt?Number(prevMonthPayDetail[mData].amt):0
+                }else{
+                  dueAmt+=Number(prevMonthPayDetail[mData].monthlyFee)+ Number(prevMonthPayDetail[mData].busFee)
+                }
+              }
+            })
+          
+            prevAmtDue= dueAmt + Number(previousPayDetail.dueAmount) - Number(previousPayDetail.excessAmount)                                       
           }
-        }))
+          const newData= {
+            sData,
+            userPayDetail:it,
+            ...monthPayDetail,
+            preDueAmount: it.dueAmount,
+            preExcessAmount: it.excessAmount,   
+            userInvoiceDetail: invoiceData,
+            prevYearAmtDue: reqSession===currentSession()? prevAmtDue : undefined
+          }
+          list.push(newData)
+        }
         return res.status(200).json({
           success: true,
           message: "Payment detail get successfully.",
-          data: newList
+          data: list
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: "Payment detail not found"
+        })
+      }
+    }catch(err){
+      console.log(err)
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    }
+  },
+
+  deletePayment: async (req, res) => {
+    try{
+      if(req.query.paymentId){
+        //let payDetail= await paymentModel.findOneAndUpdate({_id:req.query.paymentId },{deleted: true})
+        return res.status(200).json({
+          success: true,
+          message: "Payment detail deleted.",
         })
       }else{
         return res.status(200).json({

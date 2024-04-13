@@ -36,12 +36,13 @@ router.post("/addList/:name",  admin.createList)
 router.get("/getAllList",  admin.getAllList)
 router.post("/updateList/:name/:id",  admin.updateList)
 router.post("/addPayment",  admin.addPayment)
-router.get("/gePaymentDetail",  admin.gePaymentDetail)
+router.get("/getPaymentDetail",  admin.getPaymentDetail)
 router.get("/getPaymentRecieverUser",  admin.getPaymentRecieverUser) 
 router.post("/updatePaymentRecieverUser",  admin.updatePaymentRecieverUser)
 router.get("/getAllInvoice",  admin.getAllInvoice)
 router.get("/getInvoicesByUserId",  admin.getInvoicesByUserId)
 router.post("/deleteTransaction",  admin.deleteTransaction)
+router.post("/deletePayment",  admin.deletePayment)
 
 // router for blog
 
