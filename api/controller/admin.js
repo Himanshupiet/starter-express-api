@@ -11,7 +11,7 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession} = require('../../util/helper')
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -143,6 +143,19 @@ const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, s
   return monthPayData
 }
 
+function encryptObj(objecData){
+  objecData.userInfo.roleName= encryptAES(objecData.userInfo.roleName)
+  objecData.userInfo.roleId= encryptAES(objecData.userInfo.roleId)
+  objecData.userInfo.phoneNumber1= encryptAES(objecData.userInfo.phoneNumber1)
+  objecData.userInfo.phoneNumber2= encryptAES(objecData.userInfo.phoneNumber2)
+  objecData.userInfo.aadharNumber= encryptAES(objecData.userInfo.aadharNumber)
+  objecData.userInfo.userId= encryptAES(objecData.userInfo.userId)
+  objecData.userInfo.fullName= encryptAES(objecData.userInfo.fullName)
+  //delete objecData.userInfo.isPaymentReciever
+
+  return objecData
+}
+
 const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
 
 
@@ -209,7 +222,7 @@ module.exports = {
   getAllStudents: async (req, res) => {
     try {
       const searchStr= req.body.searchStr
-      let studentAprroveParam = activeParam //{$and:[{deleted:false},{isApproved:true}]}
+      let studentAprroveParam =  {$and:[{deleted:false},{isApproved:true}]}
       let searchParam={}
       let classParam={}
       let filterOptionParam={}
@@ -1933,6 +1946,53 @@ module.exports = {
     }
 
   },
+  studentDashboardData:async (req, res)=>{
+    try{
+      let mainUser = await userModel.findOne({$and:[activeParam,{'userInfo.roleName': 'STUDENT'},{'userInfo.userId': req.query.mainUserId}]});
+      if(!mainUser){
+        return res.status(401).json({
+          success: false,
+          message: 'Token expired',
+        });
+      }
+      let otherUser=[]
+      if(mainUser){
+        otherUser = await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'},{ 'userInfo.userId': { $ne: mainUser.userInfo.userId }},{$or:[{ "userInfo.phoneNumber1": mainUser.userInfo.phoneNumber1},{ "userInfo.phoneNumber2": mainUser.userInfo.phoneNumber2}]}]});
+      }
+    const allUserIds= [mainUser.userInfo.userId, ...otherUser.map(data=> data.userInfo.userId)]
+     const paymentPrevYear = await paymentModel.find({$and:[{session:'2023-24'},{delected: false}, {userId:{$in:[...allUserIds]}}]})
+     const paymentCurrYear = await paymentModel.find({$and:[{session:currentSession()},{delected: false}, {userId:{$in:[...allUserIds]}}]})
+    
+     const allTransaction = await  invoiceModel.find({$and:[{delected:false},{userId:{$in:[...allUserIds]}}]})
+ 
+      const userData= encryptObj(mainUser)
+      
+      const newOtherUser = otherUser.map(item => encryptObj(item));
+
+    dashBoardData={
+      user: userData, 
+      //token: tokenGen, 
+      otherUser: newOtherUser,
+      paymentPrevYear:paymentPrevYear,
+      paymentCurrYear:paymentCurrYear,
+      allTransaction:allTransaction
+    }
+
+    if(dashBoardData){
+      return res.status(200).json({ 
+        success: true,
+        message: "get dashboard data successfully.",
+        dashboardData:dashBoardData
+      });
+    }
+  }catch(err){
+    console.log(err);
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+  },
   upgradeClass: async (req, res) => {
     try {
       let totalStudent = await userModel.find(  {$and: 
@@ -2069,6 +2129,12 @@ module.exports = {
       let payOptionList= await payOptionModel.find()
       let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['topadmin']}}]}) // 918732 Anshu kumar id
       let allStudentUserId = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.userId": 1})
+      let allStudentPhone1 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber1": 1})
+      let allStudentPhone2 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber2": 1})
+      allStudentPhone1 = [...allStudentPhone1].map(data=> data.userInfo.phoneNumber1)
+      allStudentPhone2 = [...allStudentPhone2].map(data=> data.userInfo.phoneNumber2)
+      const flatPhoneNum= [...new Set([...allStudentPhone1, ...allStudentPhone1])].map(phone=> {return {label: phone, value: phone}})
+      //console.log("allStudentPhone1", flatmap)
       return res.status(200).json({
         success: true,
         message: "Get list successfully.",
@@ -2078,6 +2144,7 @@ module.exports = {
           monthlyFeeList,
           payOptionList,
           paymentRecieverUserList,
+          allStudentPhoneList:flatPhoneNum,
           allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
         }
       })
@@ -2286,6 +2353,13 @@ module.exports = {
           searchParam={}
           //userIdParam={'userInfo.userId': req.query.userId}
           userIdParam={'userId': req.query.userId}
+      }
+      if(req.query.selectedPhone){
+        const phoneNoUserIds = await userModel.find({$and:[activeParam,{$or:[{'userInfo.phoneNumber1':req.query.selectedPhone},{'userInfo.phoneNumber2':req.query.selectedPhone}]}]}) 
+        classParam={}
+        searchParam={}
+        //userIdParam={'userInfo.userId': req.query.userId}
+        userIdParam={'userId':{$in:[...phoneNoUserIds.map(data=> data.userInfo.userId)]}}
       }
       
       //let students= await userModel.find({$and:[ activeParam, classParam, roleParam, searchParam, userIdParam]})
