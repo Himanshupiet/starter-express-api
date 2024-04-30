@@ -254,6 +254,7 @@ module.exports = {
         sortingOption={
           created: 1
         }
+        studentAprroveParam={$and:[{deleted:false},{isApproved:true},{isActive:true}]}
       }
 
       if(req.body.selectedClass){
