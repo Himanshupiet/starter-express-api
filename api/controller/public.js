@@ -13,17 +13,31 @@ const {
   decryptAES,
   passwordEncryptAES,
   passwordDecryptAES,
-  currentSession
+  currentSession,
+  encryptObjectData
 
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
 
 const SECRET = process.env.SECRET;
+const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
+function encryptObj(objecData){
+  objecData.userInfo.roleName= encryptAES(objecData.userInfo.roleName)
+  objecData.userInfo.roleId= encryptAES(objecData.userInfo.roleId)
+  objecData.userInfo.phoneNumber1= encryptAES(objecData.userInfo.phoneNumber1)
+  objecData.userInfo.phoneNumber2= encryptAES(objecData.userInfo.phoneNumber2)
+  objecData.userInfo.aadharNumber= encryptAES(objecData.userInfo.aadharNumber)
+  objecData.userInfo.userId= encryptAES(objecData.userInfo.userId)
+  objecData.userInfo.fullName= encryptAES(objecData.userInfo.fullName)
+  //delete objecData.userInfo.isPaymentReciever
+
+  return objecData
+}
 
 module.exports = {
   userlogin: async (req, res) => {
     try {
-      const user = await userModel.findOne({ "userInfo.userId": req.body.bmmsId });
+      const user = await userModel.findOne({$and:[{'userInfo.roleName':{$in:["TOPADMIN","ADMIN","TEACHER","ACCOUNTANT"]}},{"userInfo.userId": req.body.bmmsId }]});
       let isAdmin = false;
       if (!user) {
         return res.status(200).json({
@@ -56,6 +70,19 @@ module.exports = {
           });
         }
         const roleExist = await roleModel.findOne({ _id: user.userInfo.roleId });
+        if(!roleExist){
+          return res.status(200).json({
+            success: false,
+            message: "Not authorised user",
+          });
+        }
+        if(roleExist && roleExist.roleName &&roleExist.roleName==='STUDENT'){
+          return res.status(200).json({
+            success: false,
+            message: "Not allowed to login. Please try with with phone number.",
+          });
+        }
+  
         if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT")) isAdmin = true;
         const blogWeb= (user && user.userInfo && user.userInfo.userId &&  user.userInfo.userId ==='topadmin')? true:false 
         const expireDay=  isAdmin?"1d":"100d"
@@ -80,12 +107,92 @@ module.exports = {
           token: tokenGen,
           userId: user.id
         });
+        const userData = encryptObj(user)
 
         const tokenData = await tokenSave.save();
         return res.status(200).json({
           success: true,
           message: "Logged-in successfully",
-          data: { user: user, token: tokenGen },
+          data: { user: userData, token: tokenGen },
+        });
+
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  },
+  userLoginWithPhone: async (req, res) => {
+    try {
+      const user = await userModel.findOne({$and:[activeParam, {'userInfo.roleName': 'STUDENT'},{$or:[{ "userInfo.phoneNumber1": req.body.phoneNumber},{ "userInfo.phoneNumber2": req.body.phoneNumber}]}]});
+      if (!user) {
+        return res.status(200).json({
+          success: false,
+          message: "Phone number not registered.",
+        });
+      }
+     
+      if (user.deleted === true) {
+        return res
+        .status(200)
+        .json({ success: false, message: "Please contact to school 9470510100." });
+      }
+      if (!user.isActive) {
+        return res.status(200).json({
+          success: false,
+          message: "Your id is not active. Please contact to school 9470510100 ",
+        });
+      }
+      if(!user.isApproved){
+          return res.status(200).json({
+            success: false,
+            message: "Your id not approved by school. Please contact to school 9470510100.",
+          });
+      }
+        // if(!(user && passwordDecryptAES(user.userInfo.password)===decryptAES(req.body.password))) {
+        //   return res.status(200).json({
+        //     success: false,
+        //     message: "BMMS ID or Password is wrong",
+        //   });
+        // }
+        const roleExist = await roleModel.findOne({ _id: user.userInfo.roleId });
+        if(!roleExist){
+          return res.status(200).json({
+            success: false,
+            message: "Not authorised user",
+          });
+        }
+    
+        //if(roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT")) isAdmin = true;
+     
+        // if(isAdmin){
+        //   return res.status(200).json({
+        //     success: false,
+        //     message: "Only student allowed to login with phone number.",
+        //   });
+        // }
+        const expireDay=  "300d"
+        let tokenGen =   jwt.sign({userId: user.id, isAdmin: true},SECRET,{ expiresIn:expireDay})
+               
+        const tokenSave = new AuthToken({
+          token: tokenGen,
+          userId: user.id
+        });
+        const otherUser = await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'},{ 'userInfo.userId': { $ne: user.userInfo.userId }},{$or:[{ "userInfo.phoneNumber1": req.body.phoneNumber},{ "userInfo.phoneNumber2": req.body.phoneNumber}]}]});
+   
+        const userData= encryptObj(user)
+        //console.log("userData", userData)
+
+        const newOtherUser=  otherUser.map(item => encryptObj(item));
+        //console.log("newOtherUser", newOtherUser)
+
+        const tokenData = await tokenSave.save();
+        return res.status(200).json({
+          success: false,
+          message: "Logged-in successfully",
+          //data: { user: userData, token: tokenGen, otherUser: newOtherUser},
         });
 
     } catch (err) {
