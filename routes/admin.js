@@ -26,6 +26,7 @@ router.get("/getExamPermission",  admin.getExamPermission);
 router.post("/resultEntryPer", admin.createResultEntryPermission)
 router.post("/updateResultEntryPer", admin.updateResultEntryPermission)
 router.get("/adminDashboardData",  admin.getAdminDashboardData);
+router.get("/studentDashboardData",  admin.studentDashboardData);
 router.post("/uploadDocumentS3",  admin.uploadDocumentS3);
 router.delete("/deleteExamPermission/:id",  admin.deleteResultEntryPermission);
 router.get("/getExamDateAndSub",  admin.getExamDateAndSub);
