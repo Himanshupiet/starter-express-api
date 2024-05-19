@@ -40,6 +40,9 @@ const paymentSchema = new mongoose.Schema({
   other: {
     type: JSON,
   },
+  otherDue:{
+    type: JSON,
+  },
   dueAmount:{
     type: Number
   },

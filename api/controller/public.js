@@ -1,5 +1,6 @@
 const { userModel } = require("../../models/user");
 const { roleModel } = require("../../models/role");
+const {paymentModel}=require("../../models/payment");
 const { AuthToken } = require("../../models/authtoken");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");

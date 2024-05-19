@@ -264,7 +264,7 @@ module.exports = {
         filterOptionParam={[`document.${req.body.filterOption}`]:{$exists:false}}
       }else if(req.body.filterOption && req.body.docFilter===false){
         if(req.body.filterOption==='No Mobile Number'){
-          filterOptionParam={'userInfo.phoneNumber1':''}
+          filterOptionParam={$or:[{'userInfo.phoneNumber1':''},{'userInfo.phoneNumber1':'0000000000'}]}
         }
         if(req.body.filterOption==='No Aadhar'){
           filterOptionParam={'userInfo.aadharNumber':''}
@@ -298,8 +298,9 @@ module.exports = {
     
       if(users && users.length>0){
      
-       //for (const it of users) {
-        // // await userModel.findOneAndUpdate({_id: it._id},{'userInfo.session':'2023-24'})
+      //  for (const it of users) {
+        
+        //await userModel.findOneAndUpdate({_id: it._id},{'userInfo.session':'2024-25'})
         // const stClass = it.userInfo.class
         //         // let newStClass=''
         //         // if(stClass =='10'){newStClass= '9'}else
@@ -323,20 +324,21 @@ module.exports = {
         //         // if(stClass =='NUR A') {newStClass= 'PRE NUR A'}else
         //         // if(stClass =='NUR B') {newStClass= 'PRE NUR B'}
                 
-      //   const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: it.userInfo.userId},{session:'2024-25'}]},{class: it.userInfo.class})
-      //      if(!payFound){
-      //       const newPaymentData = paymentModel({
-      //         userId:it.userInfo.userId,
-      //         session:'2024-25',
-      //         class:it.userInfo.class,
-      //         dueAmount: 0,
-      //         excessAmount:0,
-      //         totalFineAmount:0
-      //       })
-            
-      //    const  newPaymentDataCreated = await newPaymentData.save()
-      //   }
-      //  }
+        // const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: it.userInfo.userId},{session:'2024-25'}]},{class: it.userInfo.class})
+        //    if(!payFound){
+        //     const newPaymentData = paymentModel({
+        //       userId:it.userInfo.userId,
+        //       session:'2024-25',
+        //       class:it.userInfo.class,
+        //       dueAmount: 0,
+        //       excessAmount:0,
+        //       totalFineAmount:0
+        //     })
+        //     const  newPaymentDataCreated = await newPaymentData.save()
+
+        //     console.log("newPaymentDataCreated", newPaymentDataCreated)
+        //   }
+        // }
         return res.status(200).json({
           success: true,
           message: 'Successfully get all students.',
@@ -2217,7 +2219,9 @@ module.exports = {
                 if(paymentFound.other &&paymentFound.other.length>0 ){
                   let othertPay=[]
                   for(const data of req.body.otherFeeList){
-                    othertPay=[{
+                    othertPay=[
+                      ...othertPay,
+                      {
                         name: data.name,
                         amount: Number(data.amount),
                         paymentRecieverId: req.body.paymentRecieverId,
@@ -2245,6 +2249,61 @@ module.exports = {
                 }
                 }
              
+              }
+              if(submitType==='OTHER_PAYMENT'){
+                if(paymentFound.other && paymentFound.other.length>0 ){
+                  let othertPay=[]
+                  let oldOtherDue = paymentFound.otherDue ? JSON.parse(JSON.stringify(paymentFound.otherDue)):{}
+                  for(const data of req.body.otherFeeList){
+                    const othertPayList={
+                        name: data.name,
+                        amount: Number(data.amount),
+                        paymentRecieverId: req.body.paymentRecieverId,
+                        paidStatus: true,
+                        submittedDate : req.body.submittedDate,
+                        invoiceId: newInvoiceCreate.invoiceId,
+                        receiptNumber: req.body.receiptNumber,
+                      }
+                      othertPay.push(othertPayList)
+                    if(data && data.name && data.name.includes('due') && Object.keys(oldOtherDue).length>0){
+                      oldOtherDue={
+                        ...oldOtherDue,
+                        [data.name]: Number(oldOtherDue[data.name]) - Number(data.amount)
+                      }
+                    }
+                  }
+                  paymentFound.otherDue= oldOtherDue
+                  if(req.body.dueFor){
+                    paymentFound.otherDue={
+                      ...paymentFound.otherDue,
+                      [req.body.dueFor]: req.body.dueAmount?Number(req.body.dueAmount):0
+                    }
+                  }
+                  paymentFound.other=[...paymentFound.other, ...othertPay]
+                  
+                }else{
+                  let othertPay=[]
+                  for(const data of req.body.otherFeeList){
+                    const othertPayList={
+                      name: data.name,
+                      amount: Number(data.amount),
+                      paymentRecieverId: req.body.paymentRecieverId,
+                      paidStatus: true,
+                      submittedDate : req.body.submittedDate,
+                      invoiceId: newInvoiceCreate.invoiceId,
+                      receiptNumber: req.body.receiptNumber 
+                    }
+                    othertPay.push(othertPayList)
+                  }
+                  paymentFound.other=[...othertPay]
+                }
+                if(req.body.dueFor){
+                  const oldOtherDue= paymentFound.otherDue
+                  paymentFound.otherDue={
+                    ...oldOtherDue,
+                    [req.body.dueFor]: req.body.dueAmount?Number(req.body.dueAmount):0
+                  }
+                }
               }
               // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
               // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
@@ -2433,6 +2492,12 @@ module.exports = {
             }else{
               dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
               dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
+            }
+
+            if(previousPayDetail && previousPayDetail.otherDue){
+              for(const key in previousPayDetail.otherDue) {
+                dueAmt+= previousPayDetail.otherDue[key]? Number(previousPayDetail.otherDue[key]):0;
+              }
             }
            
             monthList.map(mData=>{
