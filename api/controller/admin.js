@@ -2162,6 +2162,7 @@ module.exports = {
   },
 
   addPayment: async (req, res) => {
+    let newInvoiceCreatedId=''
     try{
       let paymentAdded=null
       const newInvoiceIdGen = await newInvoiceIdGenrate()
@@ -2185,6 +2186,7 @@ module.exports = {
       newInvoiceInfo['session']= req.body.session
       const newInvoiceCreate = await newInvoiceInfo.save();
       if(newInvoiceCreate){
+        newInvoiceCreatedId = newInvoiceCreate._id
         let paymentFound =  await paymentModel.findOne({$and:[{userId: req.body.userId},{session: req.body.session}]})
           if(paymentFound){
               if(submitType==='MONTHLY'){
@@ -2362,14 +2364,19 @@ module.exports = {
         return res.status(200).json({
           success: true,
           message: "Payment Added successfully.",
+          invoiceId: newInvoiceCreate.invoiceId
         })
       }else{
+        await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
         return res.status(200).json({
           success: false,
           message: "Payment not added, Please try again!",
         })
       }
     }catch(err){
+      if(newInvoiceCreatedId){
+        await invoiceModel.deleteOne({_id:newInvoiceCreatedId}) 
+      }
       console.log(err)
       return res.status(400).json({
         success: false,
