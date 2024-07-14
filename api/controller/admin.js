@@ -119,11 +119,13 @@ const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, s
   let busFee= 0
   let monthlyFee=0
   if(sData.userInfo.busService && busRouteFareList.length>0){
-    busFee= busRouteFareList.find(busData => busData._id.toString() === sData.userInfo.busRouteId)?.fare
+    const busFeeData= busRouteFareList.find(busData => busData._id.toString() === sData.userInfo.busRouteId)
+    busFee = (busFeeData && busFeeData.fare)? busFeeData.fare:0
   }
   if(monthlyFeeList.length>0 ){
     //console.log("userPayDetail.class",userPayDetail.class)
-    monthlyFee= monthlyFeeList.find(data => data.className === userPayDetail.class)?.monthlyFee
+    const monthlyFeeData = monthlyFeeList.find(data => data.className === userPayDetail.class)
+    monthlyFee =  monthlyFeeData && monthlyFeeData.monthlyFee ? monthlyFeeData.monthlyFee :0
   }
   let monthPayData={}
   for (const month of monthList) {
@@ -2591,11 +2593,11 @@ module.exports = {
       if(invoiceData && invoiceData.length>0){
         let allInvoice=[]
           for (let it of invoiceData) {
-            if(it.invoiceInfo.userId && (it.invoiceType==='MONTHLY' || it.invoiceType==='EXAM_FEE')){
+            if(it.invoiceInfo.userId && (it.invoiceType==='MONTHLY' || it.invoiceType==='EXAM_FEE' || it.invoiceType==='OTHER_PAYMENT')){
               const userData =  await userModel.findOne({'userInfo.userId': it.invoiceInfo.userId})
               it.invoiceInfo['userData']= userData
             }
-              if(it.invoiceInfo.paymentRecieverId && (it.invoiceType==='MONTHLY' || it.invoiceType==='EXAM_FEE')){
+              if(it.invoiceInfo.paymentRecieverId && (it.invoiceType==='MONTHLY' || it.invoiceType==='EXAM_FEE' || it.invoiceType==='OTHER_PAYMENT')){
               const recieverData = await userModel.findOne({'_id': it.invoiceInfo.paymentRecieverId})
                 //console.log("recieverDatarecieverDatarecieverData", recieverData)
                 it.invoiceInfo['recieverName'] = recieverData && recieverData.userInfo &&recieverData.userInfo.fullName? recieverData.userInfo.fullName:'N/A'
