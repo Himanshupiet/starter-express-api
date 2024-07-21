@@ -368,4 +368,10 @@ module.exports = {
       });
     }
   },
+  paymentCallback: (req, res) => {
+    // Process callback data
+    const data = req.body;
+    console.log('Payment callback received:', data);
+    res.status(200).send('Callback received');
+  },
 };

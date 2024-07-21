@@ -2,6 +2,9 @@ const moment = require("moment-timezone");
 const fast2sms = require("fast-two-sms");
 const mongoose = require("mongoose");
 const mongodb = require("mongodb");
+const crypto = require('crypto');
+const sha256 = require("sha256");
+const uniqid = require("uniqid")
 const MongoClient = mongodb.MongoClient;
 const URL = process.env.MONGO_LOCAL_CONN_URL;
 const { userModel } = require("../../models/user");
@@ -30,12 +33,17 @@ const fastcsv = require("fast-csv");
 const fs = require("fs");
 const {payOptionModel}=require("../../models/payOption");
 let slugify = require('slugify')
-const {default: Axios}=require('axios');
+const axios = require('axios');
 
 
 
 const authorization = process.env.SMS_API;
 const UPLOAD_IMAGE_URL = process.env.UPLOAD_IMAGE_URL
+const { PHONEPE_MERCHANT_ID, PHONEPE_MERCHANT_KEY, PHONEPE_MERCHANT_SALT, PHONEPE_CALLBACK_URL } = process.env;
+
+const generateHash = (data) => {
+  return crypto.createHash('sha256').update(data).digest('hex');
+};
 const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PRE NUR A", "PRE NUR B"]
 const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
 const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
@@ -2724,6 +2732,84 @@ module.exports = {
           })
         }
   },
+
+  initiatePayment: async (req, res) => {
+    const MERCHANT_ID = "PGTESTPAYUAT86"//"PGTESTPAYUAT";
+    const PHONE_PE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+    const SALT_INDEX = 1;
+    const SALT_KEY = "96434309-7796-489d-8924-ab56988a6076"//099eb0cd-02cf-4e2a-8aca-3e6c6aff0399";
+    const APP_BE_URL = "http://localhost:3010/api/"; // our application
+    let userId = "MUID123";
+    let merchantTransactionId = uniqid();
+    const { amount, orderId, customerId } = req.body;
+    
+    const normalPayLoad = {
+      "merchantId": MERCHANT_ID,
+      "merchantTransactionId": merchantTransactionId,
+      "merchantUserId": userId,
+      "amount": Number(amount) * 100,
+      //"redirectUrl": "http://localhost:3010/payment",
+      //"redirectMode": "REDIRECT",
+      //redirectUrl: `http://localhost:3000/payment`, //${APP_BE_URL}/payment/validate/${merchantTransactionId}`,
+      //redirectMode: "POST",
+      "callbackUrl": "https://bmmsbackendapp.onrender.com/api/paymentCallback",
+      "mobileNumber": "9999999999",
+      "paymentInstrument": {
+        "type": "PAY_PAGE"
+      }
+    };
+  
+    //const payloadString = JSON.stringify(payload);
+    //const xVerify = generateHash(payloadString +'/pg/v1/pay'+ PHONEPE_MERCHANT_SALT) + '###' + PHONEPE_MERCHANT_KEY;
+     // Make a base64-encoded payload
+      let bufferObj = Buffer.from(JSON.stringify(normalPayLoad), "utf8");
+      let base64EncodedPayload = bufferObj.toString("base64");
+
+       // X-VERIFY => SHA256(base64EncodedPayload + "/pg/v1/pay" + SALT_KEY) + ### + SALT_INDEX
+        let string = base64EncodedPayload + "/pg/v1/pay" + SALT_KEY;
+        let sha256_val = sha256(string);
+        let xVerifyChecksum = sha256_val + "###" + SALT_INDEX;
+        axios.post(
+          `${PHONE_PE_HOST_URL}/pg/v1/pay`,
+          { request: base64EncodedPayload },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-VERIFY": xVerifyChecksum,
+              accept: "application/json",
+            },
+          }
+        )
+        .then(function (response) {
+          console.log("response->---------->", response.data);
+          console.log("response->---------->", response.data.data.instrumentResponse.redirectInfo.url);
+          // res.redirect(response.data.data.instrumentResponse.redirectInfo.url);
+          // res.send(response.data)
+          //res.status(200).send(response.data);
+          return res.status(200).json({
+            success: true,
+            data: response.data
+          })
+        })
+        .catch(function (error) {
+          console.log("errrrr", error)
+          //res.send(error);
+        });
+  
+    // try {
+    //   const response = await axios.post('https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay', payload, {
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //       'X-VERIFY': xVerify,
+    //     },
+    //   });
+    //   res.status(200).send(response.data);
+    // } catch (error) {
+    //   console.log("error", error)
+    //   res.status(500).send(error.response ? error.response.data : error.message);
+    // }
+  },
+
 
   createBuckup: async (req, res) => {
     sendDailyBackupEmail()
