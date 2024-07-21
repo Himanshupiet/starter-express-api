@@ -2752,7 +2752,7 @@ module.exports = {
       //"redirectMode": "REDIRECT",
       //redirectUrl: `http://localhost:3000/payment`, //${APP_BE_URL}/payment/validate/${merchantTransactionId}`,
       //redirectMode: "POST",
-      "callbackUrl": "https://bmmsbackendapp.onrender.com/api/paymentCallback",
+      "callbackUrl": "https://bmmsbackendapp.onrender.com/api/public/paymentCallback",
       "mobileNumber": "9999999999",
       "paymentInstrument": {
         "type": "PAY_PAGE"
