@@ -43,6 +43,10 @@ const paymentSchema = new mongoose.Schema({
   otherDue:{
     type: JSON,
   },
+  feeFree:{
+    type: Boolean,
+    default: false
+  },
   dueAmount:{
     type: Number
   },
