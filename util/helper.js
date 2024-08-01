@@ -226,7 +226,7 @@ module.exports = {
 
     return newInvoiceId
   }, 
-  currentSession :()=>{
+  currentSession :()=> {
     const currentDate= new Date()
     const currentYear = Number(moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'))
     const currentMonth= Number(moment.tz(Date.now(), "Asia/Kolkata").format('MM'))
@@ -276,14 +276,14 @@ module.exports = {
   s3upload: async(userId,fileName, file)=>{
     // const Bucket="cyclic-fine-rose-fly-sari-ap-northeast-2"
     // const AWS_REGION="ap-northeast-2"
-    // const AWS_ACCESS_KEY_ID="ASIAWCJ5L2TDQAU7E6EG"
-    // const AWS_SECRET_ACCESS_KEY="hYD6hDQ3tFC3b8hly+7pVgfXiixvBjHhwc6gDsg9"
-    // const AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEKf//////////wEaCmFwLXNvdXRoLTEiRzBFAiAPyTrduOVQ+LdcVsdWG5TZ4RPkCTqL19PX2EtDTIkeAgIhAKlKtjWyKoLZzHi7Prb/P4zrY3965XIvQKhLuc/Crzx7KrUCCPD//////////wEQABoMNDE3Mjc3NDAwMjYzIgwMESSmailtcLCh1YEqiQLs/jrUXCr6vnJRl8+3UX21PjTEBhTOPDTJvlDtx4T0fvLlbZmtbUIBDoH84MptMiIDsOJnw0qzXsPZfMWX9u+BeWuP5YSEye0cZAYPyWZE843oGtZdw/MHPgT1b1CzRAs4dU6KJgKUn8ty/K7vUtq41DV4KyvAiJRsmd0XFAkXzi5/RU3YngkA65bKlAf6ZydbelapSiEcgT5GueyrPq+nhsdK0N8sGM6AB1EtBmqBhn6xAoMvqznSvDJ3QxYkJ+/2JWjBY5d76RmabOFZ2cvpgwL7X9u9rGriRttOuM9arsOJKznSmgLObPCURVF0Dtlr5ZUB2uA4PHj1FqpBem+68glrfB8Sb39AMPKb1p0GOp0BxfSKYiQ33jEpteiycvRZa6qM7HNkvaVe0z5UjG+8b7TldMYWj4T27fxcuV++zlMJnO0EjDQLbjS+e+ZDXhuePblpuniInzj/AI9iotmPwb+KbnK03BLHhco3nGFgWa9d7kc1mVX7v+b/bWdQGB3AjIUFiIt1mijm3pJBN/+MnqOoMAFZV7Wh1tvBjvC5BDKVU/zoURc50tMxqXKKEA=="
+    // const AWS_ACCESS_KEY_ID=""
+    // const AWS_SECRET_ACCESS_KEY=""
+    // const AWS_SESSION_TOKEN=""
 
 //  AWS_REGION="ap-south-1"
-// export AWS_ACCESS_KEY_ID="ASIAYIJYDZJLZDBCZ3VQ"
-// export AWS_SECRET_ACCESS_KEY="3sKOEC5vvk2P7Vmt6GRZn3JP8Bj1vdd4aHdyTboy"
-// export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEKf//////////wEaCmFwLXNvdXRoLTEiRzBFAiEA0cqjRUvRKqw2jSwHzCdRnA5zOLasepKJLvUgu6q9BFwCIBvkOuJT0RA5rMz01R6NFxINXGILbg40Z7bDNO7/Uew4KrUCCPD//////////wEQABoMNTY3NTkwMjQyOTAzIgwtEc5BB0TQ7FPPM1MqiQJdmQ46IT5yAczB+oi49BHGBolm4wMr/eq3Gjnq62eFx6uHoZiHCaLODgqDogIFtX6mdEWjST14e74/lN83FrIXMCvtv0If9oeCcTZuMKgRlI1BHshcHo3Eyehki8GJ2wog3aaduf8ToJC0Zl9/I+dsP6yY3Xip0h8eUaWB3LfD0arTxY8IFoSX755umF/xaTTxY3CNstHOgF3YNUyXZhZfeRjus+7JWGfyLXBeDw2sS8f9CsybkQ4vUgG6/0ogyDKqixPb1ncihF7NPcw7DJMB1vgcWUaOYGlL5eaaC5NTAE5/0zv1bghjkCJo05fhVgq/CuyowfwwyDUL2hph3qV0u33i2y97d8R2MMKf1p0GOp0Bh/fIxJRl5BiIkH/Tc7TzoDURJl/LnoOpPxivWu4ZfUS8wD2zCVaX1Y2pHg3OavMX59WPtuzBf017Jfawwgl0eJGsQ/9DDjNo8YGa5UNuDx9xrSGPDVOVbJZRyyob68P5qab8+Ci+i5wPuP6KDYyqBKociuJatyj+TbCI0O1YE6imYTAguiNEQMQVjveo55f135TOaMrDHARN1gEhXQ=="
+// export AWS_ACCESS_KEY_ID=""
+// export AWS_SECRET_ACCESS_KEY=""
+// export AWS_SESSION_TOKEN="I"
     // const AWS_REGION=process.env.AWS_REGION
     // const AWS_ACCESS_KEY_ID=process.env.AWS_ACCESS_KEY_ID
     // const AWS_SECRET_ACCESS_KEY=process.env.AWS_SECRET_ACCESS_KEY
