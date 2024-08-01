@@ -15,7 +15,8 @@ const {
   passwordEncryptAES,
   passwordDecryptAES,
   currentSession,
-  encryptObjectData
+  encryptObjectData,
+  whatsAppMessage
 
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
@@ -260,6 +261,11 @@ module.exports = {
         // };
           const sms = await sendSms(sendSMSandEmaildata);
           //const sms= true
+          const WSData={
+             userId:sendSMSandEmaildata.userId,
+             password: password
+          }
+          await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
        
           if (sms) {
             let userData = await newUser.save();
