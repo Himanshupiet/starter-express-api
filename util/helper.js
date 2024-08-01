@@ -239,6 +239,165 @@ module.exports = {
     //console.log("session", session)
     return session
   },
+
+
+  getAdmissionSession:(admmissionDate)=>{
+    const currentDate= new Date(admmissionDate)
+    const currentYear = Number(moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'))
+    const currentMonth= Number(moment.tz(Date.now(), "Asia/Kolkata").format('MM'))
+    let session=''
+    if(currentMonth>=4){
+        session = `${(currentYear).toString()}-${(currentYear+1).toString().substring(2)}`
+    }else if(currentMonth<4 ){
+        session = `${(currentYear-1).toString()}-${(currentYear).toString().substring(2)}`
+    }
+    //console.log("session", session)
+    return session
+  },
+  whatsAppMessage:async ( sendNumber, message , templateType, data)=>{
+    console.log("sendNumbersendNumbersendNumber===>", sendNumber)
+    // 8930991910
+    let toNumber= sendNumber
+    console.log("toNumber>>>>>>>>>", toNumber)
+    function generateUniqueId() {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    console.log("11111111111111", templateType)
+    const whatsappApiUrl = process.env.WHATSAPP_API_URL
+    const whatsappApiToken = process.env.WHATSAPP_API_TOKEN
+      let WAMessageData={}
+        if(templateType ){
+          if(templateType==='registration'){
+            WAMessageData={
+                 "messaging_product": "whatsapp", 
+                  "to": `91${toNumber}`, 
+                  "recipient_type": "individual",
+                  "type": "template", 
+                  "template": {
+                      "name": "registration", 
+                      "language": {
+                        "code": "en" 
+                      },
+                      "components": [
+                        {
+                            "type" : "body",
+                            "parameters": [
+                                {
+                                    "type": "text",
+                                    "text": data.userId
+                                },
+                                {
+                                    "type": "text",
+                                    "text": data.password
+                                }
+                        ]
+                      }
+                    ] 
+                  } 
+            }
+          }
+
+          if(templateType==='sharepassword'){
+            WAMessageData={
+                 "messaging_product": "whatsapp", 
+                 "recipient_type": "individual",
+                  "to": `91${toNumber}`, 
+                  "type": "template", 
+                  "template": {
+                      "name": "sharepassword", 
+                      "language": {
+                        "code": "en" 
+                      },
+                      "components": [
+                        {
+                            "type" : "body",
+                            "parameters": [
+                                {
+                                    "type": "text",
+                                    "text": data.userId
+                                },
+                                {
+                                    "type": "text",
+                                    "text": data.password
+                                }
+                        ]
+                      }
+                    ]  
+                  } 
+            }
+          }
+          if(templateType ==='general'){
+            WAMessageData={
+              "messaging_product": "whatsapp",
+              "recipient_type": "individual",
+              "to": `91${toNumber}`,
+              "type": "text",
+              "text": {
+                "body": `It general messaage for testing. Just ingnore it.`
+              }
+            }
+          }
+          if(templateType ==='test'){
+            WAMessageData={
+              "messaging_product": "whatsapp", 
+              "to": "918233443106", 
+              "type": "template", 
+              "template": { 
+                "name": "hello_world", 
+                "language": { 
+                  "code": "en_US" 
+                } 
+              } 
+            }
+            }
+        }else{
+            return false
+        }
+      try {
+          const response = await axios.post(
+              `${whatsappApiUrl}`,
+              {
+                  ...WAMessageData
+              },
+              {
+                  headers: {
+                      Authorization: `Bearer ${whatsappApiToken}`,
+                      'Content-Type': 'application/json',
+                  },
+              }
+          );
+          console.log("sucess555555555555555555", response.data)
+          const newMessageInfo= new messageModel({
+            templateType: templateType,
+            recipientType: 'individual',
+            messageId:generateUniqueId(),
+            messageData:{
+                success: true,
+                detail:response.data
+            },
+          })
+           await newMessageInfo.save();
+           return true
+         
+          //res.status(200).send(response.data);
+      } catch (error) {
+        console.log("error44444444444444444444", error.response ? error.response.data : error.message)
+        const newMessageInfo= new messageModel({
+          templateType: templateType,
+          recipientType: 'individual',
+          messageId:generateUniqueId(),
+          messageData:{
+              success: false,
+              error:error.response ? error.response.data : error.message
+          }
+        })
+         await newMessageInfo.save();
+         return false
+      }
+  },
+
+
   // notificationSend : async () => {
  
   //     try {
