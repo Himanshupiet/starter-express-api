@@ -14,7 +14,7 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES} = require('../../util/helper')
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -139,7 +139,7 @@ const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, s
   for (const month of monthList) {
     let monthData={}
     const monthEnable =  checkAdmissionDate(sData, month, session)
-      if(monthEnable){
+      if(monthEnable && userPayDetail.feeFree === undefined || userPayDetail.feeFree === false ){
         monthData['monthlyFee']= monthlyFee
         monthData['busFee']= busFee
         monthData['payEnable']=true
@@ -484,7 +484,7 @@ module.exports = {
       }
       if(updatedUser){
         if(userData && userData.userInfo.class !== updatedUser.userInfo.class && updatedUser.userInfo.roleName==='STUDENT'){
-          await paymentModel.findOneAndUpdate({$and:[{session:updatedUser.userInfo.session},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class })
+          await paymentModel.findOneAndUpdate({$and:[{session:updatedUser.userInfo.session},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: !!req.body.feeFree})
         }
         if(updatedUser.userInfo.roleName==='STUDENT'){
           const foundPayment = await paymentModel.findOne({$and:[{session:updatedUser.userInfo.session},{'userId': updatedUser.userInfo.userId}]})
@@ -2496,27 +2496,58 @@ module.exports = {
 
           if(previousPayDetail){
             const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, monthlyFeeList, busRouteFareList, '2023-24')   
-            let paidAmt = 0
             let dueAmt=0
             const feeData= monthlyFeeList.find(data=> data.className===previousPayDetail.class)
-            if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
-                if(!previousPayDetail.other.find(data=> data.name=='ANNUAL EXAM')){
-                  dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
+            if(sData.userInfo.admissionDate){
+              const admissionDate = new Date(sData.userInfo.admissionDate)
+              const admissionMonthIndex = admissionDate.getMonth()
+              const admissionSession = getAdmissionSession(sData.userInfo.admissionDate)
+              if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
+                const isAnnualExamFeeNotPaid = !previousPayDetail.other.find(data => data.name === 'ANNUAL EXAM')
+                const isHalfExamFeeNotPaid   = !previousPayDetail.other.find(data => data.name === 'HALF YEARLY EXAM')
+                if(admissionSession ==='2023-24' ){
+                  if ((admissionMonthIndex >= 3 && admissionMonthIndex <= 9)) {
+                    if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;}
+                    if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;}
+                  } else if ((admissionMonthIndex >= 10 || admissionMonthIndex <= 2)) {
+                    if(isAnnualExamFeeNotPaid) {dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;}
+                  }
+                }else{
+                  if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;}
+                  if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;}
                 }
-                if(!previousPayDetail.other.find(data=> data.name=='HALF YEARLY EXAM')){
-                  dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
+              }else{
+                if(admissionSession ==='2023-24' ){
+                  if ((admissionMonthIndex >= 3 && admissionMonthIndex <= 9)) {
+                    dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;
+                    dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
+                  } else if ((admissionMonthIndex >= 10 || admissionMonthIndex <= 2)) {
+                    dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
+                  }
+                }else{
+                  dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;
+                  dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
                 }
+              }
             }else{
-              dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
-              dueAmt+=feeData && feeData.examFee? Number(feeData.examFee):0
-            }
+              if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
+                const isAnnualExamFeeNotPaid = !previousPayDetail.other.find(data => data.name === 'ANNUAL EXAM')
+                const isHalfExamFeeNotPaid   = !previousPayDetail.other.find(data => data.name === 'HALF YEARLY EXAM')
+                if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;}
+                if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;}
+                
+              }else{
+                  dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;
+                  dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
+              }
+            }   
 
             if(previousPayDetail && previousPayDetail.otherDue){
               for(const key in previousPayDetail.otherDue) {
                 dueAmt+= previousPayDetail.otherDue[key]? Number(previousPayDetail.otherDue[key]):0;
               }
             }
-           
+            //console.log("prevMonthPayDetail", prevMonthPayDetail)
             monthList.map(mData=>{
               if(prevMonthPayDetail[mData].payEnable){
                 if(prevMonthPayDetail[mData].paidDone){
@@ -2808,6 +2839,43 @@ module.exports = {
     //   console.log("error", error)
     //   res.status(500).send(error.response ? error.response.data : error.message);
     // }
+  },
+ sendMessage: async (req, res) => {
+    let { userId, toNumber, message , templateType, otherDetail} = req.body;
+
+    console.log("req.bodyreq.body")
+ 
+    try {
+      //sharePassword
+      if(templateType && templateType==='sharePassword'){
+        const user = await userModel.findOne({'userInfo.userId': userId})
+        console.log("user", user)
+        const password = passwordDecryptAES(user.userInfo.password)
+        const WSData={
+          userId: userId,
+          password: password
+        }
+      
+      const response = await whatsAppMessage(toNumber, message, templateType, WSData)
+      if(response){
+        return res.status(200).json({
+          success: true,
+          message: 'Message send successfully'
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: 'Message not send.'
+        })
+      }
+      }
+    } catch (err) {
+      console.log(err)
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    }
   },
 
 
