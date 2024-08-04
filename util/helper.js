@@ -1,4 +1,5 @@
 const fast2sms = require("fast-two-sms");
+const axios = require('axios')
 var CronJob = require('cron').CronJob;
 const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
@@ -9,6 +10,7 @@ const { userModel } = require("../models/user");
 //const mailgun = require("mailgun-js");
 const CryptoJS = require('crypto-js');
 const {invoiceModel}=require("../models/invoice ");
+const {messageModel} = require('../models/message')
 const nodemailer = require("nodemailer");
 const fs = require("fs").promises;
 
@@ -334,14 +336,14 @@ module.exports = {
               "to": `91${toNumber}`,
               "type": "text",
               "text": {
-                "body": `It general messaage for testing. Just ingnore it.`
+                "body": `${message}`
               }
             }
           }
           if(templateType ==='test'){
             WAMessageData={
               "messaging_product": "whatsapp", 
-              "to": "918233443106", 
+              "to": `91${toNumber}`, 
               "type": "template", 
               "template": { 
                 "name": "hello_world", 
@@ -372,6 +374,7 @@ module.exports = {
             templateType: templateType,
             recipientType: 'individual',
             messageId:generateUniqueId(),
+            userId: data.userId?data.userId :'N/A',
             messageData:{
                 success: true,
                 detail:response.data
@@ -387,6 +390,7 @@ module.exports = {
           templateType: templateType,
           recipientType: 'individual',
           messageId:generateUniqueId(),
+          userId: data.userId?data.userId :'N/A',
           messageData:{
               success: false,
               error:error.response ? error.response.data : error.message

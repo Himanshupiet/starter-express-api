@@ -18,6 +18,13 @@ const messageSchema = new mongoose.Schema({
   messageData:{
     type: JSON,
   },
+  platform:{
+    type: String,
+    default: 'Whatsapp'
+  },
+  userId:{
+    type:String
+  },
   created: {
     type: Date,
   },

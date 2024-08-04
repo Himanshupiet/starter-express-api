@@ -20,8 +20,9 @@ const {
 
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
-
+require("dotenv/config");
 const SECRET = process.env.SECRET;
+console.log("SECRET", SECRET)
 const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
 function encryptObj(objecData){
   objecData.userInfo.roleName= encryptAES(objecData.userInfo.roleName)

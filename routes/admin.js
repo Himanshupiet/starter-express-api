@@ -46,6 +46,7 @@ router.post("/deleteTransaction",  admin.deleteTransaction)
 router.post("/deletePayment",  admin.deletePayment)
 router.post("/initiate-payment", admin.initiatePayment)
 router.post("/sendMessage", admin.sendMessage)
+router.get("/getAllMessage", admin.getAllMessage)
 
 // router for blog
 

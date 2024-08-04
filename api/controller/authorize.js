@@ -2,7 +2,6 @@ const { AuthToken } = require("../../models/authtoken");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv/config");
-const SECRET = process.env.SECRET;
 
 module.exports = {
   logout: async (req, res) => {

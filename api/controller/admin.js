@@ -29,6 +29,7 @@ const {vehicleRouteFareModel}=require("../../models/vehicleRouteFare");
 const {monthlyFeeListModel}=require("../../models/monthlyFeeList");
 const {paymentModel}=require("../../models/payment");
 const {invoiceModel}=require("../../models/invoice ");
+const {messageModel} = require('../../models/message')
 const fastcsv = require("fast-csv");
 const fs = require("fs");
 const {payOptionModel}=require("../../models/payOption");
@@ -2283,6 +2284,10 @@ module.exports = {
                         [data.name]: Number(oldOtherDue[data.name]) - Number(data.amount)
                       }
                     }
+                    if (data.name === 'dueMarch_Month_Bus') {
+                        paymentFound['dueAmount'] = Number(paymentFound['dueAmount']) - Number(data.amount)
+                        delete oldOtherDue[data.name];
+                    }
                   }
                   paymentFound.otherDue= oldOtherDue
                   if(req.body.dueFor){
@@ -2843,7 +2848,7 @@ module.exports = {
  sendMessage: async (req, res) => {
     let { userId, toNumber, message , templateType, otherDetail} = req.body;
 
-    console.log("req.bodyreq.body")
+    console.log("req.bodyreq.body", req.body)
  
     try {
       //sharePassword
@@ -2869,6 +2874,48 @@ module.exports = {
         })
       }
       }
+      if(templateType && templateType==='general'){
+        const user = await userModel.findOne({'userInfo.userId': userId})
+     
+        const WSData={
+          userId: userId,
+          //password: password
+        }
+      
+        const response = await whatsAppMessage(toNumber, message, templateType, WSData)
+        if(response){
+          return res.status(200).json({
+            success: true,
+            message: 'Message send successfully'
+          })
+        }else{
+          return res.status(200).json({
+            success: false,
+            message: 'Message not send.'
+          })
+        }
+      }
+      if(templateType && templateType==='test'){
+        const user = await userModel.findOne({'userInfo.userId': userId})
+     
+        const WSData={
+          userId: userId,
+          //password: password
+        }
+      
+        const response = await whatsAppMessage(toNumber, message, templateType, WSData)
+        if(response){
+          return res.status(200).json({
+            success: true,
+            message: 'Message send successfully'
+          })
+        }else{
+          return res.status(200).json({
+            success: false,
+            message: 'Message not send.'
+          })
+        }
+      }
     } catch (err) {
       console.log(err)
       return res.status(400).json({
@@ -2878,6 +2925,31 @@ module.exports = {
     }
   },
 
+  getAllMessage:async(req, res)=>{
+    try {
+      const messageData = await messageModel.find({})
+      if(messageData && messageData.length>0){
+        return res.status(200).json({
+          success: true,
+          message: 'Message get successfully',
+          data:{
+            list: messageData
+          }
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: 'Message not send.'
+        })
+      }
+    } catch (err) {
+      console.log(err)
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    } 
+  },
 
   createBuckup: async (req, res) => {
     sendDailyBackupEmail()
