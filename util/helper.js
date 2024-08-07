@@ -86,59 +86,61 @@ module.exports = {
   },
   //to send sms
   sendSms: async (data) => {
-    // console.log("data", data);
-    let options = {
-      authorization: smsapikey,
-      // sender_id:"BMMS",
-      message:`Registration Successful with B.M.M. SCHOOL.Your BMMS-ID: ${data.userId}.\nPassword: ${data.password}`,
-      numbers: [data.phoneNumber],
-    };
-    console.log("options", options)
-
-    function capitalize(sentance){
-      sentance = sentance.replace(/ +(?= )/g,'')
-      if(sentance.length===0) return ""
-  
-      const words = sentance.split(" ");
-      const capitalizeWord = words.map((word) => { 
-        if(word.trim().length>0) return word[0].toUpperCase() + word.substring(1).toLowerCase(); 
-        
-      }).join(" ");
-      return capitalizeWord
-    }
-
-    function limitString (string = '', limit = 0) {  
-      return string.substring(0, limit)
-    }
-    const capitalizeName= capitalize(data.fullName)
-
-    const name = limitString(capitalizeName, 27)
-
-    let options2 = {
-      authorization: smsapikey,
-      // route : "p", // p for promational // q for quick 3.50 
-      // sender_id:"BMMS",
-      message:`Welcome to BMM SCHOOL ${name}.Click here http://bmmschool.in`,
-      numbers: [data.phoneNumber],
-    };
-    console.log("options", options2)
-    // fast2sms.sendMessage(options).then((response) => {
-    //   console.log("sms service", response);
-    //   return response;
-    // });
     // let options = {
     //   authorization: smsapikey,
-    //   message: 'YOUR_MESSAGE_HERE',
-    //   numbers: [number]
-    // }
-    // console.log('sms', options)
+    //   // sender_id:"BMMS",
+    //   message:`Registration Successful with B.M.M. SCHOOL.Your BMMS-ID: ${data.userId}.\nPassword: ${data.password}`,
+    //   numbers: [data.phoneNumber],
+    // };
+    // console.log("options", options)
 
-    const response = await fast2sms.sendMessage(options);
-    //const response2 = await fast2sms.sendMessage(options2);
-    //console.log("response2", response2)
-    console.log("testttt", response.return);
-    return response.return;
-    //return true;
+    // function capitalize(sentance){
+    //   sentance = sentance.replace(/ +(?= )/g,'')
+    //   if(sentance.length===0) return ""
+  
+    //   const words = sentance.split(" ");
+    //   const capitalizeWord = words.map((word) => { 
+    //     if(word.trim().length>0) return word[0].toUpperCase() + word.substring(1).toLowerCase(); 
+        
+    //   }).join(" ");
+    //   return capitalizeWord
+    // }
+
+    // function limitString (string = '', limit = 0) {  
+    //   return string.substring(0, limit)
+    // }
+    // const capitalizeName= capitalize(data.fullName)
+
+    // const name = limitString(capitalizeName, 27)
+
+    // let options2 = {
+    //   authorization: smsapikey,
+    //   // route : "p", // p for promational // q for quick 3.50 
+    //   // sender_id:"BMMS",
+    //   message:`Welcome to BMM SCHOOL ${name}.Click here http://bmmschool.in`,
+    //   numbers: [data.phoneNumber],
+    // };
+
+
+    const randomSixDigitNumber = Math.floor(100000 + Math.random() * 900000);
+    try {
+      const response = await axios.post('https://www.fast2sms.com/dev/bulkV2', {
+        "route" : "otp",
+        "variables_values" : `${randomSixDigitNumber}`,
+        "numbers" : data.phoneNumber,
+      }, {
+        headers: {
+          'Authorization': `${smsapikey}`, 
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      console.log('SMS sent successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error sending SMS:', error.response ? error.response.data : error.message);
+      throw error;
+    }
   },
 
   //to genearte new password
@@ -331,14 +333,41 @@ module.exports = {
           }
           if(templateType ==='general'){
             WAMessageData={
-              "messaging_product": "whatsapp",
+              "messaging_product": "whatsapp", 
               "recipient_type": "individual",
-              "to": `91${toNumber}`,
-              "type": "text",
-              "text": {
-                "body": `${message}`
-              }
-            }
+               "to": `91${toNumber}`, 
+               "type": "template", 
+               "template": {
+                   "name": "general ", 
+                   "language": {
+                     "code": "hi" 
+                   },
+                   "components": [
+                     {
+                         "type" : "body",
+                         "parameters": [
+                             {
+                                 "type": "text",
+                                 "text": `${data.title}`
+                             },
+                             {
+                                 "type": "text",
+                                 "text": `${data.message}`
+                             }
+                     ]
+                   }
+                 ]  
+               } 
+         }
+            // WAMessageData={
+            //   "messaging_product": "whatsapp",
+            //   "recipient_type": "individual",
+            //   "to": `91${toNumber}`,
+            //   "type": "text",
+            //   "text": {
+            //     "body": `${message}`
+            //   }
+            // }
           }
           if(templateType ==='test'){
             WAMessageData={

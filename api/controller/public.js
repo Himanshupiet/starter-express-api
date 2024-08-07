@@ -260,15 +260,15 @@ module.exports = {
         //   password: newPassword,
         // };
           const sms = await sendSms(sendSMSandEmaildata);
-          //const sms= true
+          const smsSend =  (sms && sms.return)? true: false
           const WSData={
              userId:sendSMSandEmaildata.userId,
              password: password
           }
           await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
-       
-          if (sms) {
+     
             let userData = await newUser.save();
+            const registrationMessage= smsSend?"Registration successful and Mobile number verified":"Registration successful and Mobile number not verified."
             if(userData && userData.userInfo && userData.userInfo.roleName==='STUDENT'){
               const newPaymentData = paymentModel({
                 userId:userData.userInfo.userId,
@@ -279,16 +279,14 @@ module.exports = {
                 totalFineAmount:0
               })
               const  newPaymentDataCreated = await newPaymentData.save()
-            }
-     
             return res.status(200).json({
               success: true,
-              message: "Registration successful.",
+              message: registrationMessage
             });
           } else {
             return res.status(200).json({
               success: false,
-              message: "Mobile mumber is not valid",
+              message: "Registration successful.",
             });
           }
     } catch (err) {
