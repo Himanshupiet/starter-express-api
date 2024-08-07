@@ -263,7 +263,7 @@ module.exports = {
           const smsSend =  (sms && sms.return)? true: false
           const WSData={
              userId:sendSMSandEmaildata.userId,
-             password: password
+             password: sendSMSandEmaildata.password
           }
           await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
      
@@ -290,6 +290,7 @@ module.exports = {
             });
           }
     } catch (err) {
+      console.log("errrrr", err)
       return res.status(400).json({
         success: false,
         message: "Resigtration unsuccessful.",
