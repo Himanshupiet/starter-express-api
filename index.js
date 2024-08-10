@@ -64,13 +64,15 @@ app.use(`${api}/cron`, cronJob);
 //Database
 const connectToMongo = async() => {
 await mongoose
-  .connect(mongoUrl, {
-    serverSelectionTimeoutMS: 9000,
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-    dbName: mongoDbName,
-  })
+  .connect(mongoUrl, 
+  //   {
+  //   serverSelectionTimeoutMS: 9000,
+  //   useNewUrlParser: true,
+  //   useUnifiedTopology: true,
+  //   useFindAndModify: false,
+  //   dbName: mongoDbName,
+  // }
+)
   .then(() => {
     app.listen(PORT || 3010, () => {
       console.log(`server is running http://localhost:${PORT}`);

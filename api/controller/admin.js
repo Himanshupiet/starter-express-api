@@ -140,7 +140,7 @@ const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, s
   for (const month of monthList) {
     let monthData={}
     const monthEnable =  checkAdmissionDate(sData, month, session)
-      if(monthEnable && userPayDetail.feeFree === undefined || userPayDetail.feeFree === false ){
+      if(monthEnable && (userPayDetail.feeFree === undefined || userPayDetail.feeFree === false )){
         monthData['monthlyFee']= monthlyFee
         monthData['busFee']= busFee
         monthData['payEnable']=true
