@@ -2849,79 +2849,74 @@ module.exports = {
     let { userId, toNumber, message , templateType, otherDetail} = req.body;
 
     console.log("req.bodyreq.body", req.body)
- 
+    const user = await userModel.findOne({ 'userInfo.userId': userId });
     try {
-      //sharePassword
-      if(templateType && templateType==='sharePassword'){
-        const user = await userModel.findOne({'userInfo.userId': userId})
-        console.log("user", user)
-        const password = passwordDecryptAES(user.userInfo.password)
-        const WSData={
-          userId: userId,
-          password: password
+      // Share Password template
+      if (templateType && templateType === 'sharePassword') {
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: 'Message not sent. User not found'
+          });
         }
-      
-      const response = await whatsAppMessage(toNumber, message, templateType, WSData)
-      if(response){
-        return res.status(200).json({
-          success: true,
-          message: 'Message send successfully'
-        })
-      }else{
-        return res.status(200).json({
-          success: false,
-          message: 'Message not send.'
-        })
-      }
-      }
-      if(templateType && templateType==='general'){
-        const user = await userModel.findOne({'userInfo.userId': userId})
-     
-        const WSData={
+    
+        const password = passwordDecryptAES(user.userInfo.password);
+        const WSData = {
           userId: userId,
-          //password: password
+          password: password,
+          name: user.userInfo.fullName
+        };
+        await mesageApi(toNumber, message, templateType, WSData);
+      }
+    
+      // General template
+      if (templateType && templateType === 'general') {
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: 'Message not sent. User not found'
+          });
         }
-      
-        const response = await whatsAppMessage(toNumber, message, templateType, WSData)
-        if(response){
+        if (!otherDetail || !otherDetail.amount || (otherDetail.amount && !Number(otherDetail.amount)>0)) {
+          return res.status(404).json({
+            success: false,
+            message: 'Message not sent. amount not found'
+          });
+        }
+    
+        const WSData = {
+          title: "फीस सम्बन्धित सुचना",
+          message: `प्रिय अभिभावक, ${user.userInfo.fullName} का महीना शुल्क ${otherDetail.amount}/- जमा कर दें । लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`
+         };
+          await mesageApi(toNumber, message, templateType, WSData);
+      }
+    
+      // Test template
+      if (templateType && templateType === 'test') {
+        await mesageApi(toNumber, message, templateType);
+      }
+    
+      async function mesageApi(number, msg, tempType, data) {
+        const response = await whatsAppMessage(number, msg, tempType, data);
+    
+        if (response) {
           return res.status(200).json({
             success: true,
-            message: 'Message send successfully'
-          })
-        }else{
-          return res.status(200).json({
+            message: 'Message sent successfully'
+          });
+        } else {
+          return res.status(500).json({
             success: false,
-            message: 'Message not send.'
-          })
-        }
-      }
-      if(templateType && templateType==='test'){
-        const user = await userModel.findOne({'userInfo.userId': userId})
-     
-        const WSData={
-          userId: userId,
-          //password: password
-        }
-      
-        const response = await whatsAppMessage(toNumber, message, templateType, WSData)
-        if(response){
-          return res.status(200).json({
-            success: true,
-            message: 'Message send successfully'
-          })
-        }else{
-          return res.status(200).json({
-            success: false,
-            message: 'Message not send.'
-          })
+            message: 'Message not sent.'
+          });
         }
       }
     } catch (err) {
-      console.log(err)
+      console.error(err);
       return res.status(400).json({
         success: false,
         message: err.message,
-      })
+      });
     }
   },
 

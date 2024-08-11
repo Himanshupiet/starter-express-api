@@ -302,7 +302,7 @@ module.exports = {
             }
           }
 
-          if(templateType==='sharepassword'){
+          if(templateType==='sharePassword'){
             WAMessageData={
                  "messaging_product": "whatsapp", 
                  "recipient_type": "individual",
@@ -410,9 +410,14 @@ module.exports = {
             },
           })
            await newMessageInfo.save();
-           return true
-         
-          //res.status(200).send(response.data);
+           const isAccepted = response.data.messages.some(message => message.message_status === 'accepted');
+            if (isAccepted) {
+              return true
+              //console.log(true);
+            } else {
+              return false
+              //console.log(false);
+            }
       } catch (error) {
         console.log("error44444444444444444444", error.response ? error.response.data : error.message)
         const newMessageInfo= new messageModel({
