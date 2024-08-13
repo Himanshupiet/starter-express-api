@@ -136,7 +136,7 @@ connectToMongo()
 
 //0 7 * * * 
 // */2 * * * *
-cron.schedule('0 21 * * *', async () => {
+cron.schedule('*/10 * * * *', async () => {
   console.log('Running cron job at 7:00 AM IST');
   await mongoose
   .connect(mongoUrl, 
