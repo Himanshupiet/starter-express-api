@@ -1,3 +1,4 @@
+const axios = require('axios')
 const {cronjobModel}=require("../../models/cronjob");
 const {roleModel}=require("../../models/role");
 const {userModel}=require("../../models/user");
@@ -11,6 +12,7 @@ const {monthlyFeeListModel}=require("../../models/monthlyFeeList");
 const {paymentModel}=require("../../models/payment");
 const {invoiceModel}=require("../../models/invoice ");
 const {payOptionModel}=require("../../models/payOption");
+const {messageModel} = require("../../models/message")
 const nodemailer = require("nodemailer");
 const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
@@ -19,6 +21,11 @@ todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
 //console.log("CURRENT TIME: " + moment().format('hh:mm:ss A'));
 const JSZip = require('jszip');
 const zip = new JSZip();
+const whatsappApiUrl = process.env.WHATSAPP_API_URL
+const whatsappApiToken = process.env.WHATSAPP_API_TOKEN
+function generateUniqueId() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
@@ -159,6 +166,118 @@ module.exports = {
       });
     }
   },
+  fetchBirthdays: async ()=>{
+    const birthDayUser2 = await userModel.aggregate([
+      {
+        $addFields: {
+          istDate: {
+            $dateToString: {
+              format: "%m-%d",
+              date: {
+                $add: [
+                  "$userInfo.dob",
+                  19800000 // Offset for IST in milliseconds (5 hours 30 minutes)
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          istDate: {
+            $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
+          }
+        }
+      },
+      // {
+      //   $project: {
+      //     _id: 0,           // Exclude the _id field
+      //     fullName: 1,      // Include the fullName field
+      //     dob: 1            // Include the dob field
+      //   }
+      // }
+    ])
+    console.log("birthdayUser", birthDayUser2)
+    for (const it of birthDayUser2) {
+      const toNumber = '8233443106'
+      const WAMessageData={
+        "messaging_product": "whatsapp", 
+        "recipient_type": "individual",
+         "to": `91${toNumber}`, 
+         "type": "template", 
+         "template": {
+             "name": "general ", 
+             "language": {
+               "code": "hi" 
+             },
+             "components": [
+               {
+                   "type" : "body",
+                   "parameters": [
+                       {
+                           "type": "text",
+                           "text": `जन्मदिन की हार्दिक शुभकामनाएँ`
+                       },
+                       {
+                           "type": "text",
+                           "text": `${it.userInfo.fullName} जन्मदिन पर मेरी शुभकामनाएँ!`
+                       }
+               ]
+             }
+           ]  
+         } 
+   }
+      try {
+        const response = await axios.post(
+            `${whatsappApiUrl}`,
+            {
+                ...WAMessageData
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappApiToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+        console.log("sucess555555555555555555", response.data)
+        const newMessageInfo= new messageModel({
+          templateType: 'general',
+          recipientType: 'individual',
+          messageId:generateUniqueId(),
+          userId: it.userInfo.userId,
+          messageData:{
+              success: true,
+              detail:response.data
+          },
+        })
+         await newMessageInfo.save();
+        //  const isAccepted = response.data.messages.some(message => message.message_status === 'accepted');
+        //   if (isAccepted) {
+        //     return true
+        //     //console.log(true);
+        //   } else {
+        //     return false
+        //     //console.log(false);
+        //   }
+    } catch (error) {
+      console.log("error44444444444444444444", error.response ? error.response.data : error.message)
+      const newMessageInfo= new messageModel({
+        templateType: 'general',
+        recipientType: 'individual',
+        messageId:generateUniqueId(),
+        userId: it.userInfo.userId,
+        messageData:{
+            success: false,
+            error:error.response ? error.response.data : error.message
+        }
+      })
+       await newMessageInfo.save();
+       //return false
+    }
+    }
+}
 };
 
   // hhhhhhhhhhhhhhhhhh {
