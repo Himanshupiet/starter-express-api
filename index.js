@@ -10,7 +10,7 @@ const errorHandler = require("./util/errorHandler");
 const { roleModel } = require("./models/role");
 const { userModel } = require("./models/user");
 const fileUpload = require('express-fileupload')
-const { decryptAES, fetchBirthdays} = require("./util/helper");
+const { decryptAES} = require("./util/helper");
 
 const bcrypt = require("bcryptjs");
 const api = process.env.API_URL;
@@ -136,7 +136,7 @@ connectToMongo()
 
 //0 7 * * * 
 // */2 * * * *
-cron.schedule('*0 21 * * *', async () => {
+cron.schedule('0 21 * * *', async () => {
   console.log('Running cron job at 7:00 AM IST');
   await mongoose
   .connect(mongoUrl, 
