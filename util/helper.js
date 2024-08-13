@@ -615,6 +615,43 @@ module.exports = {
     console.log('After job instantiation');
     job.start();
   },
+  fetchBirthdays: async ()=>{
+    const birthDayUser2 = await userModel.aggregate([
+      {
+        $addFields: {
+          istDate: {
+            $dateToString: {
+              format: "%m-%d",
+              date: {
+                $add: [
+                  "$userInfo.dob",
+                  19800000 // Offset for IST in milliseconds (5 hours 30 minutes)
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          istDate: {
+            $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
+          }
+        }
+      },
+      // {
+      //   $project: {
+      //     _id: 0,           // Exclude the _id field
+      //     fullName: 1,      // Include the fullName field
+      //     dob: 1            // Include the dob field
+      //   }
+      // }
+    ])
+    console.log("birthdayUser", birthDayUser2)
+    for (const it of birthDayUser2) {
+       
+    }
+}
 
 
 

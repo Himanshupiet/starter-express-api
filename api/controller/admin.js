@@ -1893,6 +1893,41 @@ module.exports = {
           }
         }
       ])
+      const birthDayUser2 = await userModel.aggregate([
+        {
+          $addFields: {
+            istDate: {
+              $dateToString: {
+                format: "%m-%d",
+                date: {
+                  $add: [
+                    "$userInfo.dob",
+                    19800000 // Offset for IST in milliseconds (5 hours 30 minutes)
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          $match: {
+            istDate: {
+              $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
+            }
+          }
+        },
+        // {
+        //   $project: {
+        //     _id: 0,           // Exclude the _id field
+        //     fullName: 1,      // Include the fullName field
+        //     dob: 1            // Include the dob field
+        //   }
+        // }
+      ])
+      //console.log("birthDayUser2",birthDayUser)
+
+      //console.log("birthDayUser2", birthDayUser2)
+      
        const todayInvoice = await  invoiceModel.find({$and:[{deleted:false},invoiceTodayParams]})
        //console.log("todayInvoice",todayInvoice)
        if(todayInvoice && todayInvoice.length>0){
@@ -1941,13 +1976,14 @@ module.exports = {
         totalStudent:totalStudent,
         totalTeacher:totalTeacher,
         todayBirthday:birthDayUser,
+        todayBirthday2:birthDayUser2,
         todayTransaction:todayTransaction
       }
 
       if(dashBoardData){
         return res.status(200).json({ 
           success: true,
-          message: "get dashboard data successfully.",
+          message: "Get dashboard data successfully.",
           dashboardData:dashBoardData
         });
       }

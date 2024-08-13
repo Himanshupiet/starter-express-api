@@ -1,4 +1,5 @@
 const express = require("express");
+const cron = require('node-cron');
 const app = express();
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
@@ -9,7 +10,7 @@ const errorHandler = require("./util/errorHandler");
 const { roleModel } = require("./models/role");
 const { userModel } = require("./models/user");
 const fileUpload = require('express-fileupload')
-const { decryptAES} = require("./util/helper");
+const { decryptAES, fetchBirthdays} = require("./util/helper");
 
 const bcrypt = require("bcryptjs");
 const api = process.env.API_URL;
@@ -61,6 +62,8 @@ app.use(`${api}/admin`, admin);
 app.use(`${api}/cron`, cronJob);
 // app.use(`${api}/securitylog`, securitylog);
 
+
+
 //Database
 const connectToMongo = async() => {
 await mongoose
@@ -78,6 +81,7 @@ await mongoose
     app.listen(PORT || 3010, () => {
       console.log(`server is running http://localhost:${PORT}`);
     });
+
     const getAdmin = async () => {
       try {
         let topAdminRoleId = "";
@@ -127,6 +131,15 @@ await mongoose
   });
 }
 connectToMongo()
+
+
+
+cron.schedule('*/2 * * * *', () => {
+  console.log('Running cron job at 7:00 AM IST');
+  fetchBirthdays();
+}, {
+  timezone: "Asia/Kolkata"
+});
 
 // //Server
 // app.listen(PORT || 3010, () => {
