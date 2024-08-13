@@ -54,7 +54,7 @@ const user = require("./routes/user");
 const securitylog = require("./routes/secuirtylog");
 const cronJob = require("./routes/cronJob");
 const { passwordEncryptAES } = require("./util/helper");
-const {fetchBirthdays}=require("./api/controller/cronJobs");
+const {fetchBirthdays, sendDailyBackupEmail}=require("./api/controller/cronJobs");
 
 app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);
@@ -126,6 +126,7 @@ await mongoose
       }
     };
     //getAdmin();
+    //sendDailyBackupEmail()
   })
   .catch((err) => {
     console.log(err);
@@ -137,6 +138,10 @@ connectToMongo()
 //0 7 * * * 
 // */2 * * * *
 cron.schedule('*/10 * * * *', async () => {
+   console.log(" Cron job running...")
+})
+
+cron.schedule('0 7 * * *', async () => {
   console.log('Running cron job at 7:00 AM IST');
   await mongoose
   .connect(mongoUrl, 
@@ -150,6 +155,26 @@ cron.schedule('*/10 * * * *', async () => {
 )
   .then(() => {
     fetchBirthdays();
+  })
+}, {
+  timezone: "Asia/Kolkata"
+});
+
+cron.schedule('0 23 * * *', async () => {
+  console.log('Running cron job at 11:00 PM IST');
+  await mongoose
+  .connect(mongoUrl, 
+    {
+    serverSelectionTimeoutMS: 9000,
+    // useNewUrlParser: true,
+    // useUnifiedTopology: true,
+    // useFindAndModify: false,
+    dbName: mongoDbName,
+  }
+)
+  .then(() => {
+    // fetchBirthdays();
+    sendDailyBackupEmail()
   })
 }, {
   timezone: "Asia/Kolkata"

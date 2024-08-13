@@ -41,7 +41,7 @@ const transporter = nodemailer.createTransport({
   // }
 });
 
-const mailTo= `hkc.kumar@gmail.com, bmmsbkg@gmail.com`
+const mailTo= `bmmsbkg@gmail.com`
 
 let requestBody={
   jobPerform: `Daily Backup Mail Send.`,
@@ -52,7 +52,8 @@ let requestBody={
 
 
 module.exports = {
-    sendDailyBackupEmail: async (req, res, next) => {
+  sendDailyBackupEmail: async (req, res, next) => {
+    console.log("Creating backup")
     try {
       let today = new Date(todayIndiaDate);
       let dd = String(today.getDate()).padStart(2, '0');
@@ -102,68 +103,59 @@ module.exports = {
                 },
               ],
           }
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              requestBody.status= `Fail`
-              requestBody.detail= error.message? error.message: `Error while sending mail`
-              cronjobModel.create(requestBody,function (err, response) {
-                if (err) {
-                    next(err)
-                } else {
-                    res.status(200).json({
-                        status: 'success',
-                        message: `Daily Backup run`
-                    })
+          try {
+            transporter.sendMail(mailOptions, async (error, info) => {
+              if (error) {
+                requestBody.status= `Fail`
+                requestBody.detail= error.message? error.message: `Error while sending mail`
+                const response = await cronjobModel.create(requestBody);
+                // res.status(200).json({
+                //   status: 'success',
+                //   message: 'Daily Backup run',
+                // })
+           
+              }else{
+                const response = await cronjobModel.create(requestBody);
+                // res.status(200).json({
+                //   status: 'success',
+                //   message: 'Daily Backup run',
+                // })
                 }
-              }) 
-         
-            }else{
-              cronjobModel.create(requestBody,function (err, response) {
-                if (err) {
-                    next(err)
-                } else {
-                    res.status(200).json({
-                        status: 'success',
-                        message: `Daily Backup run`
-                    })
-                 }
-                }) 
-              }
-          });
+              });
+          } catch (error) {
+             console.log("Error while send backup email")
+             requestBody.status= `Fail`
+             requestBody.detail= error.message? error.message: `Error while sending mail`
+             const response = await cronjobModel.create(requestBody);
+            //  res.status(200).json({
+            //    status: 'success',
+            //    message: 'Daily Backup run',
+            //  })
+          }
           
       }else{
         requestBody.status= `Fail`
         requestBody.detail= err.message? err.message: `Error while creating backup.`
-        cronjobModel.create(requestBody,function (err, response) {
-          if (err) {
-              next(err)
-          } else {
-              res.status(200).json({
-                  status: 'success',
-                  message: `Daily Backup run`
-              })
-           }
-          }) 
+        const response = await cronjobModel.create(requestBody);
+        // res.status(200).json({
+        //   status: 'success',
+        //   message: 'Daily Backup run',
+        // })
       }
     
     } catch (err) {
       requestBody.status= `Fail`
       requestBody.detail= err.message? err.message: `Something went wrong when creating backup/sending mail`
-      cronjobModel.create(requestBody,function (err, response) {
-        if (err) {
-            next(err)
-        } else {
-            res.status(200).json({
-                status: 'success',
-                message: `Daily Backup run`
-            })
-         }
-      }) 
+      const response = await cronjobModel.create(requestBody);
+      // res.status(200).json({
+      //   status: 'success',
+      //   message: 'Daily Backup run',
+      // })
       console.log(err);
-      return res.status(400).json({
-        success: false,
-        error: err.message,
-      });
+      // return res.status(400).json({
+      //   success: false,
+      //   error: err.message,
+      // });
     }
   },
   fetchBirthdays: async ()=>{
