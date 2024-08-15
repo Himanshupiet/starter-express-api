@@ -269,7 +269,20 @@ module.exports = {
        //return false
     }
     }
-}
+},
+  serverWakeupApi:async()=>{
+    try {
+      const response= await axios.get("https://bmmsbackendapp.onrender.com/");
+      if(response){
+           console.log("server wake up success....")
+      }else{
+       console.log("server not reach out")
+      }
+    } catch (error) {
+      console.log("Error while while wake up server", error)
+    }
+
+  } 
 };
 
   // hhhhhhhhhhhhhhhhhh {
