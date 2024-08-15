@@ -137,12 +137,12 @@ connectToMongo()
 
 //0 7 * * * 
 // */2 * * * *
-cron.schedule('*/1 * * * *', async () => {
-   console.log(" Cron job running...")
-   if(process.env.ENVIRONMENT==='ADABTABLE'){
-      serverWakeupApi()
-   }
-})
+// cron.schedule('*/1 * * * *', async () => {
+//    //console.log(" Cron job running...")
+//    if(process.env.ENVIRONMENT==='ADABTABLE'){
+//       serverWakeupApi()
+//    }
+// })
 
 cron.schedule('0 7 * * *', async () => {
   console.log('Running cron job at 7:00 AM IST');
