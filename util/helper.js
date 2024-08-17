@@ -290,7 +290,15 @@ module.exports = {
                             "parameters": [
                                 {
                                     "type": "text",
-                                    "text": data.userId
+                                    "text": data.name
+                                },
+                                {
+                                    "type": "text",
+                                    "text": data.class
+                                },
+                                {
+                                  "type": "text",
+                                  "text": data.userId
                                 },
                                 {
                                     "type": "text",
@@ -382,7 +390,44 @@ module.exports = {
                 } 
               } 
             }
+          }
+          if(templateType ==='notification'){
+            //This message from BM Memorial School
+            // {{1}} Notification
+            // =====================
+            // Details:{{2}}
+            // Date:{{3}}
+            WAMessageData={
+              "messaging_product": "whatsapp", 
+              "to": `91${toNumber}`, 
+              "type": "template",
+              "template": { 
+                "name": "notification", 
+                "language": { 
+                  "code": "en" 
+                },
+                "components": [
+                  {
+                      "type" : "body",
+                      "parameters": [
+                          {
+                              "type": "text",
+                              "text": `${data.title}`
+                          },
+                          {
+                              "type": "text",
+                              "text": `${data.details}`
+                          },
+                          {
+                            "type": "text",
+                            "text": `${data.date}`
+                        }
+                  ]
+                }
+              ]  
+              } 
             }
+          }  
         }else{
             return false
         }
@@ -405,6 +450,7 @@ module.exports = {
             recipientType: 'individual',
             messageId:generateUniqueId(),
             userId: data.userId?data.userId :'N/A',
+            sendMessageFor:data.sendMessageFor,
             messageData:{
                 success: true,
                 detail:response.data
@@ -425,6 +471,7 @@ module.exports = {
           templateType: templateType,
           recipientType: 'individual',
           messageId:generateUniqueId(),
+          sendMessageFor:data.sendMessageFor,
           userId: data.userId?data.userId :'N/A',
           messageData:{
               success: false,

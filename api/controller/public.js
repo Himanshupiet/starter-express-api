@@ -262,23 +262,27 @@ module.exports = {
           const sms = await sendSms(sendSMSandEmaildata);
           const smsSend =  (sms && sms.return)? true: false
           const WSData={
+             name: req.body.fullName,
+             class:req.body.class,
              userId:sendSMSandEmaildata.userId,
              password: sendSMSandEmaildata.password
           }
-          await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
      
             let userData = await newUser.save();
             const registrationMessage= smsSend?"Registration successful and Mobile number verified":"Registration successful and Mobile number not verified."
-            if(userData && userData.userInfo && userData.userInfo.roleName==='STUDENT'){
-              const newPaymentData = paymentModel({
-                userId:userData.userInfo.userId,
-                session: currentSession(),
-                class:userData.userInfo.class,
-                dueAmount: 0,
-                excessAmount:0,
-                totalFineAmount:0
-              })
-              const  newPaymentDataCreated = await newPaymentData.save()
+            if(userData){
+              await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
+              if(userData.userInfo && userData.userInfo.roleName==='STUDENT'){
+                const newPaymentData = paymentModel({
+                  userId:userData.userInfo.userId,
+                  session: currentSession(),
+                  class:userData.userInfo.class,
+                  dueAmount: 0,
+                  excessAmount:0,
+                  totalFineAmount:0
+                })
+                const  newPaymentDataCreated = await newPaymentData.save()
+              }
             return res.status(200).json({
               success: true,
               message: registrationMessage

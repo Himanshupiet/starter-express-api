@@ -15,11 +15,12 @@ const {payOptionModel}=require("../../models/payOption");
 const {messageModel} = require("../../models/message")
 const nodemailer = require("nodemailer");
 const moment = require("moment-timezone");
-const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
-todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-// console.log("Today India date", todayIndiaDate);
+// const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
+// todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+// // console.log("Today India date", todayIndiaDate);
 //console.log("CURRENT TIME: " + moment().format('hh:mm:ss A'));
 const JSZip = require('jszip');
+const {whatsAppMessage}=require('../../util/helper');
 const zip = new JSZip();
 const whatsappApiUrl = process.env.WHATSAPP_API_URL
 const whatsappApiToken = process.env.WHATSAPP_API_TOKEN
@@ -41,6 +42,8 @@ const transporter = nodemailer.createTransport({
   // }
 });
 
+const TodayDate = moment.tz(new Date(), 'DD/MM/YYYY', 'Asia/Kolkata').format('DD/MM/YYYY');;
+
 const mailTo= `bmmsbkg@gmail.com`
 
 let requestBody={
@@ -50,12 +53,29 @@ let requestBody={
   status: 'Success'
 }
 
+function createFormattedString(user) {
+  const roleName = user.userInfo.roleName;
+  const fullName = user.userInfo.fullName;
+  const userClass = user.userInfo.class;
+
+  let formattedRoleName;
+  if (roleName === "TEACHER") {
+    formattedRoleName = roleName.toUpperCase();
+  } else if (roleName === "STUDENT") {
+    formattedRoleName = "Student";
+  } else {
+    formattedRoleName = roleName; // Default case if role is neither TEACHER nor STUDENT
+  }
+
+  return `${formattedRoleName}: ${fullName} (Class: ${userClass})`;
+}
+
 
 module.exports = {
   sendDailyBackupEmail: async (req, res, next) => {
     console.log("Creating backup")
     try {
-      let today = new Date(todayIndiaDate);
+      let today = TodayDate;
       let dd = String(today.getDate()).padStart(2, '0');
       let mm = String(today.getMonth() + 1).padStart(2, '0'); 
       let yyyy = today.getFullYear();
@@ -158,7 +178,7 @@ module.exports = {
       // });
     }
   },
-  fetchBirthdays: async ()=>{
+  fetchBirthdays: async (req, res, next)=>{
     const birthDayUser2 = await userModel.aggregate([
       {
         $addFields: {
@@ -190,85 +210,41 @@ module.exports = {
       //   }
       // }
     ])
-    console.log("birthdayUser", birthDayUser2)
-    for (const it of birthDayUser2) {
-      const toNumber = '8233443106'
-      const WAMessageData={
-        "messaging_product": "whatsapp", 
-        "recipient_type": "individual",
-         "to": `91${toNumber}`, 
-         "type": "template", 
-         "template": {
-             "name": "general ", 
-             "language": {
-               "code": "hi" 
-             },
-             "components": [
-               {
-                   "type" : "body",
-                   "parameters": [
-                       {
-                           "type": "text",
-                           "text": `जन्मदिन की हार्दिक शुभकामनाएँ`
-                       },
-                       {
-                           "type": "text",
-                           "text": `${it.userInfo.fullName} जन्मदिन पर मेरी शुभकामनाएँ!`
-                       }
-               ]
-             }
-           ]  
-         } 
-   }
-      try {
-        const response = await axios.post(
-            `${whatsappApiUrl}`,
-            {
-                ...WAMessageData
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${whatsappApiToken}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-        console.log("sucess555555555555555555", response.data)
-        const newMessageInfo= new messageModel({
-          templateType: 'general',
-          recipientType: 'individual',
-          messageId:generateUniqueId(),
-          userId: it.userInfo.userId,
-          messageData:{
-              success: true,
-              detail:response.data
-          },
-        })
-         await newMessageInfo.save();
-        //  const isAccepted = response.data.messages.some(message => message.message_status === 'accepted');
-        //   if (isAccepted) {
-        //     return true
-        //     //console.log(true);
-        //   } else {
-        //     return false
-        //     //console.log(false);
-        //   }
-    } catch (error) {
-      console.log("error44444444444444444444", error.response ? error.response.data : error.message)
-      const newMessageInfo= new messageModel({
-        templateType: 'general',
-        recipientType: 'individual',
-        messageId:generateUniqueId(),
-        userId: it.userInfo.userId,
-        messageData:{
-            success: false,
-            error:error.response ? error.response.data : error.message
+    // console.log("birthdayUser", birthDayUser2)
+    if(birthDayUser2 && birthDayUser2.length>0){
+      let list=[]
+      const title= 'जन्मदिन की हार्दिक शुभकामनाएँ'
+      const tempType = 'general'
+      const msg=null
+      let data={
+        title,
+        sendMessageFor:'BIRTHDAY'
+      }
+      for(const it of birthDayUser2){
+       const birthdayUser =createFormattedString(it)
+       list.push(birthdayUser)
+        const message= `${it.userInfo.fullName}, Class ${it.userInfo.class}, आपके जन्मदिन के इस शुभ अवसर पर B.M. Memorial School परिवार की ओर से आपको ढेर सारी शुभकामनाएँ। हम आपके उज्ज्वल भविष्य और सफलता की कामना करते हैं। आपकी मेहनत और समर्पण से आप हमेशा आगे बढ़ते रहें। आपका दिन खुशियों से भरा हो!`
+        data={...data, message, userId: it.userInfo.userId}
+        if(it.userInfo.phoneNumber1){
+          const response = await whatsAppMessage(it.userInfo.phoneNumber1, msg, tempType, data)
         }
+        if(it.userInfo.phoneNumber2){
+          const response = await whatsAppMessage(it.userInfo.phoneNumber2, msg, tempType, data)
+        }
+      }
+      await whatsAppMessage('7250175700', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})
+      await whatsAppMessage('8233443106', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})
+      return res.status(200).json({
+        success: true,
+        message: "Birthday wishes send.",
       })
-       await newMessageInfo.save();
-       //return false
+    }else{
+      return res.status(200).json({
+        success: false,
+        message: "No birthrday found.",
+      })
     }
-    }
+
 },
   serverWakeupApi:async()=>{
     try {

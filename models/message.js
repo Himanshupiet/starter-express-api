@@ -22,6 +22,9 @@ const messageSchema = new mongoose.Schema({
     type: String,
     default: 'Whatsapp'
   },
+  sendMessageFor:{
+    type: String,
+  },
   userId:{
     type:String
   },
