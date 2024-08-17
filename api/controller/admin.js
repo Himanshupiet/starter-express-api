@@ -564,10 +564,8 @@ module.exports = {
         }
       }
 
-        userModel.findOneAndUpdate({ 'userInfo.userId': userId },datatoUpdate, async (err, response) => {
-        if (err) {
-          next(err);
-        }else{
+       const response = await userModel.findOneAndUpdate({ 'userInfo.userId': userId},datatoUpdate)
+        if(response) {
           if(datatoUpdate.isActive ===false || datatoUpdate.isApproved===false){
             await AuthToken.deleteMany({ userId: userId })
           }
@@ -591,8 +589,12 @@ module.exports = {
             success: true,
             message: "Update status successfully.",
           });
+        }else{
+          return res.status(200).json({
+            success: false,
+            message: "Status not updated",
+          });
         }
-      })
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -601,13 +603,10 @@ module.exports = {
       });
     }
   },
-  updatePaymentRecieverUser:  (req, res, next) => {
+  updatePaymentRecieverUser:  async (req, res, next) => {
     try{
-
-        userModel.findOne({ 'userInfo.userId': req.body.userId }, async (err, response) => {
-          if (err) {
-            next(err);
-          }else{
+        const response= await userModel.findOne({ 'userInfo.userId': req.body.userId })
+        if(response){
             const role= response.userInfo.roleName
             if(role==='ADMIN' || role==='ACCOUNTANT'){
               response['isPaymentReciever'] = req.body.status
@@ -623,8 +622,12 @@ module.exports = {
                 message: "Can't update as payment reciever. Contact to Admin"
               })
             }
-          }
-        })
+          }else{
+            return res.status(200).json({
+              success: false,
+              message: "User not found"
+            })
+          }  
   } catch (err) {
     console.log(err);
     return res.status(400).json({

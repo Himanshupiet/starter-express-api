@@ -163,8 +163,8 @@ cron.schedule('0 7 * * *', async () => {
   timezone: "Asia/Kolkata"
 });
 
-cron.schedule('0 23 * * *', async () => {
-  console.log('Running cron job at 11:00 PM IST');
+cron.schedule('0 22 * * *', async () => {
+  console.log('Running cron job at 10:00 PM IST');
   await mongoose
   .connect(mongoUrl, 
     {
