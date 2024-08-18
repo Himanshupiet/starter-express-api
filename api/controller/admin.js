@@ -2925,8 +2925,8 @@ module.exports = {
     
         const WSData = {
           title: "फीस संबंधित सूचना",
-          message: `प्रिय अभिवावक, आपको सूचित किया जाता है कि ${user.userInfo.fullName} कक्षा-${user.userInfo.class} का महीना फीस ${otherDetail.amount}/- बाकी है। लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`,
-          //message: `प्रिय अभिभावक, ${user.userInfo.fullName} का महीना शुल्क ${otherDetail.amount}/- जमा कर दें । लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`
+          message: `प्रिय अभिवावक, आपको सूचित किया जाता है कि ${user.userInfo.fullName} Class-${user.userInfo.class} का महीना फीस ${otherDetail.amount}/- बाकी है। लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`,
+          //message: `प्रिय अभिभावक, ${user.userInfo.fullName} कक्षा का महीना शुल्क ${otherDetail.amount}/- जमा कर दें । लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`
          };
           await mesageApi(toNumber, message, templateType, WSData);
       }

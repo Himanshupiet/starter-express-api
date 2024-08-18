@@ -76,10 +76,10 @@ module.exports = {
     console.log("Creating backup")
     try {
       let today = TodayDate;
-      let dd = String(today.getDate()).padStart(2, '0');
-      let mm = String(today.getMonth() + 1).padStart(2, '0'); 
-      let yyyy = today.getFullYear();
-      today = dd + '/' + mm + '/' + yyyy;
+      // let dd = String(today.getDate()).padStart(2, '0');
+      // let mm = String(today.getMonth() + 1).padStart(2, '0'); 
+      // let yyyy = today.getFullYear();
+      // today = dd + '/' + mm + '/' + yyyy;
       const userData = await userModel.find()
       const roleData = await roleModel.find()
       const examData = await examModel.find()
