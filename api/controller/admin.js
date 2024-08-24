@@ -14,7 +14,7 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage} = require('../../util/helper')
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -41,6 +41,8 @@ const axios = require('axios');
 const authorization = process.env.SMS_API;
 const UPLOAD_IMAGE_URL = process.env.UPLOAD_IMAGE_URL
 const { PHONEPE_MERCHANT_ID, PHONEPE_MERCHANT_KEY, PHONEPE_MERCHANT_SALT, PHONEPE_CALLBACK_URL } = process.env;
+const HalfYearlyMonthIndex = 6
+const AnualExamMonthIndex = 12
 
 const generateHash = (data) => {
   return crypto.createHash('sha256').update(data).digest('hex');
@@ -166,6 +168,22 @@ function encryptObj(objecData){
 
   return objecData
 }
+
+// Helper function to add exam fees
+const addExamFees = (feeData, isAnnualExamFeeNotPaid, isHalfExamFeeNotPaid) => {
+  let dueAmt=0
+  if (isAnnualExamFeeNotPaid) {
+      dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+  }
+  if (isHalfExamFeeNotPaid) {
+      dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+  }
+  return dueAmt;
+};
+
+// Helper function to determine if the admission date falls within a specific session
+const isAdmissionInCurrentSession = (admissionSession, previousSession) => admissionSession === previousSession;
+
 
 const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
 
@@ -1836,67 +1854,20 @@ module.exports = {
         cashCredit:0,
         cashDebit: 0
       }
-      const todayDate = req.query.todayDate
-      //console.log("todayDateeeeeeeeeeeeeeeee",  todayDate)
       const totalStudent= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'}]}).countDocuments()
       const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
-      let date = new Date(todayDate)
-      let date_end = new Date(todayDate)
-      let startDate = new Date(date.setDate(date.getDate()-1));
-      let endDate= new Date(date_end.setDate(date_end.getDate()))
-      startDate.setUTCHours(18);
-      startDate.setUTCMinutes(30);
-      startDate.setSeconds(0);
-      startDate.setMilliseconds(0);
-      endDate.setUTCHours(18);
-      endDate.setUTCMinutes(30);
-      endDate.setSeconds(0);
-      endDate.setMilliseconds(0);
-      // const todayParams = {
-      //     'created': {
-      //         "$gte": startDate,
-      //         "$lte":  endDate
-      //     }
-      // };
+      const indiaTimezone = 'Asia/Kolkata';
+      const startOfTomorrow = moment.tz(indiaTimezone).add(1, 'day').startOf('day').toDate().toISOString();
+      const startOfYesterday = moment.tz(indiaTimezone).startOf('day').toDate().toISOString();
+      const TodayDate = moment.tz(new Date(), 'DD/MM/YYYY', 'Asia/Kolkata').format('DD/MM/YYYY');;
       const invoiceTodayParams = {
-        $expr: {
-          $and: [
-              { $gte: [{ $toDate: "$invoiceInfo.submittedDate" }, startDate] },
-              { $lte: [{ $toDate: "$invoiceInfo.submittedDate" }, endDate] }
-          ]
+              'invoiceInfo.submittedDate':{
+                '$gte':startOfYesterday,
+                '$lte':startOfTomorrow 
+              }
         }
-      };
-      console.log(JSON.stringify(invoiceTodayParams))
- 
-      const birthDayUser=  await userModel.aggregate([
-        { 
-          $match: {
-            $expr: {
-              $and: [
-                { $eq: [{ $dayOfMonth: '$userInfo.dob' }, 
-                  { $dayOfMonth: {
-                    date: new Date(),
-                    timezone: "Asia/Kolkata"
-                    } 
-                  }
-                  ] 
-                },
-                { $eq: [{ $month: '$userInfo.dob' },
-                  { 
-                    $month: 
-                    {
-                    date: new Date(),
-                    timezone: "Asia/Kolkata"
-                    } 
-                  }
-                  ] 
-                },
-              ],
-            },
-          }
-        }
-      ])
-      const birthDayUser2 = await userModel.aggregate([
+        console.log("invoiceTodayParams", invoiceTodayParams)
+      const birthDayUser = await userModel.aggregate([
         {
           $addFields: {
             istDate: {
@@ -1927,29 +1898,76 @@ module.exports = {
         //   }
         // }
       ])
-      //console.log("birthDayUser2",birthDayUser)
+      // const todayInvoice = await  invoiceModel.find({$and:[{deleted:false},invoiceTodayParams]})
+      //  if(todayInvoice && todayInvoice.length>0){
+      //     for (const it of todayInvoice) {
+      //           if(it.transactionType && it.transactionType==='credit'){
+      //            todayTransaction.totalCredit= Number(todayTransaction.totalCredit)+ Number(it.amount)
+      //              if(it.invoiceInfo && it.invoiceInfo.payment && it.invoiceInfo.payment.length>0){
+      //                 for (const payInfo of it.invoiceInfo.payment) {
+      //                     if(payInfo && payInfo.payModeId.toString()==='Cash'){
+      //                       todayTransaction.cashCredit = Number(todayTransaction.cashCredit) + Number(payInfo.amount)
+      //                     }
+      //                     if(payInfo && payInfo.payModeId.toString()!=='Cash'){
+      //                       todayTransaction.onlineCredit = Number(todayTransaction.onlineCredit) + Number(payInfo.amount)
+      //                     }
+      //                 }
+      //             }
+      //         }
+      //     }
+      //   }
 
-      //console.log("birthDayUser2", birthDayUser2)
-      
-       const todayInvoice = await  invoiceModel.find({$and:[{deleted:false},invoiceTodayParams]})
-       //console.log("todayInvoice",todayInvoice)
-       if(todayInvoice && todayInvoice.length>0){
-          for (const it of todayInvoice) {
-                if(it.transactionType && it.transactionType==='credit'){
-                 todayTransaction.totalCredit= Number(todayTransaction.totalCredit)+ Number(it.amount)
-                   if(it.invoiceInfo && it.invoiceInfo.payment && it.invoiceInfo.payment.length>0){
-                      for (const payInfo of it.invoiceInfo.payment) {
-                          if(payInfo && payInfo.payModeId.toString()==='Cash'){
-                            todayTransaction.cashCredit = Number(todayTransaction.cashCredit) + Number(payInfo.amount)
-                          }
-                          if(payInfo && payInfo.payModeId.toString()!=='Cash'){
-                            todayTransaction.onlineCredit = Number(todayTransaction.onlineCredit) + Number(payInfo.amount)
-                          }
+        const todayTransaction2 = await invoiceModel.aggregate([
+          {
+              $match: {
+                  $and: [
+                      { deleted: false },
+                      invoiceTodayParams // Filter for today's invoices
+                  ]
+              }
+          },
+          {
+              $match: { transactionType: 'credit' } // Only credit transactions
+          },
+          {
+              $unwind: { path: "$invoiceInfo.payment", preserveNullAndEmptyArrays: true } // Unwind payment array
+          },
+          {
+              $group: {
+                  _id: null,
+                  totalCredit: { $sum: { $toDouble: "$amount" } }, // Sum of all credit amounts
+                  cashCredit: {
+                      $sum: {
+                          $cond: [
+                              { $eq: [{ $toString: "$invoiceInfo.payment.payModeId" }, "Cash"] },
+                              { $toDouble: "$invoiceInfo.payment.amount" },
+                              0
+                          ]
+                      }
+                  },
+                  onlineCredit: {
+                      $sum: {
+                          $cond: [
+                              { $ne: [{ $toString: "$invoiceInfo.payment.payModeId" }, "Cash"] },
+                              { $toDouble: "$invoiceInfo.payment.amount" },
+                              0
+                          ]
                       }
                   }
               }
+          },
+          {
+              $project: {
+                  _id: 0,
+                  totalCredit: 1,
+                  cashCredit: 1,
+                  onlineCredit: 1
+              }
           }
-        }
+      ]);
+      
+      const todayTransactionResult = todayTransaction2[0] || { totalCredit: 0, cashCredit: 0, onlineCredit: 0,  toatlDebit:0, };
+      console.log("result", todayTransactionResult)
 
       // const  filterParamsTxLedger = [
       //     {$match: {$and:[{$or:[{'otherInformation.system_mode': {$in:[system_mode,system_mode.toLowerCase()]}},{'app_mode':{$in:[system_mode,system_mode.toLowerCase()]}}]},{$or:[{'otherInformation.helox_type':true},{'capture_type':'api'}]}]}},
@@ -1979,8 +1997,7 @@ module.exports = {
         totalStudent:totalStudent,
         totalTeacher:totalTeacher,
         todayBirthday:birthDayUser,
-        todayBirthday2:birthDayUser2,
-        todayTransaction:todayTransaction
+        todayTransaction:todayTransactionResult
       }
 
       if(dashBoardData){
@@ -2013,7 +2030,7 @@ module.exports = {
         otherUser = await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'},{ 'userInfo.userId': { $ne: mainUser.userInfo.userId }},{$or:[{ "userInfo.phoneNumber1": mainUser.userInfo.phoneNumber1},{ "userInfo.phoneNumber2": mainUser.userInfo.phoneNumber2}]}]});
       }
     const allUserIds= [mainUser.userInfo.userId, ...otherUser.map(data=> data.userInfo.userId)]
-     const paymentPrevYear = await paymentModel.find({$and:[{session:'2023-24'},{delected: false}, {userId:{$in:[...allUserIds]}}]})
+     const paymentPrevYear = await paymentModel.find({$and:[{session:previousSession()},{delected: false}, {userId:{$in:[...allUserIds]}}]})
      const paymentCurrYear = await paymentModel.find({$and:[{session:currentSession()},{delected: false}, {userId:{$in:[...allUserIds]}}]})
     
      const allTransaction = await  invoiceModel.find({$and:[{delected:false},{userId:{$in:[...allUserIds]}}]})
@@ -2526,7 +2543,7 @@ module.exports = {
         const userIds= allPayDetail.map(data=> data.userId)
         const allStudents = await userModel.find({'userInfo.userId': {$in:[...userIds]}})
 
-          const allPreviousPayDetail = reqSession===currentSession()? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:'2023-24'}]}):undefined
+        const allPreviousPayDetail = reqSession===currentSession()? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:previousSession()}]}):undefined
         
         for (const it of allPayDetail) {
           let prevAmtDue=0
@@ -2539,52 +2556,87 @@ module.exports = {
           const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList, reqSession)
 
           if(previousPayDetail){
-            const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, monthlyFeeList, busRouteFareList, '2023-24')   
-            let dueAmt=0
-            const feeData= monthlyFeeList.find(data=> data.className===previousPayDetail.class)
-            if(sData.userInfo.admissionDate){
-              const admissionDate = new Date(sData.userInfo.admissionDate)
-              const admissionMonthIndex = admissionDate.getMonth()
-              const admissionSession = getAdmissionSession(sData.userInfo.admissionDate)
-              if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
-                const isAnnualExamFeeNotPaid = !previousPayDetail.other.find(data => data.name === 'ANNUAL EXAM')
-                const isHalfExamFeeNotPaid   = !previousPayDetail.other.find(data => data.name === 'HALF YEARLY EXAM')
-                if(admissionSession ==='2023-24' ){
-                  if ((admissionMonthIndex >= 3 && admissionMonthIndex <= 9)) {
-                    if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;}
-                    if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;}
-                  } else if ((admissionMonthIndex >= 10 || admissionMonthIndex <= 2)) {
-                    if(isAnnualExamFeeNotPaid) {dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;}
+            // const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, monthlyFeeList, busRouteFareList, previousSession())   
+            // let dueAmt=0
+            // const feeData= monthlyFeeList.find(data=> data.className===previousPayDetail.class)
+            // if(sData.userInfo.admissionDate){
+            //   const admissionDate = new Date(sData.userInfo.admissionDate)
+            //   const admissionMonthIndex = admissionDate.getMonth()
+            //   const admissionSession = getAdmissionSession(sData.userInfo.admissionDate)
+          
+            //   if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
+            //     const isAnnualExamFeeNotPaid = !previousPayDetail.other.find(data => data.name === 'ANNUAL EXAM')
+            //     const isHalfExamFeeNotPaid   = !previousPayDetail.other.find(data => data.name === 'HALF YEARLY EXAM')
+            //     if(admissionSession ===previousSession() ){
+            //       if ((admissionMonthIndex >= 3 && admissionMonthIndex <= 9)) {
+            //         if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
+            //         if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
+            //       } else if ((admissionMonthIndex >= 10 || admissionMonthIndex <= 2)) {
+            //         if(isAnnualExamFeeNotPaid) {dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
+            //       }
+            //     }else{
+            //       if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
+            //       if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
+            //     }
+            //   }else{
+            //     if(admissionSession ===previousSession() ){
+            //       if ((admissionMonthIndex >= 3 && admissionMonthIndex <= 9)) {
+            //         dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+            //         dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+            //       } else if ((admissionMonthIndex >= 10 || admissionMonthIndex <= 2)) {
+            //         dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+            //       }
+            //     }else{
+            //       dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+            //       dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+            //     }
+            //   }
+            // }else{
+            //   if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
+            //     const isAnnualExamFeeNotPaid = !previousPayDetail.other.find(data => data.name === 'ANNUAL EXAM')
+            //     const isHalfExamFeeNotPaid   = !previousPayDetail.other.find(data => data.name === 'HALF YEARLY EXAM')
+            //     if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
+            //     if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
+            //   }else{
+            //       dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+            //       dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+            //   }
+            // } 
+            // Main logic
+            const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, monthlyFeeList, busRouteFareList, previousSession());
+            let dueAmt = 0;
+            const feeData = monthlyFeeList.find(data => data.className === previousPayDetail.class);
+            const isPrevOtherPay= previousPayDetail && previousPayDetail.other && previousPayDetail.other.length > 0? true:false
+            const isAnnualExamFeeNotPaid = isPrevOtherPay? !previousPayDetail.other.some(data => data.name === 'ANNUAL EXAM') : true
+            const isHalfExamFeeNotPaid = isPrevOtherPay? !previousPayDetail.other.some(data => data.name === 'HALF YEARLY EXAM') : true
+            if (sData.userInfo.admissionDate) {
+                const admissionDate = new Date(sData.userInfo.admissionDate);
+                const admissionMonthIndex = admissionDate.getFinancialMonthIndex();
+                const admissionSession = getAdmissionSession(sData.userInfo.admissionDate);
+                const isCurrentSession = isAdmissionInCurrentSession(admissionSession, previousSession());
+                if(isCurrentSession){
+                  if(admissionMonthIndex<HalfYearlyMonthIndex && isHalfExamFeeNotPaid){
+                    dueAmt += addExamFees(feeData, false, true)
+                  }
+                  if(admissionMonthIndex<AnualExamMonthIndex && isAnnualExamFeeNotPaid){
+                    dueAmt += addExamFees(feeData, true, false)
                   }
                 }else{
-                  if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;}
-                  if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;}
-                }
-              }else{
-                if(admissionSession ==='2023-24' ){
-                  if ((admissionMonthIndex >= 3 && admissionMonthIndex <= 9)) {
-                    dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;
-                    dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
-                  } else if ((admissionMonthIndex >= 10 || admissionMonthIndex <= 2)) {
-                    dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
+                  if(isHalfExamFeeNotPaid){
+                    dueAmt += addExamFees(feeData, false, true)
                   }
-                }else{
-                  dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;
-                  dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
+                  if(isAnnualExamFeeNotPaid){
+                    dueAmt += addExamFees(feeData, true, false)
+                  }
                 }
+            } else {
+              if(isHalfExamFeeNotPaid){
+                dueAmt += addExamFees(feeData, false, true)
               }
-            }else{
-              if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
-                const isAnnualExamFeeNotPaid = !previousPayDetail.other.find(data => data.name === 'ANNUAL EXAM')
-                const isHalfExamFeeNotPaid   = !previousPayDetail.other.find(data => data.name === 'HALF YEARLY EXAM')
-                if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;}
-                if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;}
-                
-              }else{
-                  dueAmt += feeData && feeData.halfYearlyExamFee ? Number(feeData.halfYearlyExamFee) : 0;
-                  dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
+              if(isAnnualExamFeeNotPaid){
+                dueAmt += addExamFees(feeData, true, false)
               }
-            }   
+            }  
 
             if(previousPayDetail && previousPayDetail.otherDue){
               for(const key in previousPayDetail.otherDue) {
@@ -2664,23 +2716,109 @@ module.exports = {
       let limit = (req.query.limit && parseInt(req.query.limit) > 0 )? parseInt(req.query.limit):10
       let pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber) : 0 ;
       let totalCount=0
-      let order = {'invoiceInfo.submittedDate':"desc"}
+      let totalPaidAmount=0
+      let isDesc= req.query.isDesc? req.query.isDesc=='true'? 'desc':'asc': 'desc'
+      let sortOrder={'created':isDesc}
+      let startOfDateRange;
+      let endOfDateRange;
+      let dayCount
+      const topAdminRole = req.user.userInfo.roleName==='TOPADMIN'?true:false
+      const timeZone ='Asia/Kolkata'
+      const TodayDate = moment.tz(timeZone).endOf('day').toDate()
+      if(req.query.fromDate&&req.query.toDate){
+           startOfDateRange = moment.tz(req.query.fromDate, timeZone).startOf('day').toDate().toISOString();
+           endOfDateRange = moment.tz(req.query.toDate, timeZone).endOf('day').toDate().toISOString();
+           dayCount = moment(TodayDate).diff(startOfDateRange, 'days')+1;
+           
+      }else if(req.query.fromDate && !req.query.toDate){
+          startOfDateRange = moment.tz(req.query.fromDate, timeZone).startOf('day').toDate().toISOString();
+         
+          dayCount = moment(TodayDate).diff(startOfDateRange, 'days')+1;
+      }
+
+   
+      console.log("dayCount", dayCount)
+      let dateFilter={};
+      if(req.query.fromDate && !req.query.toDate){
+        if(req.query.dateFilterType && req.query.dateFilterType==='sub_date'){
+          dateFilter = {
+            'invoiceInfo.submittedDate':{
+                '$gte':startOfDateRange
+            }
+          }
+        }else{
+          dateFilter = {
+            'created':{
+                '$gte':startOfDateRange
+            }
+          }
+        }
+      }
+       if(req.query.fromDate && req.query.toDate){
+        if(req.query.dateFilterType && req.query.dateFilterType==='sub_date'){
+          dateFilter = {
+            'invoiceInfo.submittedDate':{
+              "$gte": startOfDateRange,
+              "$lte": endOfDateRange
+            }
+          }
+        }else{
+          dateFilter = {
+            'created':{
+              "$gte": startOfDateRange,
+              "$lte": endOfDateRange
+            }
+          }
+        }
+      }
+
+      console.log("dateFilter", dateFilter)
 
       if(req.query.invoiceId){
         invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
+        dateFilter={}
+        dayCount= undefined
       }else{
-        order={'created':'desc'}
-        totalCount= await invoiceModel.find({}).countDocuments()
-        invoiceData= await invoiceModel.find({}).sort(order).limit(limit).skip(limit * pageNumber)
+        if(req.query.sortOrder && req.query.sortOrder==='sub_date'){
+          sortOrder = {'invoiceInfo.submittedDate': isDesc}
+        }
+        if(req.query.sortOrder && req.query.sortOrder==='entry_date'){
+          sortOrder = {'created': isDesc}
+        }
+   
+       const sumData = await invoiceModel.aggregate([
+                {
+                    "$match": {
+                        ...dateFilter,
+                        "deleted": false
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": null,
+                        "totalAmount": { "$sum": "$amount" }
+                    }
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    totalAmount: 1
+                  }
+              }
+        ])
+        // console.log("sumData", sumData[0]? sumData[0].totalAmount:0)
+        totalPaidAmount= sumData[0]? sumData[0].totalAmount:0
+        totalCount= await invoiceModel.find(dateFilter).countDocuments()
+        invoiceData= await invoiceModel.find(dateFilter).sort(sortOrder).limit(limit).skip(limit * pageNumber)
       }
       if(invoiceData && invoiceData.length>0){
         let allInvoice=[]
           for (let it of invoiceData) {
-            if(it.invoiceInfo.userId && (it.invoiceType==='MONTHLY' || it.invoiceType==='EXAM_FEE' || it.invoiceType==='OTHER_PAYMENT')){
+            if(it.invoiceInfo.userId){
               const userData =  await userModel.findOne({'userInfo.userId': it.invoiceInfo.userId})
               it.invoiceInfo['userData']= userData
             }
-              if(it.invoiceInfo.paymentRecieverId && (it.invoiceType==='MONTHLY' || it.invoiceType==='EXAM_FEE' || it.invoiceType==='OTHER_PAYMENT')){
+              if(it.invoiceInfo.paymentRecieverId){
               const recieverData = await userModel.findOne({'_id': it.invoiceInfo.paymentRecieverId})
                 //console.log("recieverDatarecieverDatarecieverData", recieverData)
                 it.invoiceInfo['recieverName'] = recieverData && recieverData.userInfo &&recieverData.userInfo.fullName? recieverData.userInfo.fullName:'N/A'
@@ -2690,9 +2828,10 @@ module.exports = {
         return res.status(200).json({
           success: true,
           message: "Invoice detail get successfully.",
-          data: allInvoice.sort((a,b)=> new Date(b.invoiceInfo.submittedDate) - new Date(a.invoiceInfo.submittedDate)),
+          data: allInvoice,
           pageSize:totalCount>0? Math.floor(totalCount/limit)+1:0,
-          totalCount:totalCount
+          totalCount:totalCount,
+          totalPaidAmount: topAdminRole? totalPaidAmount : (dayCount && dayCount<=32) ?totalPaidAmount:0
         })
       }else{
         return res.status(200).json({

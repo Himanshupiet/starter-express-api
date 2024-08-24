@@ -47,6 +47,12 @@ const whatsappApiToken = process.env.WHATSAPP_API_TOKEN
 function generateUniqueId() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+Date.prototype.getFinancialMonthIndex = function(timezone = "Asia/Kolkata") {
+  // Get the actual month index (0-11) using moment-timezone
+  const actualMonthIndex = moment.tz(this, timezone).month();
+  // Shift the index so that April is 1 and March is 12
+  return (actualMonthIndex + 9) % 12 + 1;
+};
 module.exports = {
   // to send email
   sendEmail: async (data) => {
@@ -237,28 +243,40 @@ module.exports = {
     return newInvoiceId
   }, 
   currentSession :()=> {
-    const currentDate= new Date()
     const currentYear = Number(moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'))
     const currentMonth= Number(moment.tz(Date.now(), "Asia/Kolkata").format('MM'))
     let session=''
     if(currentMonth>=4){
         session = `${(currentYear).toString()}-${(currentYear+1).toString().substring(2)}`
-    }else if(currentMonth<4 ){
+    }else{
         session = `${(currentYear-1).toString()}-${(currentYear).toString().substring(2)}`
     }
     //console.log("session", session)
     return session
   },
 
+ 
+  previousSession : () => {
+    const currentYear = Number(moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'));
+    const currentMonth = Number(moment.tz(Date.now(), "Asia/Kolkata").format('MM'));
+    let previousSession = '';
+    if (currentMonth >= 4) { 
+        previousSession = `${(currentYear - 1).toString()}-${currentYear.toString().substring(2)}`;
+    } else { 
+        previousSession = `${(currentYear - 2).toString()}-${(currentYear - 1).toString().substring(2)}`;
+    }
+    return previousSession
+  },
+
 
   getAdmissionSession:(admmissionDate)=>{
     const currentDate= new Date(admmissionDate)
-    const currentYear = Number(moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'))
-    const currentMonth= Number(moment.tz(Date.now(), "Asia/Kolkata").format('MM'))
+    const currentYear = Number(moment.tz(currentDate, "Asia/Kolkata").format('YYYY'))
+    const currentMonth= Number(moment.tz(currentDate, "Asia/Kolkata").format('MM'))
     let session=''
     if(currentMonth>=4){
         session = `${(currentYear).toString()}-${(currentYear+1).toString().substring(2)}`
-    }else if(currentMonth<4 ){
+    }else{
         session = `${(currentYear-1).toString()}-${(currentYear).toString().substring(2)}`
     }
     //console.log("session", session)

@@ -232,17 +232,22 @@ module.exports = {
           const response = await whatsAppMessage(it.userInfo.phoneNumber2, msg, tempType, data)
         }
       }
-      await whatsAppMessage('7250175700', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})
+      await whatsAppMessage('7870421111', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})// Dinker
+      await whatsAppMessage('7250175700', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})// kailash
       await whatsAppMessage('8233443106', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})
-      return res.status(200).json({
-        success: true,
-        message: "Birthday wishes send.",
-      })
+      if(res || req){
+        return res.status(200).json({
+          success: true,
+          message: "Birthday wishes send.",
+        })
+      }
     }else{
-      return res.status(200).json({
-        success: false,
-        message: "No birthrday found.",
-      })
+      if(res || req){
+        return res.status(200).json({
+          success: false,
+          message: "No birthrday found.",
+        })
+      }
     }
 
 },

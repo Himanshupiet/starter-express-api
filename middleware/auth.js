@@ -27,7 +27,7 @@ exports.isAunthaticatedAdmin = async (req, res, next) => {
                 const userData = await userModel.findOne({ _id: decoded.userId });
                 if (userData) {
                   req.user = userData;
-                  req.setCompanyId = userData.userInfo.companyId;
+                  // req.setCompanyId = userData.userInfo.companyId;
                   next();
                 } else {
                   return res.status(401).json({
