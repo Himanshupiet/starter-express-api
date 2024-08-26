@@ -1885,9 +1885,13 @@ module.exports = {
         },
         {
           $match: {
-            istDate: {
-              $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
-            }
+            $and:[
+              {istDate: {
+                $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
+                }
+              },
+              {deleted: false}
+              ]
           }
         },
         // {
