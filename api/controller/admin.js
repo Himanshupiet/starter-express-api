@@ -293,13 +293,19 @@ module.exports = {
         filterOptionParam={[`document.${req.body.filterOption}`]:{$exists:false}}
       }else if(req.body.filterOption && req.body.docFilter===false){
         if(req.body.filterOption==='No Mobile Number'){
-          filterOptionParam={$or:[{'userInfo.phoneNumber1':''},{'userInfo.phoneNumber1':'0000000000'}]}
+          filterOptionParam={$or:[{'userInfo.phoneNumber1':{$in:['','0000000001', '0000000000']}}]}
         }
         if(req.body.filterOption==='No Aadhar'){
           filterOptionParam={'userInfo.aadharNumber':''}
         }
         if(req.body.filterOption==='Deactive'){
           studentAprroveParam={$and:[{deleted:false},{isApproved:true},{isActive:false}]}
+        }
+        if(req.body.filterOption==='Free Students'){
+          studentAprroveParam={$and:[{'userInfo.feeFree':true}]}
+        }
+        if(req.body.filterOption==='Bus Students'){
+          studentAprroveParam={$and:[{'userInfo.busService':true}]}
         }
 
       }
@@ -2884,7 +2890,7 @@ module.exports = {
   deleteTransaction:async(req, res)=>{
         try {
           const invoiceData= await invoiceModel.findOne({invoiceId: req.body.invoiceId})
-          if(invoiceData && req.body.session && (invoiceData.invoiceType==='MONTHLY'|| invoiceData.invoiceType==='EXAM_FEE') ){
+          if(invoiceData && req.body.session && (invoiceData.invoiceType==='MONTHLY'|| invoiceData.invoiceType==='EXAM_FEE' || invoiceData.invoiceType==='OTHER_PAYMENT') ){
             const paymentData= await paymentModel.findOne({$and:[{'userId': invoiceData.userId},{session: req.body.session}]})
             if(paymentData){
               let unsetMonthName={}
