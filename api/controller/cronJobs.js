@@ -202,7 +202,9 @@ module.exports = {
             $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
             }
           },
-          {deleted: false}
+          {deleted: false},
+          {isApproved: true},
+          {isActive: true}
           ]
         }
 
