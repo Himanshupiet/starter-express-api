@@ -178,11 +178,17 @@ module.exports = {
   //to genrate new roi
 
   newUserIdGen: async () => {
-    let newUserId = Date.now().toString().substring(7, 20).toString();
-    for (;;) {
-      const sameRoiId = await userModel.findOne({ "userInfo.userId": newUserId  });
+    const generateId = () => {
+      let id = Math.floor(Math.random() * 900000) + 100000; // Generate a 6-digit number (from 100000 to 999999)
+      return id.toString();
+    };
+  
+    let newUserId = generateId();
+  
+    while (true) {
+      const sameRoiId = await userModel.findOne({ "userInfo.userId": newUserId });
       if (sameRoiId) {
-        newUserId = Date.now().toString().substring(7, 20).toString();
+        newUserId = generateId(); // Regenerate if ID already exists
       } else {
         break;
       }

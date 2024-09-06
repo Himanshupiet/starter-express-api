@@ -265,7 +265,8 @@ module.exports = {
              name: req.body.fullName,
              class:req.body.class,
              userId:sendSMSandEmaildata.userId,
-             password: sendSMSandEmaildata.password
+             password: sendSMSandEmaildata.password,
+             sendMessageFor:'Registration'
           }
      
             let userData = await newUser.save();

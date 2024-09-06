@@ -47,6 +47,10 @@ const paymentSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  busService:{
+    type: Boolean,
+    default: false
+  },
   dueAmount:{
     type: Number
   },

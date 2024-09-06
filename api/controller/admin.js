@@ -129,11 +129,11 @@ checkAdmissionDate=(user, columnMonth, session)=>{
 const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, session )=>{
   let busFee= 0
   let monthlyFee=0
-  if(sData.userInfo.busService && busRouteFareList.length>0){
+  if(userPayDetail.busService && busRouteFareList.length>0){
     const busFeeData= busRouteFareList.find(busData => busData._id.toString() === sData.userInfo.busRouteId)
     busFee = (busFeeData && busFeeData.fare)? busFeeData.fare:0
   }
-  if(monthlyFeeList.length>0 ){
+  if(monthlyFeeList.length>0  && userPayDetail.feeFree !=true){
     //console.log("userPayDetail.class",userPayDetail.class)
     const monthlyFeeData = monthlyFeeList.find(data => data.className === userPayDetail.class)
     monthlyFee =  monthlyFeeData && monthlyFeeData.monthlyFee ? monthlyFeeData.monthlyFee :0
@@ -142,13 +142,13 @@ const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, s
   for (const month of monthList) {
     let monthData={}
     const monthEnable =  checkAdmissionDate(sData, month, session)
-      if(monthEnable && (userPayDetail.feeFree === undefined || userPayDetail.feeFree === false )){
-        monthData['monthlyFee']= monthlyFee
-        monthData['busFee']= busFee
+      if(monthEnable && (userPayDetail.feeFree != true || userPayDetail.busService===true)){
+        monthData['monthlyFee']= userPayDetail.feeFree===true? 0: monthlyFee
+        monthData['busFee']= userPayDetail.busService ==true? busFee:0
         monthData['payEnable']=true
         monthData['paidDone']=userPayDetail && userPayDetail[month]? true: false
         monthData['amt'] = userPayDetail && userPayDetail[month]? (parseInt(userPayDetail[month].monthlyFee) + parseInt(userPayDetail[month].busFee)):"000"
-      }else{
+      }else{  
         monthData['payEnable']=false
       }
       monthPayData[month]= monthData
@@ -508,11 +508,8 @@ module.exports = {
         await AuthToken.deleteMany({ userId: user.userInfo.userId })
       }
       if(updatedUser){
-        if(userData && userData.userInfo.class !== updatedUser.userInfo.class && updatedUser.userInfo.roleName==='STUDENT'){
-          await paymentModel.findOneAndUpdate({$and:[{session:updatedUser.userInfo.session},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: !!req.body.feeFree})
-        }
         if(updatedUser.userInfo.roleName==='STUDENT'){
-          const foundPayment = await paymentModel.findOne({$and:[{session:updatedUser.userInfo.session},{'userId': updatedUser.userInfo.userId}]})
+          const foundPayment = await paymentModel.findOne({$and:[{session:currentSession()},{'userId': updatedUser.userInfo.userId}]})
           if(!foundPayment){
             const newPaymentData = paymentModel({
               userId:updatedUser.userInfo.userId,
@@ -520,9 +517,12 @@ module.exports = {
               class:updatedUser.userInfo.class,
               dueAmount: 0,
               excessAmount:0,
-              totalFineAmount:0
+              totalFineAmount:0,
+              feeFree: req.body.feeFree
             })
             const  newPaymentDataCreated = await newPaymentData.save()
+          }else{
+            await paymentModel.findOneAndUpdate({$and:[{session:currentSession()},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: req.body.feeFree})
           }
         }
         return res.status(200).json({
@@ -1896,7 +1896,9 @@ module.exports = {
                 $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
                 }
               },
-              {deleted: false}
+              {deleted: false},
+              {isApproved: true},
+              {isActive: true}
               ]
           }
         },
@@ -2558,6 +2560,10 @@ module.exports = {
         for (const it of allPayDetail) {
           let prevAmtDue=0
           const sData= allStudents.find(data=> data.userInfo.userId=== it.userId)
+          if(!sData){
+            continue;
+          }
+         
           const previousPayDetail = reqSession===currentSession()? allPreviousPayDetail.find(data=> data.userId=== it.userId) || undefined : undefined
           const condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
           const invoiceData = await invoiceModel.find(condInvParam)
@@ -3052,7 +3058,8 @@ module.exports = {
         const WSData = {
           userId: userId,
           password: password,
-          name: user.userInfo.fullName
+          name: user.userInfo.fullName,
+          sendMessageFor:'Password Share'
         };
         await mesageApi(toNumber, message, templateType, WSData);
       }
@@ -3074,7 +3081,10 @@ module.exports = {
     
         const WSData = {
           title: "फीस संबंधित सूचना",
-          message: `प्रिय अभिवावक, आपको सूचित किया जाता है कि ${user.userInfo.fullName} Class-${user.userInfo.class} का महीना फीस ${otherDetail.amount}/- बाकी है। लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`,
+          message: `प्रिय अभिवावक, आपको सूचित किया जाता है कि ${user.userInfo.fullName} Class-${user.userInfo.class} का महीना/अन्य फीस  ${otherDetail.amount}/- बाकी है। लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`,
+          userId: userId,
+          sendMessageFor:'Due Messaage',
+          englishMessage: `Dear Parent, You are informed that the monthly/other fees of ${user.userInfo.fullName} Class- ${user.userInfo.class} is Rs. ${otherDetail.amount}/- pending. Please submit before the due date to avoid late fine. If it has already been deposited then please inform.`
           //message: `प्रिय अभिभावक, ${user.userInfo.fullName} कक्षा का महीना शुल्क ${otherDetail.amount}/- जमा कर दें । लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`
          };
           await mesageApi(toNumber, message, templateType, WSData);
@@ -3123,7 +3133,67 @@ module.exports = {
       }else{
         return res.status(200).json({
           success: false,
-          message: 'Message not send.'
+          message: 'Message not found.'
+        })
+      }
+    } catch (err) {
+      console.log(err)
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    } 
+  },
+  getAllNotes:async(req, res)=>{
+    try {
+      let searchStr=null
+      if(req.query.searchStr){
+        searchStr= req.query.searchStr
+      }
+    const notesData=  await userModel.aggregate([
+        {
+          $match: {
+            // Match by userId if provided
+            ...(searchStr ? { "userInfo.userId": searchStr } : {})
+          }
+        },
+        {
+          $unwind: "$userInfo.notes" // Unwind the notes array to get individual notes
+        },
+        {
+          $match: {
+            // Match by task if provided (assuming partial search with case-insensitive matching)
+            ...(searchStr ? { "userInfo.notes.task": { $regex: searchStr, $options: "i" } } : {})
+          }
+        },
+        {
+          $project: {
+            _id: 0,                    // Exclude _id
+            userId: "$userInfo.userId", // Include userId
+            userFullName: "$userInfo.fullName",
+            class: "$userInfo.class", // Include class
+            task: "$userInfo.notes.task", // Include task from notes
+            isCompleted: "$userInfo.notes.isCompleted", // Include isCompleted
+            created: "$userInfo.notes.created", // Include date for sorting
+            delete: "$userInfo.notes.delete" ,// Include delete field
+            insertedName: "$userInfo.notes.insertedName" // Include delete field
+          }
+        },
+        {
+          $sort: { created: 1 } // Sort by date in ascending order (use -1 for descending order)
+        }
+      ])
+      console.log("notesData")
+      if(notesData && notesData.length>0){
+        return res.status(200).json({
+          success: true,
+          message: 'Notes get successfully',
+          data: notesData
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: 'Notes not found.'
         })
       }
     } catch (err) {
