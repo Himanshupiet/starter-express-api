@@ -518,11 +518,12 @@ module.exports = {
               dueAmount: 0,
               excessAmount:0,
               totalFineAmount:0,
-              feeFree: req.body.feeFree
+              feeFree: req.body.feeFree,
+              busService: req.body.busService
             })
             const  newPaymentDataCreated = await newPaymentData.save()
           }else{
-            await paymentModel.findOneAndUpdate({$and:[{session:currentSession()},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: req.body.feeFree})
+            await paymentModel.findOneAndUpdate({$and:[{session:currentSession()},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: req.body.feeFree, busService: req.body.busService})
           }
         }
         return res.status(200).json({
