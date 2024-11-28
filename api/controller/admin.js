@@ -1,4 +1,5 @@
 const moment = require("moment-timezone");
+const multer = require('multer');
 const fast2sms = require("fast-two-sms");
 const mongoose = require("mongoose");
 const mongodb = require("mongodb");
@@ -14,7 +15,8 @@ const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession} = require('../../util/helper')
+const cloudinary = require("cloudinary").v2;
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -35,6 +37,7 @@ const fs = require("fs");
 const {payOptionModel}=require("../../models/payOption");
 let slugify = require('slugify')
 const axios = require('axios');
+const user=require("./user");
 
 
 
@@ -43,6 +46,9 @@ const UPLOAD_IMAGE_URL = process.env.UPLOAD_IMAGE_URL
 const { PHONEPE_MERCHANT_ID, PHONEPE_MERCHANT_KEY, PHONEPE_MERCHANT_SALT, PHONEPE_CALLBACK_URL } = process.env;
 const HalfYearlyMonthIndex = 6
 const AnualExamMonthIndex = 12
+
+const storage = multer.memoryStorage(); // Store uploaded files in memory temporarily
+const upload = multer({ storage });
 
 const generateHash = (data) => {
   return crypto.createHash('sha256').update(data).digest('hex');
@@ -458,6 +464,24 @@ module.exports = {
           message: "Not deleted user.",
         });
       }
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+  },
+  rollNumberUpdate: async (req, res) => {
+    try {
+      console.log("1222222", req.body.rollNumberData)
+      // for (const it of req.body.rollNumberData) {
+      //   await userModel.findOneAndUpdate({'userInfo.userId': it.userId},{'rollNumber': it.rollNumber, modified:new Date()});
+      // }
+      return res.status(200).json({
+        success: true,
+        message: 'Roll number updated successfully',
+      });
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -922,7 +946,8 @@ module.exports = {
                 let newResultData=[]
                     for (const studentData of userData) {
                     let studentResultData = {
-                      ...studentData.userInfo
+                      ...studentData.userInfo,
+                      rollNumber: studentData.rollNumber
                     }
                     let total = 0 
                     const secondResultData = await resultModel.findOne({$and:[
@@ -2292,7 +2317,7 @@ module.exports = {
                       }
                     }
                 }
-                paymentFound['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
+                paymentFound['dueAmount'] = req.body.dueAmount? req.body.dueAmount:paymentFound.dueAmount
                 paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
                 paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
                 paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
@@ -3455,6 +3480,116 @@ module.exports = {
       });
     }
   },
+
+  uploadImage: async(req, res, next)=>{
+    console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.fileName)
+    console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.files.file)
+    const file =  req.files.file
+    try{
+      cloudinary.uploader.upload(file.tempFilePath, {
+        public_id: req.body.fileName,
+        resource_type: 'image'
+        },(error, result) => {
+          if (!error) {
+            // The image has been successfully uploaded.
+            console.log('Upload Result:', result);
+            return res.status(200).json({
+              success: true,
+              message:'Image uploaded success',
+              data: result,
+            });
+          } else {
+            // Handle the error.
+            console.error('Upload Error:', error);
+            return res.status(400).json({
+              success: false,
+              message:'Image not uploaded',
+              data: error,
+            });
+          }
+      });
+    }catch(err){
+      console.log("errrrrrrrrrrrr", err)
+      return res.status(400).json({
+        success: false,
+        message:'Error while upload image',
+        error: err.message,
+      });
+    }
+  },
+  uploadDocFireBase: async(req, res, next)=>{
+    console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.fileName)
+    console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.files.image)
+   
+    try{
+      const userId= req.body.userId 
+      const docType= req.body.docType
+      const fileName= req.body.fileName
+      let userData= await userModel.findOne({'userInfo.userId': userId})
+
+      const imageData= await uploadImageFireBase(req, userId, docType, fileName)
+      if(imageData && imageData.status===true){
+        userData.document={
+          ...userData.document,
+            [docType]: imageData.url
+          }
+
+        //userData.save()
+        await userModel.findOneAndUpdate({'_id': userData._id},userData)
+        return res.status(200).json({
+          success: true,
+          message: imageData.message,
+          data:{
+            url: imageData.url
+          }
+        });
+      }else{
+        return res.status(400).json({
+          success: false,
+          message:imageData.message,
+        });
+      }
+    }catch(err){
+      console.log("errrrrrrrrrrrr", err)
+      return res.status(400).json({
+        success: false,
+        message:'Error while upload image',
+        error: err.message,
+      });
+    }
+  },
+  imageUplaodFireBase: async(req, res, next)=>{
+    console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.fileName)
+    console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.files.image)
+   
+    try{
+      const userId= req.body.userId || '543543534'
+      const docType= req.body.docType || 'stPhoto'
+     const imageData= await uploadImageFireBase(req, userId, docType)
+     if(imageData && imageData.status===true){
+      return res.status(200).json({
+        success: true,
+        message: imageData.message,
+        data:{
+          url: imageData.url
+        }
+      });
+     }else{
+      return res.status(400).json({
+        success: false,
+        message:imageData.message,
+      });
+     }
+    }catch(err){
+      console.log("errrrrrrrrrrrr", err)
+      return res.status(400).json({
+        success: false,
+        message:'Error while upload image',
+        error: err.message,
+      });
+    }
+  },
+
 
 
   //old apis

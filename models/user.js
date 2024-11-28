@@ -137,7 +137,9 @@ const userSchema = new mongoose.Schema({
       type:String,
     },
   },
-
+  rollNumber:{
+    type:Number,
+  },
   isApproved: {
     type: Boolean,
     default: false,

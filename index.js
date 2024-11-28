@@ -11,12 +11,16 @@ const { roleModel } = require("./models/role");
 const { userModel } = require("./models/user");
 const fileUpload = require('express-fileupload')
 const { decryptAES} = require("./util/helper");
+const cloudinary = require("cloudinary").v2;
 
 const bcrypt = require("bcryptjs");
 const api = process.env.API_URL;
 const PORT = process.env.PORT;
 const mongoUrl = process.env.MONGO_LOCAL_CONN_URL;
 const mongoDbName = process.env.MONGO_DB_NAME;
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
 
 const SECRET = process.env.SECRET;
 
@@ -29,7 +33,7 @@ app.use(morgan("tiny"));
 app.use(errorHandler);
 app.use(fileUpload({
   //useTempFiles : true,
-  tempFileDir : '/tmp/',
+  //tempFileDir : '/tmp/',
   limits: {fileSize: 50 * 1024 * 1024},
 }));
 
@@ -44,6 +48,13 @@ app.use(function (req, res, next) {
   );
   next();
 });
+
+cloudinary.config({
+  cloud_name: CLOUDINARY_CLOUD_NAME,
+  api_key: CLOUDINARY_API_KEY,
+  api_secret: CLOUDINARY_API_SECRET
+});
+
 
 //controller
 const public = require("./routes/public");

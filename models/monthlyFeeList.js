@@ -14,6 +14,10 @@ const monthlyFeeListSchema = new mongoose.Schema({
     type: Number,
     required: false,
   },
+  session: {
+    type: String,
+    required: true,
+  },
   created: {
     type: Date,
   },

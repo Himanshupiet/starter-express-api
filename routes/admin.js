@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const admin = require("../api/controller/admin");
+const multer = require('multer');
 const { isAunthaticatedAdmin } = require("../middleware/auth");
+
+const storage = multer.memoryStorage(); // Store uploaded files in memory temporarily
+const upload = multer({ storage });
 
 router.get("/createBackup", admin.createBuckup)
 // router with aunthenticate
@@ -11,6 +15,7 @@ router.post("/getAllstudent",  admin.getAllStudents);
 router.get("/deleteUser/:id", admin.deleteUser)
 router.post("/updateUser/:id", admin.updateUserById)
 router.post("/updateStatus",  admin.updateStatus);
+router.post('/submitRollNumber', admin.rollNumberUpdate)
 router.get("/getSmsData",  admin.getSmsData);
 router.post("/submitResult",  admin.submitResult);
 router.post("/getResult",  admin.getResult);
@@ -48,10 +53,13 @@ router.post("/initiate-payment", admin.initiatePayment)
 router.post("/sendMessage", admin.sendMessage)
 router.get("/getAllMessage", admin.getAllMessage)
 router.get('/getAllNotes', admin.getAllNotes)
+router.post('/imageUploadFireBase', admin.imageUplaodFireBase)
+router.post('/uploadDocFireBase', admin.uploadDocFireBase)
 
 // router for blog
 
 router.post("/addBlogPost",  admin.createBlogPost)
+router.post("/uploadImage",  admin.uploadImage)
 router.post("/deleteBlogPost",  admin.deleteBlogPost)
 router.post("/updateBlogPost",  admin.updateBlogPost)
 

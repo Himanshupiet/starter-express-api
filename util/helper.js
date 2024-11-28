@@ -1,5 +1,6 @@
 const fast2sms = require("fast-two-sms");
 const axios = require('axios')
+const uniqid = require("uniqid")
 var CronJob = require('cron').CronJob;
 const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
@@ -17,6 +18,7 @@ const fs = require("fs").promises;
 const JSZip = require('jszip');
 const zip = new JSZip();
 const {roleModel}=require("../models/role");
+const {bucket}=require("./firebasebucket.js");
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
@@ -505,6 +507,55 @@ module.exports = {
          await newMessageInfo.save();
          return false
       }
+  },
+
+  getImageUrlFireBase: async(imageName)=>{
+    try {
+      const file = bucket.file(`images/${imageName}`);
+      const [url] = await file.getSignedUrl({
+        action: "read",
+        expires: "03-01-2500", // Set long expiry
+      });
+     return {imageUrl: url , status:true}
+    } catch (error) {
+      console.log("Error Image url Firebase:", error)
+      //"Error getting image URL"
+      return {status:false}
+    }
+  },
+  
+
+  uploadImageFireBase: async(req, userId, docType, fileName)=>{
+    if (!req.files) {
+      return {status: false, message:'No file to upload.'};
+    }
+  
+    const newFileName = fileName? fileName:`${docType}_${userId}.jpeg`; // Create unique filename
+    //const fileName = req.files.image.name
+    const file = bucket.file(newFileName);
+  
+    try {
+      // Upload file to Firebase Storage
+      await file.save(req.files.image.data, {
+        // metadata: { contentType: req.files.image.mimetype },
+        metadata: {
+          contentType: 'image/png',
+          metadata: {
+              firebaseStorageDownloadTokens: uniqid(),
+          },
+      },
+        public: true, // Make the file publicly accessible
+      });
+  
+      // Get public URL of the uploaded image
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+  
+     return {status: true, message: 'Image uploaded successfully', url: publicUrl };
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return {status: false, message:'Error uploading image.'};
+    }
+
   },
 
 

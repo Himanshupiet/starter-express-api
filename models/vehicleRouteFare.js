@@ -21,6 +21,10 @@ const vehicleRouteFareSchema = new mongoose.Schema({
     type: String,
     //required: true,
   },
+  session: {
+    type: String,
+    required: true,
+  },
   created: {
     type: Date,
   },

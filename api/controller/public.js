@@ -229,10 +229,17 @@ module.exports = {
       const isAdminRegistration = req.body.isAdminRegistration
       delete req.body.isAdminRegistration
 
+      const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
+      const allStudentOfClass= await userModel.find({$and:[activeParam, {'userInfo.class':req.body.class}]})
+      const allRollNumbersValid = (arr) => {
+        return arr.every(student => student.hasOwnProperty('rollNumber') && student.rollNumber > 0);
+      };
+      const isAllRollNumbersValid= allRollNumbersValid(allStudentOfClass)
+
       const newUserId = await newUserIdGen();
       const getRoleId = await roleModel.findOne({ roleName: "STUDENT" });
       let newPassword =  randomPassword().join("").toString();
-        let newUser = new userModel({
+        let newUserData={
           userInfo: {
             ...req.body,
             dob:new Date(req.body.dob),
@@ -242,7 +249,17 @@ module.exports = {
           },
           isActive:isAdminRegistration? true: false,
           isApproved: isAdminRegistration? true: false,
-        });
+        }
+        if(isAllRollNumbersValid){
+          const findMaxRollNumber = (arr) => {
+            return arr.reduce((maxStudent, currentStudent) => {
+              return currentStudent.rollNumber > maxStudent.rollNumber ? currentStudent : maxStudent;
+            });
+          };
+          const maxRoleNumberStudent = findMaxRollNumber(allStudentOfClass);
+          newUserData['rollNumber']= Number(maxRoleNumberStudent.rollNumber)+1
+        }
+        let newUser = new userModel(newUserData);
         const sendSMSandEmaildata = {
           fullName: req.body.fullName,
           email: req.body.email,
