@@ -474,10 +474,10 @@ module.exports = {
   },
   rollNumberUpdate: async (req, res) => {
     try {
-      console.log("1222222", req.body.rollNumberData)
-      // for (const it of req.body.rollNumberData) {
-      //   await userModel.findOneAndUpdate({'userInfo.userId': it.userId},{'rollNumber': it.rollNumber, modified:new Date()});
-      // }
+      // console.log("1222222", req.body.rollNumberData)
+      for (const it of req.body.rollNumberData) {
+        await userModel.findOneAndUpdate({'userInfo.userId': it.userId},{'rollNumber': it.rollNumber, modified:new Date()});
+      }
       return res.status(200).json({
         success: true,
         message: 'Roll number updated successfully',
@@ -2317,7 +2317,7 @@ module.exports = {
                       }
                     }
                 }
-                paymentFound['dueAmount'] = req.body.dueAmount? req.body.dueAmount:paymentFound.dueAmount
+                paymentFound['dueAmount'] = parseInt(req.body.paidAmount) == parseInt(req.body.totalGrandAmount)? 0 : parseInt(req.body.dueAmount|| 0) + parseInt(req.body.overDueAmount || 0)
                 paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
                 paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
                 paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
