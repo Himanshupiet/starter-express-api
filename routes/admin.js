@@ -55,6 +55,7 @@ router.get("/getAllMessage", admin.getAllMessage)
 router.get('/getAllNotes', admin.getAllNotes)
 router.post('/imageUploadFireBase', admin.imageUplaodFireBase)
 router.post('/uploadDocFireBase', admin.uploadDocFireBase)
+router.post('/removeDoc', admin.removeDocFireBase)
 
 // router for blog
 

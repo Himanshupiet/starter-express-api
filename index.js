@@ -66,6 +66,7 @@ const securitylog = require("./routes/secuirtylog");
 const cronJob = require("./routes/cronJob");
 const { passwordEncryptAES } = require("./util/helper");
 const {fetchBirthdays, sendDailyBackupEmail}=require("./api/controller/cronJobs");
+const {downloadAllImages}=require("./util/dowloadAllfile");
 
 app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);
@@ -136,8 +137,11 @@ await mongoose
         console.log(err);
       }
     };
+    //downloadAllImages('');
     //getAdmin();
     //sendDailyBackupEmail()
+    //sendDailyBackupEmailCron
+    //fetchBirthdays()
   })
   .catch((err) => {
     console.log(err);

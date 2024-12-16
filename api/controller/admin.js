@@ -16,7 +16,8 @@ const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const { ObjectId } = require("mongodb");
 const cloudinary = require("cloudinary").v2;
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase} = require('../../util/helper')
+const { ocrSpace } = require('ocr-space-api-wrapper');
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -43,6 +44,7 @@ const user=require("./user");
 
 const authorization = process.env.SMS_API;
 const UPLOAD_IMAGE_URL = process.env.UPLOAD_IMAGE_URL
+const OCR_API_KEY= process.env.OCR_SPACE_IMAGE_TO_TEXT_API_KEY
 const { PHONEPE_MERCHANT_ID, PHONEPE_MERCHANT_KEY, PHONEPE_MERCHANT_SALT, PHONEPE_CALLBACK_URL } = process.env;
 const HalfYearlyMonthIndex = 6
 const AnualExamMonthIndex = 12
@@ -947,6 +949,9 @@ module.exports = {
                     for (const studentData of userData) {
                     let studentResultData = {
                       ...studentData.userInfo,
+                      document: {
+                        stPhoto: studentData.document.stPhoto
+                      },
                       rollNumber: studentData.rollNumber
                     }
                     let total = 0 
@@ -3518,29 +3523,75 @@ module.exports = {
     }
   },
   uploadDocFireBase: async(req, res, next)=>{
-    console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.fileName)
-    console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.files.image)
+    //console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.fileName)
+    //console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.files.image)
    
     try{
-      const userId= req.body.userId 
-      const docType= req.body.docType
-      const fileName= req.body.fileName
+      const { userId, docType, fileName } = req.body;
       let userData= await userModel.findOne({'userInfo.userId': userId})
 
-      const imageData= await uploadImageFireBase(req, userId, docType, fileName)
+      const ocrPromise = new Promise(async (resolve, reject) => {
+        if (docType==='stAadharFside') {
+          //console.log("1111111111111")
+          try {
+            const base64data = 'data:image/jpeg;base64,'+Buffer.from(req.files.image.data, 'binary').toString('base64');
+            const result = await ocrSpace(base64data, {
+              apiKey: OCR_API_KEY,
+              language: 'eng',
+            });
+            //console.log("222222222222222", result)
+            const extractedText =result?.ParsedResults?.[0]?.ParsedText || '';
+            //console.log("333333333333", extractedText)
+
+            const uidaiRegex = /\b\d{4}\s\d{4}\s\d{4}\b/;
+            const matches = extractedText.match(uidaiRegex);
+            resolve(matches ? matches[0] : null);
+          } catch (error) {
+            console.log("Error", error)
+            resolve(null);
+          }
+        } else {
+          resolve(null);
+        }
+      })
+
+      const timeoutPromise = new Promise((resolve, reject) => {
+        if (docType==='stAadharFside') {
+          setTimeout(() => 
+            resolve('TIME_OUT')
+          //reject(new Error('OCR processing timed out'))
+          , 3000);
+        }else{
+          resolve(null)
+        }
+      });
+  
+      const uploadPromise= await uploadImageFireBase(req, userId, docType, fileName)
+  
+      const [ocrResult, imageData] = await Promise.all([
+        docType==='stAadharFSide'? Promise.race([ocrPromise, timeoutPromise]) : ocrPromise,
+        uploadPromise,
+      ]);
+      //console.log("4444444444", ocrResult)
+      
       if(imageData && imageData.status===true){
+        //console.log('docType', docType, "check",docType==='stAadharFside' )
+        if(docType==='stAadharFside'){
+          const aadharNumber = (ocrResult && ocrResult!=='TIME_OUT')? ocrResult.replace(/\s+/g, '') : '';
+          //console.log('Extracted Aadhaar Number:', aadharNumber);
+          userData.userInfo['aadharNumber'] = aadharNumber || userData.userInfo.aadharNumber
+        }
         userData.document={
           ...userData.document,
-            [docType]: imageData.url
-          }
-
-        //userData.save()
+            [docType]: fileName
+        }
         await userModel.findOneAndUpdate({'_id': userData._id},userData)
         return res.status(200).json({
           success: true,
           message: imageData.message,
           data:{
-            url: imageData.url
+            url: imageData.url,
+            aadharNumber: userData.userInfo.aadharNumber
           }
         });
       }else{
@@ -3585,6 +3636,63 @@ module.exports = {
       return res.status(400).json({
         success: false,
         message:'Error while upload image',
+        error: err.message,
+      });
+    }
+  },
+
+  removeDocFireBase: async(req, res, next)=>{
+    //console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.docType)
+    //console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.body.userId)
+   
+    try{
+      const {userId, docType}= req.body
+      let userData= await userModel.findOne({$and:[{'userInfo.userId': userId},{"userInfo.roleName": "STUDENT"}]})
+      if(!userData){
+        return res.status(400).json({
+          success: false,
+          message:'User not found',
+        });
+      }
+      if(!userData.document){
+        return res.status(400).json({
+          success: false,
+          message:'Any Doc/Photo not found.',
+        });
+      }
+      console.log("userData.document[docType]", userData)
+      if(!userData.document[docType]){
+        return res.status(400).json({
+          success: false,
+          message:'Doc/Photo not found.',
+        });
+      }
+      const fileName=  userData.document[docType] //`${docType}_${userId}.jpeg`
+      const isRemoved= await removeDocFireBase(fileName)
+      if(isRemoved){
+          userData.document={
+            ...userData.document,
+            [docType]: ''
+          }
+          if(docType==='stAadharFside'){
+            userData.userInfo['aadharNumber']=''
+          }
+          await userModel.findOneAndUpdate({'_id': userData.id}, userData)
+          return res.status(200).json({
+            success: true,
+            message: 'Doc/Photo deleted successfully',
+          });
+      }else{
+        return res.status(400).json({
+          success: false,
+          message:'Doc/Photo not deleted, Try again!',
+        });
+      }
+    }catch(err){
+      console.log("errrrrrrrrrrrr", err)
+      return res.status(400).json({
+        success: false,
+        message:'Error while removing Doc/Photo',
         error: err.message,
       });
     }

@@ -1,4 +1,5 @@
 const fast2sms = require("fast-two-sms");
+const { ocrSpace } = require('ocr-space-api-wrapper');
 const axios = require('axios')
 const uniqid = require("uniqid")
 var CronJob = require('cron').CronJob;
@@ -45,6 +46,7 @@ const SECRET_MSG= process.env.SECRET_MSG
 const SECRET_MSG_PASSWORD = process.env.SECRET_MSG_PASSWORD
 const whatsappApiUrl = process.env.WHATSAPP_API_URL
 const whatsappApiToken = process.env.WHATSAPP_API_TOKEN
+const OCR_API_KEY= process.env.OCR_SPACE_IMAGE_TO_TEXT_API_KEY
 
 function generateUniqueId() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -558,6 +560,19 @@ module.exports = {
 
   },
 
+  removeDocFireBase: async(filePath)=> {
+    try {
+      
+      //const bucket = admin.storage().bucket(); // Get the storage bucket
+      await bucket.file(filePath).delete(); // Delete the file
+      console.log(`File ${filePath} deleted successfully.`);
+      return true
+    } catch (error) {
+      console.error(`Failed to delete file ${filePath}:`, error);
+      return false
+    }
+  },
+
 
   // notificationSend : async () => {
  
@@ -662,13 +677,14 @@ module.exports = {
   sendDailyBackupEmailCron:async()=>{ 
     console.log('Before job instantiation');
     const job = new CronJob('0 */1 * * * *', async function() {
-      const d = new Date();
-      console.log('Every Tenth Minute:', d);
-      let today = new Date(todayIndiaDate);
-      let dd = String(today.getDate()).padStart(2, '0');
-      let mm = String(today.getMonth() + 1).padStart(2, '0'); 
-      let yyyy = today.getFullYear();
-      today = dd + '/' + mm + '/' + yyyy;
+      // const d = new Date();
+      // console.log('Every Tenth Minute:', d);
+      // let today = new Date(todayIndiaDate);
+      // let dd = String(today.getDate()).padStart(2, '0');
+      // let mm = String(today.getMonth() + 1).padStart(2, '0'); 
+      // let yyyy = today.getFullYear();
+      // today = dd + '/' + mm + '/' + yyyy;
+      const today = moment.tz(new Date(), 'DD/MM/YYYY', 'Asia/Kolkata').format('DD/MM/YYYY');;
       console.log("todaytoday", today)
       const userData = await roleModel.find()
       const userData2 = await roleModel.find()
@@ -739,6 +755,41 @@ module.exports = {
     job.start();
   },
 
+  getAadharNumber:async(imageFile,imageUrl, userId)=>{
+  
+    async function extractUidaiNumber(imagePath) {
+      console.log("extractUidaiNumber call",)
+      try {
 
+        const result = await ocrSpace(imagePath, { apiKey: OCR_API_KEY, language: 'eng' });
+        console.log("result", result)
+
+        // Extract text from the OCR result
+        const extractedText = result && result.ParsedResults && result.ParsedResults.length>0 && result.ParsedResults[0].ParsedText?result.ParsedResults[0].ParsedText:'' ;
+      
+        // Regular expression to find 12-digit numbers
+        const uidaiRegex = /\b\d{4}\s\d{4}\s\d{4}\b/;
+
+        // Find all matches
+        const matches = extractedText.match(uidaiRegex);
+
+        // Return the first match or null if not found
+        return matches ? matches[0] : null;
+      } catch (error) {
+        console.error("Error during OCR:", error);
+        return null;
+      }
+    }
+
+      let base64data = 'data:image/jpeg;base64,'+Buffer.from(imageFile, 'binary').toString('base64');
+      extractUidaiNumber(base64data).then(async(uidaiNumber)=>{
+        console.log("Extracted UIDAI Number base 64:", uidaiNumber)
+        if(uidaiNumber){
+          const cleanAadhaar = uidaiNumber.replace(/\s+/g, '');
+          console.log('Clean Aadhaar Number:', cleanAadhaar)
+          await userModel.findOneAndUpdate({'userInfo.userId': userId},{"userInfo.aadharNumber":cleanAadhaar})
+        }
+      });
+  }
 
 };

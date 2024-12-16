@@ -27,20 +27,36 @@ const whatsappApiToken = process.env.WHATSAPP_API_TOKEN
 function generateUniqueId() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+// const transporter = nodemailer.createTransport({
+//   host: "smtp-relay.brevo.com",
+//   port: 587,
+//   secure: false,
+//   auth: {
+//     // TODO: replace `user` and `pass` values from <https://forwardemail.net>
+//     user: '626492001@smtp-brevo.com',
+//     pass: 'KCbSGvUfmEw9pkYI'
+//   },
+//   // tls: {
+//   //   // do not fail on invalid certs
+//   //   rejectUnauthorized: false,
+//   // }
+// });
+
 const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
-  auth: {
-    // TODO: replace `user` and `pass` values from <https://forwardemail.net>
-    user: 'geekygeeks14@gmail.com',
-    pass: 'XgUC9AvZr16cyP0H'
-  },
-  // tls: {
-  //   // do not fail on invalid certs
-  //   rejectUnauthorized: false,
-  // }
-});
+    service:"Gmail",
+    //host: "",
+    //port: 587,
+    //secure: false,
+    auth: {
+      // TODO: replace `user` and `pass` values from <https://forwardemail.net>
+      user: 'hkc.kumar@gmail.com',
+      pass: process.env.GMAIL_APP_PASSWORD
+    },
+    // tls: {
+    //   // do not fail on invalid certs
+    //   rejectUnauthorized: false,
+    // }
+  });
 
 const TodayDate = moment.tz(new Date(), 'DD/MM/YYYY', 'Asia/Kolkata').format('DD/MM/YYYY');;
 
@@ -81,6 +97,7 @@ module.exports = {
       // let yyyy = today.getFullYear();
       // today = dd + '/' + mm + '/' + yyyy;
       const userData = await userModel.find()
+     
       const roleData = await roleModel.find()
       const examData = await examModel.find()
       const resultData = await resultModel.find()
@@ -92,6 +109,22 @@ module.exports = {
       const paymentData = await paymentModel.find()
       const invoiceData = await invoiceModel.find()
       const payOptionData = await payOptionModel.find()
+      // console.log("11111111111", userData.length)
+      // console.log("222222222222", roleData.length)
+      // console.log("33333333333", examData.length)
+      // console.log("4444444444", resultData.length)
+      // console.log("5555555555555", resultEntryPerData.length)
+      // console.log("66666666666666", examDateAndSubData.length)
+      // console.log("7777777777777", vehicleData.length)
+      // console.log("888888888888888", vehicleRouteFareData.length)
+      // console.log("9999999999999", monthlyFeeListData.length)
+      // console.log("aaaaaaaaaaa", paymentData.length)
+      // console.log("bbbbbbbbbbbbbb", invoiceData.length)
+      // console.log("cccccccccccc", payOptionData.length)
+      // console.log("ddddddddddddddd", userData.length)
+      // console.log("eeeeeeeeeeeeeeee", userData.length)
+      // console.log("ddddddddddddddd", userData.length)
+
   
       
       zip.file("users.json", JSON.stringify(userData));
@@ -108,6 +141,7 @@ module.exports = {
       zip.file("payoptions.json",JSON.stringify(payOptionData));
 
       const buffer = await zip.generateAsync({ type: `nodebuffer` })
+      // console.log("buffer", buffer)
 
       if(buffer){
           const mailOptions ={
@@ -122,6 +156,7 @@ module.exports = {
                     content:  buffer
                 },
               ],
+            
           }
           try {
             transporter.sendMail(mailOptions, async (error, info) => {
@@ -129,6 +164,7 @@ module.exports = {
                 requestBody.status= `Fail`
                 requestBody.detail= error.message? error.message: `Error while sending mail`
                 const response = await cronjobModel.create(requestBody);
+                console.log("Backup mail error", error)
                 // res.status(200).json({
                 //   status: 'success',
                 //   message: 'Daily Backup run',
@@ -136,6 +172,7 @@ module.exports = {
            
               }else{
                 const response = await cronjobModel.create(requestBody);
+                console.log("Backup mail success", info)
                 // res.status(200).json({
                 //   status: 'success',
                 //   message: 'Daily Backup run',
