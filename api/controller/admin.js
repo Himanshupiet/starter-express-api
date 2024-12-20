@@ -2242,11 +2242,11 @@ module.exports = {
       let payOptionList= await payOptionModel.find()
       let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['topadmin']}}]}) // 918732 Anshu kumar id
       let allStudentUserId = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.userId": 1})
-      let allStudentPhone1 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber1": 1})
-      let allStudentPhone2 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber2": 1})
-      allStudentPhone1 = [...allStudentPhone1].map(data=> data.userInfo.phoneNumber1)
-      allStudentPhone2 = [...allStudentPhone2].map(data=> data.userInfo.phoneNumber2)
-      const flatPhoneNum= [...new Set([...allStudentPhone1, ...allStudentPhone1])].map(phone=> {return {label: phone, value: phone}})
+      //let allStudentPhone1 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber1": 1})
+      //let allStudentPhone2 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber2": 1})
+      //allStudentPhone1 = [...allStudentPhone1].map(data=> data.userInfo.phoneNumber1)
+      //allStudentPhone2 = [...allStudentPhone2].map(data=> data.userInfo.phoneNumber2)
+      //const flatPhoneNum= [...new Set([...allStudentPhone1, ...allStudentPhone1])].map(phone=> {return {label: phone, value: phone}})
       //console.log("allStudentPhone1", flatmap)
       return res.status(200).json({
         success: true,
@@ -2257,7 +2257,7 @@ module.exports = {
           monthlyFeeList,
           payOptionList,
           paymentRecieverUserList,
-          allStudentPhoneList:flatPhoneNum,
+          allStudentPhoneList:[], //flatPhoneNum,
           allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
         }
       })
@@ -2270,6 +2270,69 @@ module.exports = {
       })
     }
   },
+
+  getAllList2 : async (req, res) => {
+    try {
+      // Concurrently fetch data using Promise.all
+      const [
+        vehicleList,
+        busRouteFareList,
+        monthlyFeeList,
+        payOptionList,
+        paymentRecieverUserList,
+        allStudents
+      ] = await Promise.all([
+        vehicleModel.find(),
+        vehicleRouteFareModel.find(),
+        monthlyFeeListModel.find(),
+        payOptionModel.find(),
+        userModel.find({
+          $and: [
+            activeParam,
+            { 'userInfo.roleName': { $in: ['ADMIN', 'ACCOUNTANT'] } },
+            { 'userInfo.userId': { $nin: ['topadmin'] } }
+          ]
+        }),
+        userModel.find({
+          $and: [activeParam, { 'userInfo.roleName': 'STUDENT' }]
+        }, { 'userInfo.userId': 1, 'userInfo.phoneNumber1': 1, 'userInfo.phoneNumber2': 1 })
+      ]);
+  
+      // Extract phone numbers and remove duplicates
+      const flatPhoneNum = [
+        ...new Set(
+          allStudents.flatMap(student => [student.userInfo.phoneNumber1, student.userInfo.phoneNumber2])
+        )
+      ].filter(Boolean).map(phone => ({ label: phone, value: phone })); // Remove undefined/null and map
+  
+      // Extract student user IDs
+      const allStudentUserIdList = allStudents.map(student => ({
+        label: student.userInfo.userId,
+        value: student.userInfo.userId
+      }));
+  
+      return res.status(200).json({
+        success: true,
+        message: "Get list successfully.",
+        data: {
+          vehicleList,
+          busRouteFareList,
+          monthlyFeeList,
+          payOptionList,
+          paymentRecieverUserList,
+          allStudentPhoneList: flatPhoneNum,
+          allStudentUserIdList
+        }
+      });
+    } catch (err) {
+      console.log(err)
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    }
+  },
+  
 
   addPayment: async (req, res) => {
     let newInvoiceCreatedId=''

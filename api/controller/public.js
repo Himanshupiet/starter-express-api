@@ -227,10 +227,11 @@ module.exports = {
       }
 
       const isAdminRegistration = req.body.isAdminRegistration
-      delete req.body.isAdminRegistration
+      delete req.body.isAdminRegistration 
+      const currentSession= currentSession()
 
       const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
-      const allStudentOfClass= await userModel.find({$and:[activeParam, {'userInfo.class':req.body.class}]})
+      const allStudentOfClass= await userModel.find({$and:[activeParam, {'userInfo.class':req.body.class},{session:currentSession}]})
       const allRollNumbersValid = (arr) => {
         return arr.every(student => student.hasOwnProperty('rollNumber') && student.rollNumber > 0);
       };
@@ -293,7 +294,7 @@ module.exports = {
               if(userData.userInfo && userData.userInfo.roleName==='STUDENT'){
                 const newPaymentData = paymentModel({
                   userId:userData.userInfo.userId,
-                  session: currentSession(),
+                  session: currentSession,
                   class:userData.userInfo.class,
                   dueAmount: 0,
                   excessAmount:0,
