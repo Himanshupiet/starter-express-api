@@ -228,12 +228,12 @@ module.exports = {
 
       const isAdminRegistration = req.body.isAdminRegistration
       delete req.body.isAdminRegistration 
-      const currentSession= currentSession()
+      const currSession= currentSession()
 
       const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
-      const allStudentOfClass= await userModel.find({$and:[activeParam, {'userInfo.class':req.body.class},{session:currentSession}]})
+      const allStudentOfClass= await userModel.find({$and:[activeParam, {'userInfo.class':req.body.class},{'userInfo.session':currSession},{'userInfo.roleName':'STUDENT'}]})
       const allRollNumbersValid = (arr) => {
-        return arr.every(student => student.hasOwnProperty('rollNumber') && student.rollNumber > 0);
+        return arr.every(student => !!student.rollNumber);
       };
       const isAllRollNumbersValid= allRollNumbersValid(allStudentOfClass)
 
@@ -257,8 +257,10 @@ module.exports = {
               return currentStudent.rollNumber > maxStudent.rollNumber ? currentStudent : maxStudent;
             });
           };
-          const maxRoleNumberStudent = findMaxRollNumber(allStudentOfClass);
-          newUserData['rollNumber']= Number(maxRoleNumberStudent.rollNumber)+1
+          if(allStudentOfClass && allStudentOfClass.length>0){
+            const maxRoleNumberStudent = findMaxRollNumber(allStudentOfClass);
+            newUserData['rollNumber']= Number(maxRoleNumberStudent.rollNumber)+1
+          }
         }
         let newUser = new userModel(newUserData);
         const sendSMSandEmaildata = {
@@ -277,7 +279,7 @@ module.exports = {
         //   receiverPhoneNumber: req.body.phoneNumber,
         //   password: newPassword,
         // };
-          const sms = await sendSms(sendSMSandEmaildata);
+          const sms ='' //await sendSms(sendSMSandEmaildata);
           const smsSend =  (sms && sms.return)? true: false
           const WSData={
              name: req.body.fullName,
@@ -287,14 +289,14 @@ module.exports = {
              sendMessageFor:'Registration'
           }
      
-            let userData = await newUser.save();
+            let userData =''  //await newUser.save();
             const registrationMessage= smsSend?"Registration successful and Mobile number verified":"Registration successful and Mobile number not verified."
-            if(userData){
-              await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
+          if(userData){
+              //await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
               if(userData.userInfo && userData.userInfo.roleName==='STUDENT'){
                 const newPaymentData = paymentModel({
                   userId:userData.userInfo.userId,
-                  session: currentSession,
+                  session: currSession,
                   class:userData.userInfo.class,
                   dueAmount: 0,
                   excessAmount:0,
@@ -307,9 +309,9 @@ module.exports = {
               message: registrationMessage
             });
           } else {
-            return res.status(200).json({
+            return res.status(400).json({
               success: false,
-              message: "Registration successful.",
+              message: "Registration unsuccessful.",
             });
           }
     } catch (err) {
