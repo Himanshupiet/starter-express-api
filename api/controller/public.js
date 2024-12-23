@@ -289,7 +289,7 @@ module.exports = {
              sendMessageFor:'Registration'
           }
      
-            let userData =''  //await newUser.save();
+            let userData = await newUser.save();
             const registrationMessage= smsSend?"Registration successful and Mobile number verified":"Registration successful and Mobile number not verified."
           if(userData){
               //await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
@@ -311,7 +311,7 @@ module.exports = {
           } else {
             return res.status(400).json({
               success: false,
-              message: "Registration unsuccessful.",
+              message: "Registration unsuccessful22.",
             });
           }
     } catch (err) {
