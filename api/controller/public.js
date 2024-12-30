@@ -20,6 +20,7 @@ const {
 
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
+const myCache=require("../..");
 require("dotenv/config");
 const SECRET = process.env.SECRET;
 const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
@@ -294,6 +295,7 @@ module.exports = {
           if(userData){
               //await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
               if(userData.userInfo && userData.userInfo.roleName==='STUDENT'){
+                myCache.del("AllList")
                 const newPaymentData = paymentModel({
                   userId:userData.userInfo.userId,
                   session: currSession,

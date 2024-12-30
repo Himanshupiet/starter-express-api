@@ -39,6 +39,7 @@ const {payOptionModel}=require("../../models/payOption");
 let slugify = require('slugify')
 const axios = require('axios');
 const user=require("./user");
+const myCache=require("../..");
 
 
 
@@ -2176,6 +2177,7 @@ module.exports = {
         newListCreated = await newInfo.save();
       }
       if(newListCreated){
+        myCache.del("AllList")
         return res.status(200).json({
           success: true,
           message: "created successfully.",
@@ -2236,22 +2238,43 @@ module.exports = {
 
   getAllList: async (req, res) => {
     try{
-      let vehicleList= await vehicleModel.find()
-      let busRouteFareList= await vehicleRouteFareModel.find()
-      let monthlyFeeList= await monthlyFeeListModel.find()
-      let payOptionList= await payOptionModel.find()
-      let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['topadmin']}}]}) // 918732 Anshu kumar id
-      let allStudentUserId = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.userId": 1})
-      //let allStudentPhone1 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber1": 1})
-      //let allStudentPhone2 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber2": 1})
-      //allStudentPhone1 = [...allStudentPhone1].map(data=> data.userInfo.phoneNumber1)
-      //allStudentPhone2 = [...allStudentPhone2].map(data=> data.userInfo.phoneNumber2)
-      //const flatPhoneNum= [...new Set([...allStudentPhone1, ...allStudentPhone1])].map(phone=> {return {label: phone, value: phone}})
-      //console.log("allStudentPhone1", flatmap)
-      return res.status(200).json({
-        success: true,
-        message: "Get list successfully.",
-        data:{
+
+      if(myCache.has("AllList")){
+        let listCacheValue = myCache.get( "AllList" )
+        listCacheValue= JSON.parse(listCacheValue)
+        let vehicleList= listCacheValue.vehicleList
+        let busRouteFareList= listCacheValue.busRouteFareList
+        let monthlyFeeList= listCacheValue.monthlyFeeList
+        let payOptionList= listCacheValue.payOptionList
+        let paymentRecieverUserList =listCacheValue.paymentRecieverUserList
+        let allStudentUserId = listCacheValue.allStudentUserId
+        return res.status(200).json({
+          success: true,
+          message: "Get list successfully from cache.",
+          data:{
+            vehicleList,
+            busRouteFareList,
+            monthlyFeeList,
+            payOptionList,
+            paymentRecieverUserList,
+            allStudentPhoneList:[], //flatPhoneNum,
+            allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
+          }
+        })
+      }else{
+        let vehicleList= await vehicleModel.find()
+        let busRouteFareList= await vehicleRouteFareModel.find()
+        let monthlyFeeList= await monthlyFeeListModel.find()
+        let payOptionList= await payOptionModel.find()
+        let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['topadmin']}}]}) // 918732 Anshu kumar id
+        let allStudentUserId = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.userId": 1})
+        //let allStudentPhone1 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber1": 1})
+        //let allStudentPhone2 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber2": 1})
+        //allStudentPhone1 = [...allStudentPhone1].map(data=> data.userInfo.phoneNumber1)
+        //allStudentPhone2 = [...allStudentPhone2].map(data=> data.userInfo.phoneNumber2)
+        //const flatPhoneNum= [...new Set([...allStudentPhone1, ...allStudentPhone1])].map(phone=> {return {label: phone, value: phone}})
+        //console.log("allStudentPhone1", flatmap)
+        const returnData={
           vehicleList,
           busRouteFareList,
           monthlyFeeList,
@@ -2260,7 +2283,14 @@ module.exports = {
           allStudentPhoneList:[], //flatPhoneNum,
           allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
         }
-      })
+        myCache.set("AllList", JSON.stringify(returnData) )
+        return res.status(200).json({
+          success: true,
+          message: "Get list successfully.",
+          data:returnData
+        })
+      }
+
   
     }catch(err){
       console.log(err)

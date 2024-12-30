@@ -14,6 +14,9 @@ const { decryptAES} = require("./util/helper");
 const cloudinary = require("cloudinary").v2;
 
 const bcrypt = require("bcryptjs");
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache();
+module.exports = myCache;
 const api = process.env.API_URL;
 const PORT = process.env.PORT;
 const mongoUrl = process.env.MONGO_LOCAL_CONN_URL;
