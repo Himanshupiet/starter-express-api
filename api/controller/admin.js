@@ -2,11 +2,11 @@ const moment = require("moment-timezone");
 const multer = require('multer');
 const fast2sms = require("fast-two-sms");
 const mongoose = require("mongoose");
-const mongodb = require("mongodb");
+// const {mongodb, ObjectId} = require("mongodb");
 const crypto = require('crypto');
 const sha256 = require("sha256");
 const uniqid = require("uniqid")
-const MongoClient = mongodb.MongoClient;
+// const MongoClient = mongodb.MongoClient;
 const URL = process.env.MONGO_LOCAL_CONN_URL;
 const { userModel } = require("../../models/user");
 const { examModel } = require("../../models/exam");
@@ -14,7 +14,6 @@ const {roleModel} = require("../../models/role")
 const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
-const { ObjectId } = require("mongodb");
 const cloudinary = require("cloudinary").v2;
 const { ocrSpace } = require('ocr-space-api-wrapper');
 const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase} = require('../../util/helper')
@@ -2258,7 +2257,7 @@ module.exports = {
             payOptionList,
             paymentRecieverUserList,
             allStudentPhoneList:[], //flatPhoneNum,
-            allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
+            allStudentUserIdList : allStudentUserIdList
           }
         })
       }else{
