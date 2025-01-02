@@ -2246,7 +2246,7 @@ module.exports = {
         let monthlyFeeList= listCacheValue.monthlyFeeList
         let payOptionList= listCacheValue.payOptionList
         let paymentRecieverUserList =listCacheValue.paymentRecieverUserList
-        let allStudentUserId = listCacheValue.allStudentUserId
+        let allStudentUserIdList = listCacheValue.allStudentUserIdList
         return res.status(200).json({
           success: true,
           message: "Get list successfully from cache.",
