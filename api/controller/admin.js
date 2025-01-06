@@ -1,4 +1,5 @@
 const moment = require("moment-timezone");
+const admin = require('firebase-admin');
 const multer = require('multer');
 const fast2sms = require("fast-two-sms");
 const mongoose = require("mongoose");
@@ -16,12 +17,13 @@ const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const cloudinary = require("cloudinary").v2;
 const { ocrSpace } = require('ocr-space-api-wrapper');
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, currentSession, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase} = require('../../util/helper')
+const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
   
 } = require("../../util/income");
+const {getRedisClient}= require('../../util/redisDB')
 const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
 const {examDateAndSubModel}=require("../../models/examDateAndSub");
@@ -196,7 +198,6 @@ const isAdmissionInCurrentSession = (admissionSession, previousSession) => admis
 const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
 
 
-
 module.exports = {
   getAllUsers: async (req, res) => {
     try {
@@ -258,6 +259,7 @@ module.exports = {
   },
   getAllStudents: async (req, res) => {
     try {
+      const CURRENTSESSION = getCurrentSession()
       const searchStr= req.body.searchStr
       let studentAprroveParam =  {$and:[{deleted:false},{isApproved:true}]}
       let searchParam={}
@@ -330,7 +332,7 @@ module.exports = {
           classParam,
           filterOptionParam,
           studentById,
-          {'userInfo.session': currentSession()}
+          {'userInfo.session': CURRENTSESSION}
         ],
       }
       if(req.body.sortByClass){
@@ -495,6 +497,7 @@ module.exports = {
 
   updateUserById: async (req, res) => {
     try {
+      const CURRENTSESSION = getCurrentSession()
       if(req.body.roleUpdate){
           const newRoleName = req.body.newRoleName
           delete req.body.updateRole
@@ -535,11 +538,11 @@ module.exports = {
       }
       if(updatedUser){
         if(updatedUser.userInfo.roleName==='STUDENT'){
-          const foundPayment = await paymentModel.findOne({$and:[{session:currentSession()},{'userId': updatedUser.userInfo.userId}]})
+          const foundPayment = await paymentModel.findOne({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]})
           if(!foundPayment){
             const newPaymentData = paymentModel({
               userId:updatedUser.userInfo.userId,
-              session: currentSession(),
+              session: CURRENTSESSION,
               class:updatedUser.userInfo.class,
               dueAmount: 0,
               excessAmount:0,
@@ -549,7 +552,7 @@ module.exports = {
             })
             const  newPaymentDataCreated = await newPaymentData.save()
           }else{
-            await paymentModel.findOneAndUpdate({$and:[{session:currentSession()},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: req.body.feeFree, busService: req.body.busService})
+            await paymentModel.findOneAndUpdate({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: req.body.feeFree, busService: req.body.busService})
           }
         }
         return res.status(200).json({
@@ -586,6 +589,7 @@ module.exports = {
 
   updateStatus: async (req, res, next) => {
       try{
+      const CURRENTSESSION = getCurrentSession()
       const userId = req.body.userId;
       
       const user= await userModel.findOne({ 'userInfo.userId': userId })
@@ -602,7 +606,7 @@ module.exports = {
         datatoUpdate.isApproved= true
         datatoUpdate.modified= new Date()
         datatoUpdate.deleted=false
-        datatoUpdate.userInfo.session= currentSession()
+        datatoUpdate.userInfo.session= CURRENTSESSION
       }else{
         if(req.body.task==='isApproved'){
             datatoUpdate.isApproved = req.body.isApproved
@@ -2061,6 +2065,7 @@ module.exports = {
   },
   studentDashboardData:async (req, res)=>{
     try{
+      const CURRENTSESSION = getCurrentSession()
       let mainUser = await userModel.findOne({$and:[activeParam,{'userInfo.roleName': 'STUDENT'},{'userInfo.userId': req.query.mainUserId}]});
       if(!mainUser){
         return res.status(401).json({
@@ -2074,7 +2079,7 @@ module.exports = {
       }
     const allUserIds= [mainUser.userInfo.userId, ...otherUser.map(data=> data.userInfo.userId)]
      const paymentPrevYear = await paymentModel.find({$and:[{session:previousSession()},{delected: false}, {userId:{$in:[...allUserIds]}}]})
-     const paymentCurrYear = await paymentModel.find({$and:[{session:currentSession()},{delected: false}, {userId:{$in:[...allUserIds]}}]})
+     const paymentCurrYear = await paymentModel.find({$and:[{session:CURRENTSESSION},{delected: false}, {userId:{$in:[...allUserIds]}}]})
     
      const allTransaction = await  invoiceModel.find({$and:[{delected:false},{userId:{$in:[...allUserIds]}}]})
  
@@ -2108,6 +2113,7 @@ module.exports = {
   },
   upgradeClass: async (req, res) => {
     try {
+      const CURRENTSESSION = getCurrentSession()
       let totalStudent = await userModel.find(  {$and: 
         [ 
           activeParam,
@@ -2119,13 +2125,12 @@ module.exports = {
         for(student of totalStudent){
         
           // old 10 class ke liye purana seeion rhne dena hai
-          const currSession = currentSession()
            await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass, 'userInfo.session':currSession})
            const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: student.userInfo.userId},{session:currSession}]},{class: student.userInfo.class})
            if(!payFound){
             const newPaymentData = paymentModel({
               userId:it.userInfo.userId,
-              session:currSession,
+              session:CURRENTSESSION,
               class:it.userInfo.class,
               dueAmount: 0,
               excessAmount:0,
@@ -2176,7 +2181,10 @@ module.exports = {
         newListCreated = await newInfo.save();
       }
       if(newListCreated){
-        myCache.del("AllList")
+        //myCache.del("AllList")
+        const redisClient = getRedisClient();
+        await redisClient.del('AllList');
+    
         return res.status(200).json({
           success: true,
           message: "created successfully.",
@@ -2237,14 +2245,15 @@ module.exports = {
 
   getAllList: async (req, res) => {
     try{
-
-      if(myCache.has("AllList")){
-        let listCacheValue = myCache.get( "AllList" )
-        listCacheValue= JSON.parse(listCacheValue)
-        let vehicleList= listCacheValue.vehicleList
-        let busRouteFareList= listCacheValue.busRouteFareList
-        let monthlyFeeList= listCacheValue.monthlyFeeList
-        let payOptionList= listCacheValue.payOptionList
+      const redisClient = getRedisClient();
+      // if(myCache.has("AllList")){
+      if(redisClient && await redisClient.exists('AllList')){
+        let listCacheValue = await redisClient.get("AllList")
+        listCacheValue = JSON.parse(listCacheValue)
+        let vehicleList = listCacheValue.vehicleList
+        let busRouteFareList = listCacheValue.busRouteFareList
+        let monthlyFeeList = listCacheValue.monthlyFeeList
+        let payOptionList = listCacheValue.payOptionList
         let paymentRecieverUserList =listCacheValue.paymentRecieverUserList
         let allStudentUserIdList = listCacheValue.allStudentUserIdList
         return res.status(200).json({
@@ -2282,7 +2291,12 @@ module.exports = {
           allStudentPhoneList:[], //flatPhoneNum,
           allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
         }
-        myCache.set("AllList", JSON.stringify(returnData) )
+        //myCache.set("AllList", JSON.stringify(returnData) )
+        //console.log("redisClient",redisClient) 
+        if (redisClient) {
+          await redisClient.set('AllList', JSON.stringify(returnData));
+          //console.log('Key set in Redis.');
+        }
         return res.status(200).json({
           success: true,
           message: "Get list successfully.",
@@ -2366,6 +2380,7 @@ module.exports = {
   addPayment: async (req, res) => {
     let newInvoiceCreatedId=''
     try{
+      const CURRENTSESSION = getCurrentSession()
       let paymentAdded=null
       const newInvoiceIdGen = await newInvoiceIdGenrate()
       const submitType= req.body.submitType
@@ -2567,6 +2582,10 @@ module.exports = {
           }
       }
       if(paymentAdded){
+        const redisClient = getRedisClient()
+        if(redisClient && await redisClient.exists(`payment-${req.body.class}-${CURRENTSESSION}`)){
+          await redisClient.del(`payment-${req.body.class}-${CURRENTSESSION}`)
+        }
         return res.status(200).json({
           success: true,
           message: "Payment Added successfully.",
@@ -2593,6 +2612,9 @@ module.exports = {
 
   getPaymentDetail: async (req, res) => {
     try{
+      const CURRENTSESSION = getCurrentSession()
+      let list =[]
+      let selectedClass=''
       let reqSession= req.query.session
       let searchStr = req.query.searchStr? (req.query.searchStr).trim():''
       let searchParam={}
@@ -2602,10 +2624,21 @@ module.exports = {
       let sessionParam= {'session':req.query.session}
       const roleParam={'userInfo.roleName':'STUDENT'}
       if(req.query.selectedClass){
+        selectedClass = req.query.selectedClass
         //classParam={'userInfo.class':req.query.selectedClass}
         classParam={'class':req.query.selectedClass}
       }
-
+      const redisClient = getRedisClient()
+      // await redisClient.flushDb()
+      if(selectedClass && !req.query.userId  && redisClient && await redisClient.exists(`payment-${selectedClass}-${CURRENTSESSION}`)){
+          let cacheList = await redisClient.get(`payment-${selectedClass}-${CURRENTSESSION}`)
+          list = JSON.parse(cacheList)
+          return res.status(200).json({
+            success: true,
+            message: "Payment detail get successfully(Cache).",
+            data: list
+          })
+      }
       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
         searchParam={
           $or:[
@@ -2671,14 +2704,14 @@ module.exports = {
       //     message: "Payment detail not found"
       //   })
       // }
-      let list =[]
+     
       const allPayDetail= await paymentModel.find({$and:[sessionParam, classParam, userIdParam, deletedParam]})
      
       if(allPayDetail && allPayDetail.length>0){
         const userIds= allPayDetail.map(data=> data.userId)
         const allStudents = await userModel.find({'userInfo.userId': {$in:[...userIds]}})
 
-        const allPreviousPayDetail = reqSession===currentSession()? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:previousSession()}]}):undefined
+        const allPreviousPayDetail = reqSession===CURRENTSESSION? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:previousSession()}]}):undefined
         
         for (const it of allPayDetail) {
           let prevAmtDue=0
@@ -2687,7 +2720,7 @@ module.exports = {
             continue;
           }
          
-          const previousPayDetail = reqSession===currentSession()? allPreviousPayDetail.find(data=> data.userId=== it.userId) || undefined : undefined
+          const previousPayDetail = reqSession===CURRENTSESSION? allPreviousPayDetail.find(data=> data.userId=== it.userId) || undefined : undefined
           const condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
           const invoiceData = await invoiceModel.find(condInvParam)
           const userPayDetail = it
@@ -2802,10 +2835,14 @@ module.exports = {
             preDueAmount: it.dueAmount,
             preExcessAmount: it.excessAmount,   
             userInvoiceDetail: invoiceData,
-            prevYearAmtDue: reqSession===currentSession()? prevAmtDue : undefined
+            prevYearAmtDue: reqSession===CURRENTSESSION? prevAmtDue : undefined
           }
           list.push(newData)
         }
+        if(selectedClass && redisClient && !req.query.userId){
+          await redisClient.set(`payment-${selectedClass}-${CURRENTSESSION}`, JSON.stringify(list));
+        }
+
         return res.status(200).json({
           success: true,
           message: "Payment detail get successfully.",
@@ -3326,6 +3363,66 @@ module.exports = {
         message: err.message,
       })
     } 
+  },
+  
+  getAllImages:async(req, res)=>{
+    const bucket = admin.storage().bucket();
+    try {
+      const allStudentPhoto = await userModel.find({$and:[activeParam, {'userInfo.roleName':'STUDENT'},{'document.stPhoto':{$exists:true}}]},{'document.stPhoto':1})
+      //console.log("allStudentPhoto", allStudentPhoto)
+      const studentPhotoSet = new Set(allStudentPhoto.map((item) => item.document.stPhoto));
+      const expirationTime = new Date();
+      expirationTime.setMinutes(expirationTime.getMinutes() + 5)
+      const [files] = await bucket.getFiles({ prefix: "" }); // Replace 'images/' with your folder path
+      const urls = await Promise.all(
+        files
+          .filter((file) => {
+            const fileName = file.name.replace('images/', '');
+            return studentPhotoSet.has(fileName); // Faster lookup using a Set
+          })
+          .map(async (file) => {
+            const [url] = await file.getSignedUrl({
+              action: 'read',
+              expires: expirationTime,
+            });
+            return { url, name: file.name.replace('images/', '') };
+          })
+      );
+      return res.status(200).json({
+        success: true,
+        message: 'Images urls get successfully',
+        data: urls
+      })
+    } catch (error) {
+      console.error("Error while fetching image URLs:", error);
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    }
+  },
+  resetRedisCashe:async (req,res)=> {
+    try {
+      const redisClient = await getRedisClient()
+      if(redisClient){
+        await redisClient.flushAll()
+        return res.status(200).json({
+          success: true,
+          message: 'Redis cache flushed successfully.',
+        })
+      }else{
+        return res.status(200).json({
+          success: false,
+          message: 'Redis connection not available',
+        })
+      }
+    } catch (error) {
+      console.error("Error while redis cache flushing :", error);
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    }
   },
 
   createBuckup: async (req, res) => {

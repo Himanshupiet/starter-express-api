@@ -14,9 +14,8 @@ const {
   decryptAES,
   passwordEncryptAES,
   passwordDecryptAES,
-  encryptObjectData,
   whatsAppMessage,
-  currentSession
+  getCurrentSession
 
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
@@ -209,6 +208,7 @@ module.exports = {
 
   addUser: async (req, res) => {
     try {
+       const CURRENTSESSION = getCurrentSession()
       //  const regis=true
       //  if(regis){
       //   return res.status(200).json({
@@ -229,10 +229,9 @@ module.exports = {
 
       const isAdminRegistration = req.body.isAdminRegistration
       delete req.body.isAdminRegistration 
-      const currSession= currentSession()
 
       const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
-      const allStudentOfClass= await userModel.find({$and:[activeParam, {'userInfo.class':req.body.class},{'userInfo.session':currSession},{'userInfo.roleName':'STUDENT'}]})
+      const allStudentOfClass= await userModel.find({$and:[activeParam, {'userInfo.class':req.body.class},{'userInfo.session':CURRENTSESSION},{'userInfo.roleName':'STUDENT'}]})
       const allRollNumbersValid = (arr) => {
         return arr.every(student => !!student.rollNumber);
       };
@@ -298,7 +297,7 @@ module.exports = {
                 myCache.del("AllList")
                 const newPaymentData = paymentModel({
                   userId:userData.userInfo.userId,
-                  session: currSession,
+                  session: CURRENTSESSION,
                   class:userData.userInfo.class,
                   dueAmount: 0,
                   excessAmount:0,

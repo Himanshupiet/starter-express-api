@@ -4,7 +4,7 @@ const { User } = require("../models/user");
 const { FundingSource } = require("../models/fundingSource");
 const { cronjobModel } = require("../models/cronjob");
 todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-console.log("Today India date", todayIndiaDate);
+// console.log("Today India date", todayIndiaDate);
 
 module.exports = {
   investIncome: async (roiId) => {

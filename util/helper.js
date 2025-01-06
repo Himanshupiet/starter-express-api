@@ -6,7 +6,7 @@ var CronJob = require('cron').CronJob;
 const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
 todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-console.log("Today India date",  moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'));
+// console.log("Today India date",  moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'));
 const mongoose = require("mongoose");
 const { userModel } = require("../models/user");
 //const mailgun = require("mailgun-js");
@@ -252,7 +252,7 @@ module.exports = {
 
     return newInvoiceId
   }, 
-  currentSession :()=> {
+  getCurrentSession :()=> {
     const currentYear = Number(moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'))
     const currentMonth= Number(moment.tz(Date.now(), "Asia/Kolkata").format('MM'))
     let session=''

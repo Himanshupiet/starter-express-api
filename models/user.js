@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+//const {getCurrentSession}=require("../util/helper");
 function currentSession (){
   const currentDate= new Date()
   const currentYear = currentDate.getFullYear()
@@ -12,6 +13,8 @@ function currentSession (){
   console.log("session", session)
   return session
 }
+// if add helper functin then circular dependency warning 
+//const currentSession= getCurrentSession()
 
 const userSchema = new mongoose.Schema({
   userInfo: {

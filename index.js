@@ -1,6 +1,10 @@
 const express = require("express");
 const cron = require('node-cron');
 const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
@@ -70,6 +74,7 @@ const cronJob = require("./routes/cronJob");
 const { passwordEncryptAES } = require("./util/helper");
 const {fetchBirthdays, sendDailyBackupEmail}=require("./api/controller/cronJobs");
 const {downloadAllImages}=require("./util/dowloadAllfile");
+const {connectRedis}=require("./util/redisDB");
 
 app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);
@@ -79,6 +84,14 @@ app.use(`${api}/cron`, cronJob);
 // app.use(`${api}/securitylog`, securitylog);
 
 
+
+// Socket.IO setup
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+});
 
 //Database
 const connectToMongo = async() => {
@@ -94,9 +107,10 @@ await mongoose
 )
   .then(() => {
     console.log("Connected to MongoDB")
-    app.listen(PORT || 3010, () => {
+    server.listen(PORT || 3010, () => {
       console.log(`server is running http://localhost:${PORT}`);
     });
+    connectRedis()
 
     const getAdmin = async () => {
       try {
@@ -145,6 +159,7 @@ await mongoose
     //sendDailyBackupEmail()
     //sendDailyBackupEmailCron
     //fetchBirthdays()
+    //redisConnection()
   })
   .catch((err) => {
     console.log(err);

@@ -36,8 +36,10 @@
     "nodemailer": "^6.9.4",
     "nodemon": "^3.1.4",
     "ocr-space-api-wrapper": "^2.3.2",
+    "redis": "^4.7.0",
     "sha256": "^0.2.0",
     "slugify": "^1.6.6",
+    "socket.io": "^4.8.1",
     "uniqid": "^5.4.0"
   }
 }
