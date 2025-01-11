@@ -1091,6 +1091,7 @@ module.exports = {
                   
                       let newResultData = {
                         ...data.userInfo,
+                        rollNumber:data.rollNumber,
                         studentResult:found,
                         total:total
                         }
@@ -1099,6 +1100,7 @@ module.exports = {
                     }else{
                       const newResultData = {
                         ...data.userInfo,
+                        rollNumber:data.rollNumber,
                         studentResult:{},
                         total:0
                         }
@@ -3252,7 +3254,12 @@ module.exports = {
     
       // Test template
       if (templateType && templateType === 'test') {
-        await mesageApi(toNumber, message, templateType);
+        const WSData = {
+          userId: '',
+          name: 'N/A',
+          sendMessageFor: 'Test'
+        };
+        await mesageApi(toNumber, message, templateType, WSData);
       }
     
       async function mesageApi(number, msg, tempType, data) {

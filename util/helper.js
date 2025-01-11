@@ -20,6 +20,7 @@ const JSZip = require('jszip');
 const zip = new JSZip();
 const {roleModel}=require("../models/role");
 const {bucket}=require("./firebasebucket.js");
+const removeBg=require("./removeBgOfPhoto.js");
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
@@ -535,10 +536,11 @@ module.exports = {
     const newFileName = fileName? fileName:`${docType}_${userId}.jpeg`; // Create unique filename
     //const fileName = req.files.image.name
     const file = bucket.file(newFileName);
-  
     try {
+      // if st photo the remove background
+      const imageData = docType ==='stPhoto' ? await removeBg(req) : req.files.image.data
       // Upload file to Firebase Storage
-      await file.save(req.files.image.data, {
+      await file.save(imageData, {
         // metadata: { contentType: req.files.image.mimetype },
         metadata: {
           contentType: 'image/png',

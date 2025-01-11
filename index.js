@@ -177,24 +177,24 @@ connectToMongo()
 //    }
 // })
 
-cron.schedule('0 7 * * *', async () => {
-  console.log('Running cron job at 7:00 AM IST');
-  await mongoose
-  .connect(mongoUrl, 
-    {
-    serverSelectionTimeoutMS: 9000,
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
-    // useFindAndModify: false,
-    dbName: mongoDbName,
-  }
-)
-  .then(() => {
-    fetchBirthdays();
-  })
-}, {
-  timezone: "Asia/Kolkata"
-});
+// cron.schedule('0 7 * * *', async () => {
+//   console.log('Running cron job at 7:00 AM IST');
+//   await mongoose
+//   .connect(mongoUrl, 
+//     {
+//     serverSelectionTimeoutMS: 9000,
+//     // useNewUrlParser: true,
+//     // useUnifiedTopology: true,
+//     // useFindAndModify: false,
+//     dbName: mongoDbName,
+//   }
+// )
+//   .then(() => {
+//     fetchBirthdays();
+//   })
+// }, {
+//   timezone: "Asia/Kolkata"
+// });
 
 cron.schedule('0 22 * * *', async () => {
   console.log('Running cron job at 10:00 PM IST');
