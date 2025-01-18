@@ -75,6 +75,7 @@ const { passwordEncryptAES } = require("./util/helper");
 const {fetchBirthdays, sendDailyBackupEmail}=require("./api/controller/cronJobs");
 const {downloadAllImages}=require("./util/dowloadAllfile");
 const {connectRedis}=require("./util/redisDB");
+const {uploadPhotos}=require("./util/uploadMultipleImage");
 
 app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);
@@ -154,6 +155,10 @@ await mongoose
         console.log(err);
       }
     };
+    //const folderPath='/home/decipher/myproject/final images/redketchup'
+    // uploadPhotos(folderPath).then(() => {
+    //   console.log('Upload completed.');
+    // });
     //downloadAllImages('');
     //getAdmin();
     //sendDailyBackupEmail()

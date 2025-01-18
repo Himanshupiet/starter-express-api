@@ -13,6 +13,7 @@ const removeBg = async (reqData) => {
     return await axios.post('https://clipdrop-api.co/remove-background/v1', form, {
       headers: {
         'x-api-key': key,
+        'transparency_handling': 'discard_alpha_layer',
         ...form.getHeaders(),
       },
       responseType: 'arraybuffer',
@@ -37,7 +38,7 @@ const removeBg = async (reqData) => {
     // Try with the first API key
     const response = await makeRequest(apiKey);
     if (response.data) {
-      const compressedData = await compressImage(Buffer.from(response.data));
+      const compressedData = response.data //await compressImage(Buffer.from(response.data));
       return compressedData;
     }
   } catch (error1) {

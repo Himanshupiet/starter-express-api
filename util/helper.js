@@ -21,6 +21,7 @@ const zip = new JSZip();
 const {roleModel}=require("../models/role");
 const {bucket}=require("./firebasebucket.js");
 const removeBg=require("./removeBgOfPhoto.js");
+const {getRedisClient}=require("./redisDB.js");
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
@@ -36,8 +37,6 @@ const transporter = nodemailer.createTransport({
   // }
 });
 //const OneSignal = require('onesignal-node'); 
-// const awsSdk = require("aws-sdk");
-// const s3 = new awsSdk.S3()
 
 const DOMAIN ="https://api.mailgun.net/v3/sandboxea9896c664194cff9614608387a91f33.mailgun.org";
 require("dotenv/config");
@@ -533,7 +532,7 @@ module.exports = {
       return {status: false, message:'No file to upload.'};
     }
   
-    const newFileName = fileName? fileName:`${docType}_${userId}.jpeg`; // Create unique filename
+    const newFileName = fileName? fileName:`${docType}_${userId}.png`; // Create unique filename
     //const fileName = req.files.image.name
     const file = bucket.file(newFileName);
     try {
@@ -610,70 +609,6 @@ module.exports = {
   //       }
     
   // },
-  s3upload: async(userId,fileName, file)=>{
-    // const Bucket="cyclic-fine-rose-fly-sari-ap-northeast-2"
-    // const AWS_REGION="ap-northeast-2"
-    // const AWS_ACCESS_KEY_ID=""
-    // const AWS_SECRET_ACCESS_KEY=""
-    // const AWS_SESSION_TOKEN=""
-
-//  AWS_REGION="ap-south-1"
-// export AWS_ACCESS_KEY_ID=""
-// export AWS_SECRET_ACCESS_KEY=""
-// export AWS_SESSION_TOKEN="I"
-    // const AWS_REGION=process.env.AWS_REGION
-    // const AWS_ACCESS_KEY_ID=process.env.AWS_ACCESS_KEY_ID
-    // const AWS_SECRET_ACCESS_KEY=process.env.AWS_SECRET_ACCESS_KEY
-    //   await s3.putObject({
-    //     Body: JSON.stringify({key:"value"}),
-    //     Bucket: "cyclic-plum-clear-caridea-ap-south-1",
-    //     Key: "some_files/my_file.json",
-    // }).promise()
-    //console.log("AWS_REGION", AWS_REGION,"AWS_ACCESS_KEY_ID", AWS_ACCESS_KEY_ID,"AWS_SECRET_ACCESS_KEY", AWS_SECRET_ACCESS_KEY)
-
-    // awsSdk.config.update({region: AWS_REGION});
-    // const s3 = new awsSdk.S3({
-    //     apiVersion: '2006-03-01',
-    //     accessKeyId: AWS_ACCESS_KEY_ID,
-    //     secretAccessKey: AWS_SECRET_ACCESS_KEY
-    // });
-    //  const dddd=   await s3.putObject({
-    //     Body: file.data,
-    //     Bucket: "cyclic-fine-rose-fly-sari-ap-northeast-2",
-    //     Key:fileName,
-    // })
-    // console.log("dddddddddd", dddd.response)
-
-    // var bucketParams = {
-    //     Bucket: userId.toString(),
-    //     ACL: 'private'
-    // };
-
-    // s3.createBucket(bucketParams, async function (err, data) {
-    //     if (err) {
-    //         console.log("Error-1", err);
-    //     } else {
-    //         var uploadParams = {
-    //             Bucket: userId,
-    //             Key: fileName,
-    //             Body: file
-    //         };
-
-    //         //console.log('uploadParams', uploadParams)
-
-    //         // s3.upload(uploadParams, function (err, data) {
-    //         //     if (err) {
-    //         //         console.log("Error", err);
-    //         //     }
-    //         //     if (data) {
-    //         //         console.log("Upload Success", data.Location);
-    //         //     }
-    //         // });
-
-    //     }
-    // });
-
-  },
 
 
   sendDailyBackupEmailCron:async()=>{ 
@@ -717,32 +652,7 @@ module.exports = {
   
         }else{
           console.log("Daily Backup Mail not send.")
-  
         }
-      
-        // hhhhhhhhhhhhhhhhhh {
-        //   "accepted": [
-        //     "bmmsbkg@gmail.com"
-        //   ],
-        //   "rejected": [],
-        //   "ehlo": [
-        //     "PIPELINING",
-        //     "8BITMIME",
-        //     "AUTH LOGIN PLAIN CRAM-MD5"
-        //   ],
-        //   "envelopeTime": 131,
-        //   "messageTime": 75,
-        //   "messageSize": 3799,
-        //   "response": "250 Message queued as <b317022a-32f2-e8cb-8740-f203bac5caf6@bmmschool.in>",
-        //   "envelope": {
-        //     "from": "info@bmmschool.in",
-        //     "to": [
-        //       "bmmsbkg@gmail.com"
-        //     ]
-        //   },
-        //   "messageId": "<b317022a-32f2-e8cb-8740-f203bac5caf6@bmmschool.in>"
-        // }
-        
       }
       
       main().catch(
@@ -792,6 +702,13 @@ module.exports = {
           await userModel.findOneAndUpdate({'userInfo.userId': userId},{"userInfo.aadharNumber":cleanAadhaar})
         }
       });
+  },
+  redisDeleteCall:async(key, className, session)=>{
+    const redisClient = getRedisClient()
+    if(key && key==='payment'){
+      if(redisClient && await redisClient.exists(`payment-${className}-${session}`)){
+        await redisClient.del(`payment-${className}-${session}`)
+      }
+    }
   }
-
 };

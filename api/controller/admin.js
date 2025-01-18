@@ -17,7 +17,7 @@ const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const cloudinary = require("cloudinary").v2;
 const { ocrSpace } = require('ocr-space-api-wrapper');
-const {s3upload, passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession} = require('../../util/helper')
+const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -342,7 +342,20 @@ module.exports = {
       const users = await userModel.find(condParam,dataFilterParam).sort(sortingOption);
     
       if(users && users.length>0){
-     
+        //**** get all file name and update */
+        // const folderPath='/home/decipher/myproject/final images/otherphoto22'
+        // const fileNames= await uploadPhotos(folderPath)
+        // console.log("fileNames" ,fileNames.length)
+        // for(const fileName of fileNames) {
+        //   const userId = fileName.split("_")[1].split('.')[0]
+        //   console.log("userId", userId)
+        //   const user = await userModel.findOne({"userInfo.userId": userId})
+        //     if (user.document &&  user.document.stPhoto){
+        //         // Save the updated user in the database
+        //        // await userModel.findOneAndUpdate({_id:user._id}, {"document.stPhoto": "" });
+        //     }
+        // }
+
       //  for (const it of users) {
         
         //await userModel.findOneAndUpdate({_id: it._id},{'userInfo.session':'2024-25'})
@@ -574,17 +587,6 @@ module.exports = {
         message: err.message,
       });
     }
-  },
-  uploadDocumentS3:(req, res, next)=>{
-    console.log("userIdddddddddddddddddddddddd",req.body.userId)
-    console.log("imagefileeeeeeeeeeeeee", req.files.document)
-    const userId =req.body.userId
-    //const fileName= `${req.body.userId}_${req.body.fileName.split('_')[1]}`
-    const fileName=req.body.fileName
-    console.log("fileNameeeeeeeeeeeee", fileName)
-    const file= req.files.document
-    s3upload(userId,fileName, file)
-
   },
 
   updateStatus: async (req, res, next) => {
@@ -2584,10 +2586,7 @@ module.exports = {
           }
       }
       if(paymentAdded){
-        const redisClient = getRedisClient()
-        if(redisClient && await redisClient.exists(`payment-${req.body.class}-${CURRENTSESSION}`)){
-          await redisClient.del(`payment-${req.body.class}-${CURRENTSESSION}`)
-        }
+        redisDeleteCall('payment', req.body.class, CURRENTSESSION)
         return res.status(200).json({
           success: true,
           message: "Payment Added successfully.",
@@ -3057,10 +3056,12 @@ module.exports = {
 
   deleteTransaction:async(req, res)=>{
         try {
+          const CURRENTSESSION = getCurrentSession()
           const invoiceData= await invoiceModel.findOne({invoiceId: req.body.invoiceId})
           if(invoiceData && req.body.session && (invoiceData.invoiceType==='MONTHLY'|| invoiceData.invoiceType==='EXAM_FEE' || invoiceData.invoiceType==='OTHER_PAYMENT') ){
             const paymentData= await paymentModel.findOne({$and:[{'userId': invoiceData.userId},{session: req.body.session}]})
             if(paymentData){
+              const user = await userModel.findOne({"userInfo.userId": paymentData.userId})
               let unsetMonthName={}
               if(invoiceData.invoiceInfo.feeList){
                 for (const it of invoiceData.invoiceInfo.feeList) {
@@ -3092,6 +3093,8 @@ module.exports = {
               //   await paymentModel.deleteOne({'_id': paymentData._id})
               // }
               if(updatedPayement){
+                  if(CURRENTSESSION === req.body.session) redisDeleteCall('payment', user.userInfo.class, CURRENTSESSION)
+            
                   await invoiceModel.findOneAndUpdate({'_id': invoiceData._id},{deleted: true})
                   return res.status(200).json({
                     success: true,
