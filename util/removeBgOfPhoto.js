@@ -21,12 +21,16 @@ const removeBg = async (reqData) => {
   };
 
   const compressImage = async (buffer) => {
-    let quality = 80; // Start with high quality
+    let quality = 100; // Start with maximum compression quality
     let compressedBuffer = buffer;
-
-    while (compressedBuffer.length > 100 * 1024 && quality > 10) { // 100 KB = 100 * 1024 bytes
+  
+    while (compressedBuffer.length > 100 * 1024 && quality > 10) { // Limit file size to 100 KB
       compressedBuffer = await sharp(buffer)
-        .jpeg({ quality })
+        .png({
+          quality, // Adjust compression quality
+          compressionLevel: 9, // Maximum PNG compression level (0-9)
+          adaptiveFiltering: true, // Optimize filtering for smaller size
+        })
         .toBuffer();
       quality -= 10; // Reduce quality incrementally
     }
@@ -38,7 +42,7 @@ const removeBg = async (reqData) => {
     // Try with the first API key
     const response = await makeRequest(apiKey);
     if (response.data) {
-      const compressedData = response.data //await compressImage(Buffer.from(response.data));
+      const compressedData = await compressImage(Buffer.from(response.data));
       return compressedData;
     }
   } catch (error1) {
