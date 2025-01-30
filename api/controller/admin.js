@@ -51,8 +51,8 @@ const { PHONEPE_MERCHANT_ID, PHONEPE_MERCHANT_KEY, PHONEPE_MERCHANT_SALT, PHONEP
 const HalfYearlyMonthIndex = 6
 const AnualExamMonthIndex = 12
 
-const storage = multer.memoryStorage(); // Store uploaded files in memory temporarily
-const upload = multer({ storage });
+// const storage = multer.memoryStorage(); // Store uploaded files in memory temporarily
+// const upload = multer({ storage });
 
 const generateHash = (data) => {
   return crypto.createHash('sha256').update(data).digest('hex');
@@ -300,7 +300,12 @@ module.exports = {
         classParam={'userInfo.class':req.body.selectedClass}
       }
       if(req.body.filterOption && req.body.docFilter===true){
-        filterOptionParam={[`document.${req.body.filterOption}`]:{$exists:false}}
+        filterOptionParam={[`document.${req.body.filterOption}`]:{
+          $or: [
+            { [filterKey]: { $exists: false } },  // Field does not exist
+            { [filterKey]: "" }  // Field is an empty string
+          ]
+        }}
       }else if(req.body.filterOption && req.body.docFilter===false){
         if(req.body.filterOption==='No Mobile Number'){
           filterOptionParam={$or:[{'userInfo.phoneNumber1':{$in:['','0000000001', '0000000000']}}]}
@@ -511,16 +516,6 @@ module.exports = {
   updateUserById: async (req, res) => {
     try {
       const CURRENTSESSION = getCurrentSession()
-      if(req.body.roleUpdate){
-          const newRoleName = req.body.newRoleName
-          delete req.body.updateRole
-          delete req.body.newRoleName
-          const getNewRoleData= await roleModel.findOne({$and:[{roleName:newRoleName},{ roleName:{$nin:['TOPADMIN','ADMIN']}}]})
-          if(getNewRoleData){
-            req.body.roleName = getNewRoleData.roleName
-            req.body.roleId = getNewRoleData._id.toString()
-          }
-      }
       const userData =  await userModel.findOne({_id:req.params.id});
       if(!userData){
         return res.status(200).json({
@@ -528,6 +523,24 @@ module.exports = {
           message: "user not found.",
         });
       }
+      if(req.body.roleUpdate){
+          const newRoleName = req.body.newRoleName
+          delete req.body.roleUpdate
+          delete req.body.newRoleName
+          const getNewRoleData = await roleModel.findOne({$and:[{roleName:newRoleName},{ roleName:{$nin:['TOPADMIN','ADMIN']}}]})
+          if(!getNewRoleData){
+            return res.status(200).json({
+              success: false,
+              message: "Role not found. Please choose correct role.",
+            });
+          }
+          req.body.roleName = getNewRoleData.roleName
+          req.body.roleId = getNewRoleData._id.toString()
+          if(newRoleName!=='STUDENT'){
+            await paymentModel.findOneAndDelete({'userId': userData.userInfo.userId})
+          }
+      }
+
       let user = JSON.parse(JSON.stringify(userData))
       if(req.body.student_document){
         user['document']={
@@ -2118,7 +2131,7 @@ module.exports = {
   upgradeClass: async (req, res) => {
     try {
       const CURRENTSESSION = getCurrentSession()
-      let totalStudent = await userModel.find(  {$and: 
+      const totalStudent = await userModel.find({$and: 
         [ 
           activeParam,
           {'userInfo.roleName':'STUDENT'},
@@ -2126,19 +2139,21 @@ module.exports = {
         ]
       })
       if(totalStudent && totalStudent.length>0){
-        for(student of totalStudent){
+        for(const student of totalStudent){
         
           // old 10 class ke liye purana seeion rhne dena hai
-           await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass, 'userInfo.session':currSession})
-           const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: student.userInfo.userId},{session:currSession}]},{class: student.userInfo.class})
+           await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass, 'userInfo.session':CURRENTSESSION})
+           const  payFound = await paymentModel.findOne({$and:[{userId: student.userInfo.userId},{session:CURRENTSESSION}]})
            if(!payFound){
             const newPaymentData = paymentModel({
-              userId:it.userInfo.userId,
+              userId:student.userInfo.userId,
               session:CURRENTSESSION,
-              class:it.userInfo.class,
+              class:student.userInfo.class,
               dueAmount: 0,
               excessAmount:0,
-              totalFineAmount:0
+              totalFineAmount:0,
+              feeFree: student.userInfo.feeFree,
+              busService: student.userInfo.busService
             })
               const  newPaymentDataCreated = await newPaymentData.save()
             }
