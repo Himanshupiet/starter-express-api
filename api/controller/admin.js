@@ -57,7 +57,7 @@ const AnualExamMonthIndex = 12
 const generateHash = (data) => {
   return crypto.createHash('sha256').update(data).digest('hex');
 };
-const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5","6","7","8","9","10","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PRE NUR A", "PRE NUR B"]
+const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5 A","6 A","7 A","8 A","9 A","10 A","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PRE NUR A", "PRE NUR B"]
 const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
 const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
 const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','COMP PRACT','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI SUB ENRICH','ENGLISH SUB ENRICH','MATH SUB ENRICH','SCIENCE SUB ENRICH','SST SUB ENRICH','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK MV','ATTENDANCE']
@@ -348,6 +348,209 @@ module.exports = {
       const users = await userModel.find(condParam,dataFilterParam).sort(sortingOption);
     
       if(users && users.length>0){
+
+ 
+
+  async function updateInvoiceClasses() {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const classList = ["4", "5", "6", "7", "8", "9", "10"];
+
+      // const resultBanrches = classList.map(cls=>({
+      //   case: {$eq: ["$class", cls]},
+      //   then: `${cls} A`
+      // })) 
+
+      // await resultModel.updateMany(
+      //   {"class": {$in: classList}},
+      //   [
+      //     {
+      //       $set:{
+      //         "class":{
+      //           $switch:{
+      //             branches: resultBanrches,
+      //             default: "$class"
+      //           }
+      //         }
+      //       }
+      //     }
+      //   ],
+      //   {session}
+      // )
+
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      console.log("Transaction committed successfully.");
+    } catch (error) {
+      // Abort transaction in case of error
+      await session.abortTransaction();
+      session.endSession();
+
+      console.error("Transaction aborted due to error:", error);
+    }
+  }
+
+  // Call the function
+  //updateInvoiceClasses();
+
+
+        const classList = ["5", "6", "7", "8", "9", "10"];
+
+        const invoiceuBarches = classList.map(cls => ({
+          case: { $eq: ["$invoiceInfo.class", cls] },
+          then: `${cls} A`
+        }));
+
+        //**** invoice update */
+        // await invoiceModel.updateMany(
+        //   { "invoiceInfo.class": { $in: classList } },  // Match documents
+        //   [
+        //     { 
+        //       $set: { 
+        //         "invoiceInfo.class": { 
+        //           $switch: {
+        //             branches: invoiceuBarches,  // Apply case conditions
+        //             default: "$invoiceInfo.class" // Keep unchanged if not in the list
+        //           }
+        //         }
+        //       }
+        //     }
+        //   ]
+        // );
+
+           //**** users update */
+        const userbranches = classList.map((cls)=>{
+          return{
+            case: {$eq:["$userInfo.class", cls]},
+            then:`${cls} A`
+          }
+        })
+
+        // await userModel.updateMany(
+        //   {"userInfo.class": {$in:classList}},
+        //   [
+        //     {
+        //       $set: {
+        //         "userInfo.class":{
+        //           $switch:{
+        //             branches: userbranches,
+        //             default:"$userInfo.class"
+        //           }
+        //         }
+        //       }
+        //     }
+        //   ],
+        //  {session}
+        // )
+
+        /***  payment update */
+
+        const payBranches = classList.map(cls=>({
+          case: {$eq: ["$class", cls]},
+          then: `${cls} A`
+        })) 
+
+        // await paymentModel.updateMany(
+        //   {"class": {$in: classList}},
+        //   [
+        //     {
+        //       $set:{
+        //         "class":{
+        //           $switch:{
+        //             branches: payBranches,
+        //             default: "$class"
+        //           }
+        //         }
+        //       }
+        //     }
+        //   ],
+        //   {session}
+        // )
+
+        /*** monthlyfeelist update */
+
+        const monthFeeBranches= classList.map(cls=>({
+          case: {$eq:["$className", cls]},
+          then: `${cls} A`
+        }))
+
+        // await monthlyFeeListModel.updateMany(
+        //   {"className":{$in: classList}},
+        //   [
+        //     {
+        //       $set:{
+        //         "className":{
+        //           $switch:{
+        //             branches: monthFeeBranches,
+        //             default: "$className"
+        //           }
+        //         }
+        //       }
+        //     }
+        //   ],
+        //   {session}
+        // )
+
+        /***  result update */
+
+        const resultBanrches = classList.map(cls=>({
+          case: {$eq: ["$class", cls]},
+          then: `${cls} A`
+        })) 
+
+        // await resultModel.updateMany(
+        //   {"class": {$in: classList}},
+        //   [
+        //     {
+        //       $set:{
+        //         "class":{
+        //           $switch:{
+        //             branches: resultBanrches,
+        //             default: "$class"
+        //           }
+        //         }
+        //       }
+        //     }
+        //   ],
+        //   {session}
+        // )
+
+        /*** resultPer update */     
+        // await resultEntryPerModel.updateMany(
+        //   { "allowedList.class": { $in: classList } },  // Match documents with relevant class values
+        //   [
+        //     {
+        //       $set: {
+        //         "allowedList": {
+        //           $map: {
+        //             input: "$allowedList",
+        //             as: "elem",
+        //             in: {
+        //               $mergeObjects: [
+        //                 "$$elem",  // Preserve other fields
+        //                 {
+        //                   class: {
+        //                     $cond: {
+        //                       if: { $in: ["$$elem.class", classList] },  // Check if class is in list
+        //                       then: { $concat: ["$$elem.class", " A"] },  // Append ' A'
+        //                       else: "$$elem.class"  // Keep unchanged if not in classList
+        //                     }
+        //                   }
+        //                 }
+        //               ]
+        //             }
+        //           }
+        //         }
+        //       }
+        //     }
+        //   ],
+        //   {session}
+        // );
+        
         //**** get all file name and update */
         // const folderPath='/home/decipher/myproject/final images/otherphoto22'
         // const fileNames= await uploadPhotos(folderPath)
@@ -1517,7 +1720,7 @@ module.exports = {
       }
     }
 
-   const reportCount= await userModel.find({$and:[activeParam,queryParam]}).count();
+   const reportCount= await userModel.find({$and:[activeParam,queryParam]}).countDocuments();
 
     return res.status(200).json({
       success: true,
