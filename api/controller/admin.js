@@ -300,12 +300,13 @@ module.exports = {
         classParam={'userInfo.class':req.body.selectedClass}
       }
       if(req.body.filterOption && req.body.docFilter===true){
-        filterOptionParam={[`document.${req.body.filterOption}`]:{
+        const filterKey= [`document.${req.body.filterOption}`]
+        filterOptionParam={
           $or: [
             { [filterKey]: { $exists: false } },  // Field does not exist
             { [filterKey]: "" }  // Field is an empty string
           ]
-        }}
+        }
       }else if(req.body.filterOption && req.body.docFilter===false){
         if(req.body.filterOption==='No Mobile Number'){
           filterOptionParam={$or:[{'userInfo.phoneNumber1':{$in:['','0000000001', '0000000000']}}]}
