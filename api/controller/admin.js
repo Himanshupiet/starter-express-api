@@ -2652,7 +2652,7 @@ module.exports = {
                       }
                     }
                 }
-                paymentFound['dueAmount'] = parseInt(req.body.paidAmount) == parseInt(req.body.totalGrandAmount)? 0 : parseInt(req.body.dueAmount|| 0) + parseInt(req.body.overDueAmount || 0)
+                paymentFound['dueAmount'] = parseInt(req.body.paidAmount) >= parseInt(req.body.totalAmount)? 0 : parseInt(req.body.dueAmount|| 0) + parseInt(req.body.overDueAmount || 0)
                 paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
                 paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
                 paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
