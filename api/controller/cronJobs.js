@@ -27,6 +27,9 @@ const whatsappApiToken = process.env.WHATSAPP_API_TOKEN
 function generateUniqueId() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+function momentTodayDate(){
+  return moment.tz(new Date(), 'DD/MM/YYYY', 'Asia/Kolkata').format('DD/MM/YYYY');;
+} 
 // const transporter = nodemailer.createTransport({
 //   host: "smtp-relay.brevo.com",
 //   port: 587,
@@ -58,7 +61,6 @@ const transporter = nodemailer.createTransport({
     // }
   });
 
-const TodayDate = moment.tz(new Date(), 'DD/MM/YYYY', 'Asia/Kolkata').format('DD/MM/YYYY');;
 
 const mailTo= `bmmsbkg@gmail.com`
 
@@ -91,7 +93,7 @@ module.exports = {
   sendDailyBackupEmail: async (req, res, next) => {
     console.log("Creating backup")
     try {
-      let today = TodayDate;
+      const today = momentTodayDate();
       // let dd = String(today.getDate()).padStart(2, '0');
       // let mm = String(today.getMonth() + 1).padStart(2, '0'); 
       // let yyyy = today.getFullYear();
@@ -216,6 +218,7 @@ module.exports = {
     }
   },
   fetchBirthdays: async (req, res, next)=>{
+    const today = momentTodayDate();
     const birthDayUser2 = await userModel.aggregate([
       {
         $addFields: {
@@ -276,9 +279,9 @@ module.exports = {
           const response = await whatsAppMessage(it.userInfo.phoneNumber2, msg, tempType, data)
         }
       }
-      await whatsAppMessage('7870421111', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})// Dinker
-      await whatsAppMessage('7250175700', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})// kailash
-      await whatsAppMessage('8233443106', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:TodayDate})
+      await whatsAppMessage('7870421111', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})// Dinker
+      await whatsAppMessage('7250175700', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})// kailash
+      await whatsAppMessage('8233443106', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})
       if(res || req){
         return res.status(200).json({
           success: true,
