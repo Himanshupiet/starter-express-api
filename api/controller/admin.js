@@ -564,17 +564,17 @@ module.exports = {
             }
         
             // Create bulk update operations
-            const updateOperations = busRoutes.map(route => ({
-              updateMany: {
-                filter: { "userInfo.busRouteId": route._id.toString() }, // Filter by _id
-                update: { $set: { "userInfo.busRouteId": route.busRouteId } } // Update with busRouteId
-              }
-            }));
+            // const updateOperations = busRoutes.map(route => ({
+            //   updateMany: {
+            //     filter: { "userInfo.busRouteId": route._id.toString() }, // Filter by _id
+            //     update: { $set: { "userInfo.busRouteId": route.busRouteId } } // Update with busRouteId
+            //   }
+            // }));
         
-            // Perform bulk update if there are any operations
-            if (updateOperations.length > 0) {
-              await userModel.bulkWrite(updateOperations);
-            }
+            // // Perform bulk update if there are any operations
+            // if (updateOperations.length > 0) {
+            //   await userModel.bulkWrite(updateOperations);
+            // }
         
             console.log("Update operation completed successfully.");
           } catch (error) {
