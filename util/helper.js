@@ -703,12 +703,23 @@ module.exports = {
         }
       });
   },
-  redisDeleteCall:async(key, className, session)=>{
+  redisDeleteCall:async({key})=>{
     const redisClient = getRedisClient()
-    if(key && key==='payment'){
-      if(redisClient && await redisClient.exists(`payment-${className}-${session}`)){
-        await redisClient.del(`payment-${className}-${session}`)
-      }
+    if(redisClient && key && await redisClient.exists(key)){
+        await redisClient.del(key)
     }
+  },
+  redisSetKeyCall:async({key, data})=>{
+    const redisClient = getRedisClient()
+    if(redisClient && key && data){
+        await redisClient.set(key, data)
+    }
+  },
+  generateUniqueIdWithTime:()=>{
+    let id;
+    do {
+        id = (Date.now().toString(36).slice(-6)).toUpperCase();
+    } while (id.startsWith("0")); 
+    return id;
   }
 };

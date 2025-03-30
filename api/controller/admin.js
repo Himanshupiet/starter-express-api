@@ -17,7 +17,7 @@ const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const cloudinary = require("cloudinary").v2;
 const { ocrSpace } = require('ocr-space-api-wrapper');
-const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall} = require('../../util/helper')
+const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -140,7 +140,7 @@ const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, s
   let busFee= 0
   let monthlyFee=0
   if(userPayDetail.busService && busRouteFareList.length>0){
-    const busFeeData= busRouteFareList.find(busData => busData._id.toString() === sData.userInfo.busRouteId)
+    const busFeeData= busRouteFareList.find(busData => busData.busRouteId === sData?.userInfo?.busRouteId)
     busFee = (busFeeData && busFeeData.fare)? busFeeData.fare:0
   }
   if(monthlyFeeList.length>0  && userPayDetail.feeFree !=true){
@@ -183,10 +183,10 @@ function encryptObj(objecData){
 const addExamFees = (feeData, isAnnualExamFeeNotPaid, isHalfExamFeeNotPaid) => {
   let dueAmt=0
   if (isAnnualExamFeeNotPaid) {
-      dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+      dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
   }
   if (isHalfExamFeeNotPaid) {
-      dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
+      dueAmt += feeData && feeData.halfExamFee ? Number(feeData.halfExamFee) : 0;
   }
   return dueAmt;
 };
@@ -550,6 +550,39 @@ module.exports = {
         //   ],
         //   {session}
         // );
+
+        //**** Update vehicleFare id all student  */
+        async function updateVehicleFareIdForEachStudent() {
+          try {
+            // Fetch bus route records
+            const busRoutes = await vehicleRouteFareModel.find({ session: '2024-25' })
+              .select('_id busRouteId');
+        
+            if (!busRoutes.length) {
+              console.log("No bus routes found for the session.");
+              return;
+            }
+        
+            // Create bulk update operations
+            const updateOperations = busRoutes.map(route => ({
+              updateMany: {
+                filter: { "userInfo.busRouteId": route._id.toString() }, // Filter by _id
+                update: { $set: { "userInfo.busRouteId": route.busRouteId } } // Update with busRouteId
+              }
+            }));
+        
+            // Perform bulk update if there are any operations
+            if (updateOperations.length > 0) {
+              await userModel.bulkWrite(updateOperations);
+            }
+        
+            console.log("Update operation completed successfully.");
+          } catch (error) {
+            console.error("Error occurred:", error);
+          }
+        }
+        
+        //updateVehicleFareIdForEachStudent()
         
         //**** get all file name and update */
         // const folderPath='/home/decipher/myproject/final images/otherphoto22'
@@ -2404,10 +2437,11 @@ module.exports = {
         newListCreated = await newInfo.save();
       }
       if(newListCreated){
-        //myCache.del("AllList")
-        const redisClient = getRedisClient();
-        await redisClient.del('AllList');
-    
+        const CURRENTSESSION = getCurrentSession()
+        const reqSession = req.body.session || CURRENTSESSION
+        const RedisListKey = `AllList_${reqSession}`
+        redisDeleteCall(RedisListKey)
+
         return res.status(200).json({
           success: true,
           message: "created successfully.",
@@ -2447,6 +2481,10 @@ module.exports = {
       }
 
       if(updateList){
+        const CURRENTSESSION = getCurrentSession()
+        const reqSession = req.body.session || CURRENTSESSION
+        const RedisListKey = `AllList_${reqSession}`
+        redisDeleteCall(RedisListKey)
         return res.status(200).json({
           success: true,
           message: "Updated successfully.",
@@ -2467,11 +2505,64 @@ module.exports = {
   },
 
   getAllList: async (req, res) => {
+    //const busRouteFareList111= await vehicleRouteFareModel.find()
+    //const ids=[]
+    //for (const element of busRouteFareList111) {
+          // element.session = '2024-25'
+          // element['busRouteId'] = generateUniqueIdWithTime()
+          // await element.save();
+          //ids.push(element.busRouteId)
+    //}
+
+    //console.log("ids0", ids)
+
+    
+
+    // const busRouteFareList111= await vehicleRouteFareModel.find({session:'2024-25'})
+    // for (const element of busRouteFareList111) {
+    //       let newEle= JSON.parse(JSON.stringify(element))
+    //       delete newEle._id
+    //       newEle.session = '2023-24'
+    //       const newInfo = new vehicleRouteFareModel(newEle)
+    //       await newInfo.save();
+    // }
+
+
+    // const monthlyFeeList111 = await monthlyFeeListModel.find()
+    // for (let element of monthlyFeeList111) {
+    //   const examFee = element.examFee;
+    //   // Use Mongoose's updateOne method to update the document
+    //   await monthlyFeeListModel.updateOne(
+    //       { _id: element._id }, 
+    //       {
+    //           $unset: { examFee: "" }, // Properly remove the `examFee` field
+    //           $set: {
+    //               annualExamFee: examFee,
+    //               halfExamFee: examFee,
+    //               session: '2024-25'
+    //           }
+    //       }
+    //   );
+    // }
+
+
+    // const monthlyFeeList111= await monthlyFeeListModel.find({session:'2024-25'})
+    // for (const element of monthlyFeeList111) {
+    //       let newEle = JSON.parse(JSON.stringify(element))
+    //       delete newEle._id
+    //       newEle.session = '2023-24'
+    //       const newInfo = new monthlyFeeListModel(newEle)
+    //       await newInfo.save();
+    // }
+
+    const CURRENTSESSION = getCurrentSession()
+    const reqSession = req.query.session || CURRENTSESSION
+    const RedisListKey = `AllList_${reqSession}`
     try{
       const redisClient = getRedisClient();
       // if(myCache.has("AllList")){
-      if(redisClient && await redisClient.exists('AllList')){
-        let listCacheValue = await redisClient.get("AllList")
+      if(redisClient && await redisClient.exists(RedisListKey)){
+        listCacheValue = await redisClient.get(RedisListKey)
         listCacheValue = JSON.parse(listCacheValue)
         let vehicleList = listCacheValue.vehicleList
         let busRouteFareList = listCacheValue.busRouteFareList
@@ -2494,11 +2585,11 @@ module.exports = {
         })
       }else{
         let vehicleList= await vehicleModel.find()
-        let busRouteFareList= await vehicleRouteFareModel.find()
-        let monthlyFeeList= await monthlyFeeListModel.find()
+        let busRouteFareList= await vehicleRouteFareModel.find({session:reqSession})
+        let monthlyFeeList= await monthlyFeeListModel.find({session: reqSession})
         let payOptionList= await payOptionModel.find()
         let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['topadmin']}}]}) // 918732 Anshu kumar id
-        let allStudentUserId = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.userId": 1})
+        let allStudentUserId = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}, {'userInfo.session':CURRENTSESSION}]},{"userInfo.userId": 1})
         //let allStudentPhone1 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber1": 1})
         //let allStudentPhone2 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber2": 1})
         //allStudentPhone1 = [...allStudentPhone1].map(data=> data.userInfo.phoneNumber1)
@@ -2514,11 +2605,8 @@ module.exports = {
           allStudentPhoneList:[], //flatPhoneNum,
           allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
         }
-        //myCache.set("AllList", JSON.stringify(returnData) )
-        //console.log("redisClient",redisClient) 
         if (redisClient) {
-          await redisClient.set('AllList', JSON.stringify(returnData));
-          //console.log('Key set in Redis.');
+          redisSetKeyCall(RedisListKey, JSON.stringify(returnData))
         }
         return res.status(200).json({
           success: true,
@@ -2604,6 +2692,7 @@ module.exports = {
     let newInvoiceCreatedId=''
     try{
       const CURRENTSESSION = getCurrentSession()
+      const reqSession = req.body.session || CURRENTSESSION
       let paymentAdded=null
       const newInvoiceIdGen = await newInvoiceIdGenrate()
       const submitType= req.body.submitType
@@ -2623,11 +2712,11 @@ module.exports = {
       newInvoiceInfo['amount'] = req.body.paidAmount
       newInvoiceInfo['invoiceId'] = newInvoiceIdGen
       newInvoiceInfo['insertedId'] = req.body.insertedId
-      newInvoiceInfo['session']= req.body.session
+      newInvoiceInfo['session']= reqSession
       const newInvoiceCreate = await newInvoiceInfo.save();
       if(newInvoiceCreate){
         newInvoiceCreatedId = newInvoiceCreate._id
-        let paymentFound =  await paymentModel.findOne({$and:[{userId: req.body.userId},{session: req.body.session}]})
+        let paymentFound =  await paymentModel.findOne({$and:[{userId: req.body.userId},{session: reqSession}]})
           if(paymentFound){
               if(submitType==='MONTHLY'){
                 for(const data of req.body.feeList){
@@ -2805,7 +2894,8 @@ module.exports = {
           }
       }
       if(paymentAdded){
-        redisDeleteCall('payment', req.body.class, CURRENTSESSION)
+        const RedisPaymentKey =`payment-${req.body.class}-${reqSession}`
+        redisDeleteCall({key:RedisPaymentKey})
         return res.status(200).json({
           success: true,
           message: "Payment Added successfully.",
@@ -2835,7 +2925,7 @@ module.exports = {
       const CURRENTSESSION = getCurrentSession()
       let list =[]
       let selectedClass=''
-      let reqSession= req.query.session
+      let reqSession= req.query.session || CURRENTSESSION
       let searchStr = req.query.searchStr? (req.query.searchStr).trim():''
       let searchParam={}
       let userIdParam={}
@@ -2850,8 +2940,9 @@ module.exports = {
       }
       const redisClient = getRedisClient()
       // await redisClient.flushDb()
-      if(selectedClass && !req.query.userId  && redisClient && await redisClient.exists(`payment-${selectedClass}-${CURRENTSESSION}`)){
-          let cacheList = await redisClient.get(`payment-${selectedClass}-${CURRENTSESSION}`)
+      const RedisPaymentKey =`payment-${selectedClass}-${reqSession}`
+      if(selectedClass && !req.query.userId  && redisClient && await redisClient.exists(RedisPaymentKey)){
+          let cacheList = await redisClient.get(RedisPaymentKey)
           list = JSON.parse(cacheList)
           return res.status(200).json({
             success: true,
@@ -2889,8 +2980,8 @@ module.exports = {
       }
       
       //let students= await userModel.find({$and:[ activeParam, classParam, roleParam, searchParam, userIdParam]})
-      const busRouteFareList = await vehicleRouteFareModel.find()
-      const monthlyFeeList = await monthlyFeeListModel.find()
+      const busRouteFareList = await vehicleRouteFareModel.find({session:reqSession})
+      const monthlyFeeList = await monthlyFeeListModel.find({session: reqSession})
       //let payOptionList= await payOptionModel.find()
    
       //let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) 
@@ -3059,8 +3150,8 @@ module.exports = {
           }
           list.push(newData)
         }
-        if(selectedClass && redisClient && !req.query.userId){
-          await redisClient.set(`payment-${selectedClass}-${CURRENTSESSION}`, JSON.stringify(list));
+        if(selectedClass && !req.query.userId){
+          redisSetKeyCall(RedisPaymentKey, JSON.stringify(list))
         }
 
         return res.status(200).json({

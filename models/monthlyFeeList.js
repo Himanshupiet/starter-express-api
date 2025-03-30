@@ -10,6 +10,15 @@ const monthlyFeeListSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  annualExamFee: {
+    type: Number,
+    required: false,
+  },
+  halfExamFee: {
+    type: Number,
+    required: false,
+  },
+  // delete after update this
   examFee: {
     type: Number,
     required: false,

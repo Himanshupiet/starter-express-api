@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 
 const vehicleRouteFareSchema = new mongoose.Schema({
+  busRouteId:{
+    type: String,
+    required: true,
+  },
   vehicleId: {
     type: String,
     required: true,
