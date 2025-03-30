@@ -2605,8 +2605,8 @@ module.exports = {
           allStudentPhoneList:[], //flatPhoneNum,
           allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
         }
-        if (redisClient) {
-          redisSetKeyCall(RedisListKey, JSON.stringify(returnData))
+        if(redisClient) {
+          redisSetKeyCall({key:RedisListKey, data:JSON.stringify(returnData)})
         }
         return res.status(200).json({
           success: true,
@@ -3151,7 +3151,7 @@ module.exports = {
           list.push(newData)
         }
         if(selectedClass && !req.query.userId){
-          redisSetKeyCall(RedisPaymentKey, JSON.stringify(list))
+          redisSetKeyCall({key:RedisPaymentKey, data:JSON.stringify(list)})
         }
 
         return res.status(200).json({
@@ -3723,7 +3723,7 @@ module.exports = {
   },
   resetRedisCashe:async (req,res)=> {
     try {
-      const redisClient = await getRedisClient()
+      const redisClient = getRedisClient()
       if(redisClient){
         await redisClient.flushAll()
         return res.status(200).json({

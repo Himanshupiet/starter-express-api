@@ -712,7 +712,7 @@ module.exports = {
   redisSetKeyCall:async({key, data})=>{
     const redisClient = getRedisClient()
     if(redisClient && key && data){
-        await redisClient.set(key, data)
+      await redisClient.set(key, data)
     }
   },
   generateUniqueIdWithTime:()=>{
