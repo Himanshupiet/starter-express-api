@@ -57,7 +57,7 @@ const AnualExamMonthIndex = 12
 const generateHash = (data) => {
   return crypto.createHash('sha256').update(data).digest('hex');
 };
-const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5 A","6 A","7 A","8 A","9 A","10 A","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PRE NUR A", "PRE NUR B"]
+const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5 A","5 B","6 A","6 B","7 A","7 B","8 A","9 A","10 A","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PRE NUR A", "PRE NUR B"]
 const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
 const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
 const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','COMP PRACT','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI SUB ENRICH','ENGLISH SUB ENRICH','MATH SUB ENRICH','SCIENCE SUB ENRICH','SST SUB ENRICH','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK MV','ATTENDANCE']
@@ -2392,7 +2392,7 @@ module.exports = {
               feeFree: student.userInfo.feeFree,
               busService: student.userInfo.busService
             })
-              const  newPaymentDataCreated = await newPaymentData.save()
+              await newPaymentData.save()
             }
           }
       }
@@ -2484,7 +2484,7 @@ module.exports = {
         const CURRENTSESSION = getCurrentSession()
         const reqSession = req.body.session || CURRENTSESSION
         const RedisListKey = `AllList_${reqSession}`
-        redisDeleteCall(RedisListKey)
+        redisDeleteCall({key:RedisListKey})
         return res.status(200).json({
           success: true,
           message: "Updated successfully.",
@@ -3367,6 +3367,7 @@ module.exports = {
   deleteTransaction:async(req, res)=>{
         try {
           const CURRENTSESSION = getCurrentSession()
+          
           const invoiceData= await invoiceModel.findOne({invoiceId: req.body.invoiceId})
           if(invoiceData && req.body.session && (invoiceData.invoiceType==='MONTHLY'|| invoiceData.invoiceType==='EXAM_FEE' || invoiceData.invoiceType==='OTHER_PAYMENT') ){
             const paymentData= await paymentModel.findOne({$and:[{'userId': invoiceData.userId},{session: req.body.session}]})
@@ -3403,7 +3404,8 @@ module.exports = {
               //   await paymentModel.deleteOne({'_id': paymentData._id})
               // }
               if(updatedPayement){
-                  if(CURRENTSESSION === req.body.session) redisDeleteCall('payment', user.userInfo.class, CURRENTSESSION)
+                  const RedisPaymentKey =`payment-${user.userInfo.class}-${req.body.session}`
+                  if(CURRENTSESSION === req.body.session) redisDeleteCall({key:RedisPaymentKey})
             
                   await invoiceModel.findOneAndUpdate({'_id': invoiceData._id},{deleted: true})
                   return res.status(200).json({
