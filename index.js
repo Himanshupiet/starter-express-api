@@ -76,6 +76,7 @@ const {fetchBirthdays, sendDailyBackupEmail}=require("./api/controller/cronJobs"
 const {downloadAllImages}=require("./util/dowloadAllfile");
 const {connectRedis}=require("./util/redisDB");
 const {uploadPhotos}=require("./util/uploadMultipleImage");
+const { restoreBackup } = require("./util/restoreDbBakup");
 
 app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);
@@ -111,7 +112,11 @@ await mongoose
     server.listen(PORT || 3010, () => {
       console.log(`server is running http://localhost:${PORT}`);
     });
-    connectRedis()
+    //connectRedis()
+
+    //*** Backup restore  */
+    //const zipFilePath = "/home/anshu/Downloads/BMMS_Daily_Backup_02_04_2025.zip";
+    //restoreBackup(zipFilePath);
 
     const getAdmin = async () => {
       try {

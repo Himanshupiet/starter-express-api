@@ -94,10 +94,6 @@ module.exports = {
     console.log("Creating backup")
     try {
       const today = momentTodayDate();
-      // let dd = String(today.getDate()).padStart(2, '0');
-      // let mm = String(today.getMonth() + 1).padStart(2, '0'); 
-      // let yyyy = today.getFullYear();
-      // today = dd + '/' + mm + '/' + yyyy;
       const userData = await userModel.find()
      
       const roleData = await roleModel.find()
@@ -111,23 +107,6 @@ module.exports = {
       const paymentData = await paymentModel.find()
       const invoiceData = await invoiceModel.find()
       const payOptionData = await payOptionModel.find()
-      // console.log("11111111111", userData.length)
-      // console.log("222222222222", roleData.length)
-      // console.log("33333333333", examData.length)
-      // console.log("4444444444", resultData.length)
-      // console.log("5555555555555", resultEntryPerData.length)
-      // console.log("66666666666666", examDateAndSubData.length)
-      // console.log("7777777777777", vehicleData.length)
-      // console.log("888888888888888", vehicleRouteFareData.length)
-      // console.log("9999999999999", monthlyFeeListData.length)
-      // console.log("aaaaaaaaaaa", paymentData.length)
-      // console.log("bbbbbbbbbbbbbb", invoiceData.length)
-      // console.log("cccccccccccc", payOptionData.length)
-      // console.log("ddddddddddddddd", userData.length)
-      // console.log("eeeeeeeeeeeeeeee", userData.length)
-      // console.log("ddddddddddddddd", userData.length)
-
-  
       
       zip.file("users.json", JSON.stringify(userData));
       zip.file("roles.json",JSON.stringify(roleData));

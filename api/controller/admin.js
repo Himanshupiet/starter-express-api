@@ -712,7 +712,7 @@ module.exports = {
     try {
     const updatedUser=  await userModel.findOneAndUpdate({_id:req.params.id},{deleted: true, modified:new Date()});
      if(updatedUser){
-        await paymentModel.findOneAndUpdate({'userId': updatedUser.userInfo.userId},{deleted: true, modified:new Date()})
+      await paymentModel.updateMany({ 'userId': updatedUser.userInfo.userId },{ $set: { deleted: true, modified: new Date() } });
         return res.status(200).json({
           success: true,
           message: 'Deleted user successfully',
@@ -2368,6 +2368,7 @@ module.exports = {
   upgradeClass: async (req, res) => {
     try {
       const CURRENTSESSION = getCurrentSession()
+      console.log("CURRENTSESSION", CURRENTSESSION);
       const totalStudent = await userModel.find({$and: 
         [ 
           activeParam,
@@ -2375,27 +2376,47 @@ module.exports = {
           {'userInfo.class':req.body.selectedClass},
         ]
       })
-      if(totalStudent && totalStudent.length>0){
-        for(const student of totalStudent){
-        
-          // old 10 class ke liye purana seeion rhne dena hai
-           await userModel.findOneAndUpdate({_id:student._id},{'userInfo.class':req.body.upgradeClass, 'userInfo.session':CURRENTSESSION})
-           const  payFound = await paymentModel.findOne({$and:[{userId: student.userInfo.userId},{session:CURRENTSESSION}]})
-           if(!payFound){
-            const newPaymentData = paymentModel({
-              userId:student.userInfo.userId,
-              session:CURRENTSESSION,
-              class:student.userInfo.class,
-              dueAmount: 0,
-              excessAmount:0,
-              totalFineAmount:0,
-              feeFree: student.userInfo.feeFree,
-              busService: student.userInfo.busService
-            })
-              await newPaymentData.save()
+      console.log("totalStudent", totalStudent.length)
+      if (totalStudent && totalStudent.length > 0) {
+        for (const student of totalStudent) {
+            // Update user information
+            const updatedStudent = await userModel.findOneAndUpdate(
+                { _id: student._id },
+                { 
+                    $set: { 
+                        'userInfo.class': req.body.upgradeClass, 
+                        'userInfo.session': CURRENTSESSION 
+                    } 
+                },
+                { new: true } // Returns the updated document
+            );
+            //console.log("updatedStudent", updatedStudent)
+            if (updatedStudent) { // Only proceed if user update is successful
+                // Check if a payment record exists
+                const payFound = await paymentModel.findOne({
+                    userId: student.userInfo.userId,
+                    session: CURRENTSESSION
+                });
+    
+                // If payment record does not exist, create a new one
+                if (!payFound) {
+                    const newPaymentData = new paymentModel({
+                        userId: student.userInfo.userId,
+                        session: CURRENTSESSION,
+                        class: req.body.upgradeClass,
+                        dueAmount: 0,
+                        excessAmount: 0,
+                        totalFineAmount: 0,
+                        feeFree: student.userInfo.feeFree,
+                        busService: student.userInfo.busService
+                    });
+    
+                    await newPaymentData.save();
+                }
             }
-          }
-      }
+        }
+    }
+    
         
       return res.status(200).json({
         success: true,
@@ -2404,7 +2425,7 @@ module.exports = {
     } catch (error) {
       return res.status(400).json({
         success: false,
-        message: err.message,
+        message: error.message,
       });
     }
   },
@@ -2419,10 +2440,11 @@ module.exports = {
         newListCreated = await newInfo.save();
       }
       if(req.params.name==='busRouteFareList'){
-        const newInfo= new vehicleRouteFareModel({
-          ...req.body
-        })
-        newListCreated = await newInfo.save();
+        // Add here busrote id 
+        // const newInfo= new vehicleRouteFareModel({
+        //   ...req.body
+        // })
+        // newListCreated = await newInfo.save();
       }
       if(req.params.name==='monthlyFeeList'){
         const newInfo= new monthlyFeeListModel({
@@ -2522,7 +2544,7 @@ module.exports = {
     // for (const element of busRouteFareList111) {
     //       let newEle= JSON.parse(JSON.stringify(element))
     //       delete newEle._id
-    //       newEle.session = '2023-24'
+    //       newEle.session = '2025-26'
     //       const newInfo = new vehicleRouteFareModel(newEle)
     //       await newInfo.save();
     // }
@@ -2550,7 +2572,7 @@ module.exports = {
     // for (const element of monthlyFeeList111) {
     //       let newEle = JSON.parse(JSON.stringify(element))
     //       delete newEle._id
-    //       newEle.session = '2023-24'
+    //       newEle.session = '2025-26'
     //       const newInfo = new monthlyFeeListModel(newEle)
     //       await newInfo.save();
     // }
@@ -3021,9 +3043,10 @@ module.exports = {
       if(allPayDetail && allPayDetail.length>0){
         const userIds= allPayDetail.map(data=> data.userId)
         const allStudents = await userModel.find({'userInfo.userId': {$in:[...userIds]}})
-
-        const allPreviousPayDetail = reqSession===CURRENTSESSION? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:previousSession()}]}):undefined
-        
+        const PREV_SESSSION = previousSession()
+        const allPreviousPayDetail = reqSession===CURRENTSESSION? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:PREV_SESSSION}]}):undefined
+        const prev_busRouteFareList = await vehicleRouteFareModel.find({session:PREV_SESSSION})
+        const prev_monthlyFeeList = await monthlyFeeListModel.find({session: PREV_SESSSION})
         for (const it of allPayDetail) {
           let prevAmtDue=0
           const sData= allStudents.find(data=> data.userInfo.userId=== it.userId)
@@ -3039,56 +3062,11 @@ module.exports = {
           const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList, reqSession)
 
           if(previousPayDetail){
-            // const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, monthlyFeeList, busRouteFareList, previousSession())   
-            // let dueAmt=0
-            // const feeData= monthlyFeeList.find(data=> data.className===previousPayDetail.class)
-            // if(sData.userInfo.admissionDate){
-            //   const admissionDate = new Date(sData.userInfo.admissionDate)
-            //   const admissionMonthIndex = admissionDate.getMonth()
-            //   const admissionSession = getAdmissionSession(sData.userInfo.admissionDate)
-          
-            //   if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
-            //     const isAnnualExamFeeNotPaid = !previousPayDetail.other.find(data => data.name === 'ANNUAL EXAM')
-            //     const isHalfExamFeeNotPaid   = !previousPayDetail.other.find(data => data.name === 'HALF YEARLY EXAM')
-            //     if(admissionSession ===previousSession() ){
-            //       if ((admissionMonthIndex >= 3 && admissionMonthIndex <= 9)) {
-            //         if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
-            //         if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
-            //       } else if ((admissionMonthIndex >= 10 || admissionMonthIndex <= 2)) {
-            //         if(isAnnualExamFeeNotPaid) {dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
-            //       }
-            //     }else{
-            //       if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
-            //       if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
-            //     }
-            //   }else{
-            //     if(admissionSession ===previousSession() ){
-            //       if ((admissionMonthIndex >= 3 && admissionMonthIndex <= 9)) {
-            //         dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
-            //         dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
-            //       } else if ((admissionMonthIndex >= 10 || admissionMonthIndex <= 2)) {
-            //         dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
-            //       }
-            //     }else{
-            //       dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
-            //       dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
-            //     }
-            //   }
-            // }else{
-            //   if(previousPayDetail && previousPayDetail.other && previousPayDetail.other.length>0){
-            //     const isAnnualExamFeeNotPaid = !previousPayDetail.other.find(data => data.name === 'ANNUAL EXAM')
-            //     const isHalfExamFeeNotPaid   = !previousPayDetail.other.find(data => data.name === 'HALF YEARLY EXAM')
-            //     if(isAnnualExamFeeNotPaid) { dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
-            //     if(isHalfExamFeeNotPaid) {dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;}
-            //   }else{
-            //       dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
-            //       dueAmt += feeData && feeData.examFee ? Number(feeData.examFee) : 0;
-            //   }
-            // } 
+
             // Main logic
-            const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, monthlyFeeList, busRouteFareList, previousSession());
+            const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, prev_monthlyFeeList, prev_busRouteFareList, previousSession());
             let dueAmt = 0;
-            const feeData = monthlyFeeList.find(data => data.className === previousPayDetail.class);
+            const feeData = prev_monthlyFeeList.find(data => data.className === previousPayDetail.class);
             const isPrevOtherPay= previousPayDetail && previousPayDetail.other && previousPayDetail.other.length > 0? true:false
             const isAnnualExamFeeNotPaid = isPrevOtherPay? !previousPayDetail.other.some(data => data.name === 'ANNUAL EXAM') : true
             const isHalfExamFeeNotPaid = isPrevOtherPay? !previousPayDetail.other.some(data => data.name === 'HALF YEARLY EXAM') : true

@@ -186,3 +186,7 @@ userSchema.pre("save", function (next) {
 
 exports.userModel = mongoose.model("user", userSchema);
 exports.userSchema = userSchema;
+
+//*** use when restore from JSON file 
+// const userModel = mongoose.model("User", userSchema);
+// module.exports = userModel;

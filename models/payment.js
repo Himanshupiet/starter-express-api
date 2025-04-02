@@ -103,3 +103,7 @@ paymentSchema.pre("save", function (next) {
 
 exports.paymentModel = mongoose.model("payment", paymentSchema);
 exports.paymentSchema = paymentSchema;
+
+//*** use when restore from JSON file 
+// const paymentModel = mongoose.model("payment", paymentSchema);
+// module.exports = paymentModel;
