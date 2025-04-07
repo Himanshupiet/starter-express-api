@@ -871,7 +871,7 @@ module.exports = {
         }
       }
 
-       const response = await userModel.findOneAndUpdate({ 'userInfo.userId': userId},datatoUpdate)
+       const response = await userModel.findOneAndUpdate({ 'userInfo.userId': userId},datatoUpdate,{$new:true})
         if(response) {
           if(datatoUpdate.isActive ===false || datatoUpdate.isApproved===false){
             await AuthToken.deleteMany({ userId: userId })
@@ -880,17 +880,23 @@ module.exports = {
             const foundPayment = await paymentModel.findOne({$and:[{session:response.userInfo.session},{'userId': response.userInfo.userId}]})
             if(!foundPayment){
               const newPaymentData = paymentModel({
-                userId:updatedUser.userInfo.userId,
+                userId:response.userInfo.userId,
                 session:response.userInfo.session,
-                class:updatedUser.userInfo.class,
+                class:response.userInfo.class,
                 dueAmount: 0,
                 excessAmount:0,
                 totalFineAmount:0
               })
-              const  newPaymentDataCreated = await newPaymentData.save()
+              await newPaymentData.save()
+              const RedisPaymentKey =`payment-${response.userInfo.class}-${response.userInfo.session}`
+              redisDeleteCall({key:RedisPaymentKey})
             }
               await paymentModel.updateMany({'userId': response.userInfo.userId},{deleted: false, modified:new Date()})
-            
+              const paymentlList = await paymentModel.find({'userId': response.userInfo.userId})
+              for (const it of paymentlList){
+                const  RedisPaymentKey =`payment-${it.class}-${it.session}`
+                redisDeleteCall({key:RedisPaymentKey})
+              }
           }
           return res.status(200).json({
             success: true,
@@ -2440,11 +2446,12 @@ module.exports = {
         newListCreated = await newInfo.save();
       }
       if(req.params.name==='busRouteFareList'){
-        // Add here busrote id 
-        // const newInfo= new vehicleRouteFareModel({
-        //   ...req.body
-        // })
-        // newListCreated = await newInfo.save();
+        const busRouteId = generateUniqueIdWithTime()
+        const newInfo= new vehicleRouteFareModel({
+          ...req.body,
+          busRouteId
+        })
+        newListCreated = await newInfo.save();
       }
       if(req.params.name==='monthlyFeeList'){
         const newInfo= new monthlyFeeListModel({
