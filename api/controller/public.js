@@ -39,7 +39,7 @@ function encryptObj(objecData){
 module.exports = {
   userlogin: async (req, res) => {
     try {
-      const user = await userModel.findOne({$and:[{'userInfo.roleName':{$in:["TOPADMIN","ADMIN","TEACHER","ACCOUNTANT"]}},{"userInfo.userId": req.body.bmmsId }]});
+      const user = await userModel.findOne({$and:[{'userInfo.roleName':{$in:["TOPADMIN","ADMIN","TEACHER","ACCOUNTANT","ASSISTANT"]}},{"userInfo.userId": req.body.bmmsId }]});
       let isAdmin = false;
       if (!user) {
         return res.status(200).json({
@@ -85,7 +85,7 @@ module.exports = {
           });
         }
   
-        if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT")) isAdmin = true;
+        if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT" || roleExist.roleName === "ASSISTANT" )) isAdmin = true;
         const blogWeb= (user && user.userInfo && user.userInfo.userId &&  user.userInfo.userId ==='topadmin')? true:false 
         const expireDay=  isAdmin?"1d":"100d"
         let tokenGen =  blogWeb?
