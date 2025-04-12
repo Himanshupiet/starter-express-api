@@ -84,6 +84,25 @@ const userSchema = new mongoose.Schema({
     address2:{
       type:String,
     },
+    isBelowPoverty:{
+      type:Boolean,
+    },
+    bloodGroup:{
+      type:String,
+      default:'B+'
+    },
+    height:{
+      type: Number
+    },
+    weight:{
+      type: Number
+    },
+    qualificationFather:{
+      type:String
+    },
+    qualificationMother:{
+      type:String
+    },
     busService:{
       type:Boolean,
       default:false
