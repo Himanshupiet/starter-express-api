@@ -15,7 +15,8 @@ const {
   passwordEncryptAES,
   passwordDecryptAES,
   whatsAppMessage,
-  getCurrentSession
+  getCurrentSession,
+  redisDeleteCall
 
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
@@ -294,16 +295,21 @@ module.exports = {
           if(userData){
               //await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
               if(userData.userInfo && userData.userInfo.roleName==='STUDENT'){
-                myCache.del("AllList")
+                // myCache.del("AllList")
                 const newPaymentData = paymentModel({
                   userId:userData.userInfo.userId,
                   session: CURRENTSESSION,
                   class:userData.userInfo.class,
                   dueAmount: 0,
                   excessAmount:0,
-                  totalFineAmount:0
+                  totalFineAmount:0,
+                  paymentLedgerPage: userData.userInfo.paymentLedgerPage
                 })
                 const  newPaymentDataCreated = await newPaymentData.save()
+                if(newPaymentDataCreated){
+                  const RedisPaymentKey =`payment-${userData.userInfo.class}-${CURRENTSESSION}`
+                  redisDeleteCall({key:RedisPaymentKey})
+                }
               }
             return res.status(200).json({
               success: true,
@@ -312,7 +318,7 @@ module.exports = {
           } else {
             return res.status(400).json({
               success: false,
-              message: "Registration unsuccessful22.",
+              message: "Registration unsuccessful.",
             });
           }
     } catch (err) {

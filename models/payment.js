@@ -66,6 +66,9 @@ const paymentSchema = new mongoose.Schema({
   userId: {
     type: String,
   },
+  paymentLedgerPage:{
+    type: String,
+  },
   session: {
     type: String,
   },

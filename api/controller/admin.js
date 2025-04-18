@@ -309,7 +309,7 @@ module.exports = {
         }
       }else if(req.body.filterOption && req.body.docFilter===false){
         if(req.body.filterOption==='No Mobile Number'){
-          filterOptionParam={$or:[{'userInfo.phoneNumber1':{$in:['','0000000001', '0000000000']}}]}
+          filterOptionParam={$or:[{'userInfo.phoneNumber1':{$in:['','0000000001', '0000000000','1234567890']}}]}
         }
         if(req.body.filterOption==='No Aadhar'){
           filterOptionParam={'userInfo.aadharNumber':''}
@@ -321,9 +321,12 @@ module.exports = {
           studentAprroveParam={$and:[{'userInfo.feeFree':true}]}
         }
         if(req.body.filterOption==='Bus Students'){
-          studentAprroveParam={$and:[{'userInfo.busService':true}]}
+          if(req.body.selectedRouteId){
+            studentAprroveParam={$and:[{'userInfo.busService':true},{'userInfo.busRouteId':req.body.selectedRouteId}]}
+          }else{
+            studentAprroveParam={$and:[{'userInfo.busService':true}]}
+          }
         }
-
       }
       if(req.body.studentId){
         studentById={'_id': req.body.studentId}
@@ -815,7 +818,7 @@ module.exports = {
             })
             const  newPaymentDataCreated = await newPaymentData.save()
           }else{
-            await paymentModel.findOneAndUpdate({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: req.body.feeFree, busService: req.body.busService})
+            await paymentModel.findOneAndUpdate({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: req.body.feeFree, busService: req.body.busService, paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage})
           }
         }
         return res.status(200).json({
@@ -1758,6 +1761,22 @@ module.exports = {
         'userInfo.category':req.body.selectedCategory,
       }
     }
+    if(req.body.isBelowPoverty){
+      if (req.body.isBelowPoverty === 'true') {
+        queryParam = {
+          ...queryParam,
+          'userInfo.isBelowPoverty': true,
+        };
+      } else {
+        queryParam = {
+          ...queryParam,
+          $or: [
+            { 'userInfo.isBelowPoverty': false },
+            { 'userInfo.isBelowPoverty': { $exists: false } }
+          ]
+        };
+      }
+    }
 
    const reportCount= await userModel.find({$and:[activeParam,queryParam]}).countDocuments();
 
@@ -2391,7 +2410,8 @@ module.exports = {
                 { 
                     $set: { 
                         'userInfo.class': req.body.upgradeClass, 
-                        'userInfo.session': CURRENTSESSION 
+                        'userInfo.session': CURRENTSESSION,
+                        'userInfo.paymentLedgerPage': '' 
                     } 
                 },
                 { new: true } // Returns the updated document
@@ -2731,6 +2751,13 @@ module.exports = {
           message: "Submit type not found, Please try again!",
         })
       }
+      const userData = await userModel.findOne({$and:[{'userInfo.userId':req.body.userId},{'userInfo.roleName':'STUDENT'}]})
+      if(!userData){
+        return res.status(200).json({
+          success: false,
+          message: "User data not found, Contact to admin!",
+        })
+      }
       let newInvoiceInfo= new invoiceModel({})
       newInvoiceInfo['invoiceInfo'] = {...req.body}
       newInvoiceInfo['invoiceType'] = submitType
@@ -2774,6 +2801,7 @@ module.exports = {
                 paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
                 paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
                 paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
+                paymentFound['paymentLedgerPage'] = req.body.paymentLedgerPage? req.body.paymentLedgerPage: paymentFound['paymentLedgerPage']
               }
               if(submitType==='EXAM_FEE'){
                 if(paymentFound.other &&paymentFound.other.length>0 ){
@@ -2895,6 +2923,7 @@ module.exports = {
                 newPaymentInfo['userId'] = req.body.userId
                 newPaymentInfo['session'] = req.body.session
                 newPaymentInfo['class'] = req.body.class
+                newPaymentInfo['paymentLedgerPage'] = req.body.paymentLedgerPage? req.body.paymentLedgerPage: undefined
                 // newPaymentInfo['totalPaidAmount'] = req.body.paidAmount
                 // newPaymentInfo['totalAmount'] = req.body.totalAmount
             }
@@ -2923,6 +2952,13 @@ module.exports = {
           }
       }
       if(paymentAdded){
+        if(reqSession === CURRENTSESSION && req.body.paymentLedgerPage){
+          await userModel.findByIdAndUpdate({'userInfo.userId': req.body.userId},{
+            $set:{
+              'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
+            }
+          })
+        }
         const RedisPaymentKey =`payment-${req.body.class}-${reqSession}`
         redisDeleteCall({key:RedisPaymentKey})
         return res.status(200).json({

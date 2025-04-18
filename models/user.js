@@ -103,6 +103,12 @@ const userSchema = new mongoose.Schema({
     qualificationMother:{
       type:String
     },
+    apaarId:{
+      type:String
+    },
+    paymentLedgerPage:{
+      type:String
+    },
     busService:{
       type:Boolean,
       default:false
