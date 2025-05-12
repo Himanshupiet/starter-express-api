@@ -537,7 +537,8 @@ module.exports = {
     const file = bucket.file(newFileName);
     try {
       // if st photo the remove background
-      const imageData = docType ==='stPhoto' ? await removeBg(req) : req.files.image.data
+      //const imageData = docType ==='stPhoto' ? await removeBg(req) : req.files.image.data
+      const imageData = req.files.image.data
       // Upload file to Firebase Storage
       await file.save(imageData, {
         // metadata: { contentType: req.files.image.mimetype },
