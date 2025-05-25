@@ -71,6 +71,7 @@ const admin = require("./routes/admin");
 const user = require("./routes/user");
 const securitylog = require("./routes/secuirtylog");
 const cronJob = require("./routes/cronJob");
+const student = require("./routes/student");
 const { passwordEncryptAES } = require("./util/helper");
 const {fetchBirthdays, sendDailyBackupEmail}=require("./api/controller/cronJobs");
 const {downloadAllImages}=require("./util/dowloadAllfile");
@@ -83,6 +84,7 @@ app.use(`${api}/role`, role);
 app.use(`${api}/authorize`, authorize);
 app.use(`${api}/admin`, admin);
 app.use(`${api}/cron`, cronJob);
+app.use(`${api}/student`, student);
 // app.use(`${api}/securitylog`, securitylog);
 
 

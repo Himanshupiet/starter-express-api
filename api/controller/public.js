@@ -40,8 +40,9 @@ function encryptObj(objecData){
 module.exports = {
   userlogin: async (req, res) => {
     try {
-      const user = await userModel.findOne({$and:[{'userInfo.roleName':{$in:["TOPADMIN","ADMIN","TEACHER","ACCOUNTANT","ASSISTANT"]}},{"userInfo.userId": req.body.bmmsId }]});
+      const user = await userModel.findOne({$and:[{'userInfo.roleName':{$in:["TOPADMIN","ADMIN","TEACHER","ACCOUNTANT","ASSISTANT","STUDENT"]}},{"userInfo.userId": req.body.bmmsId }]});
       let isAdmin = false;
+      let isStudent= false
       if (!user) {
         return res.status(200).json({
           success: false,
@@ -80,10 +81,11 @@ module.exports = {
           });
         }
         if(roleExist && roleExist.roleName &&roleExist.roleName==='STUDENT'){
-          return res.status(200).json({
-            success: false,
-            message: "Not allowed to login. Please try with with phone number.",
-          });
+            isStudent= true
+          // return res.status(200).json({
+          //   success: false,
+          //   message: "Not allowed to login. Please try with with phone number.",
+          // });
         }
   
         if (roleExist && roleExist.roleName && (roleExist.roleName === "TOPADMIN" || roleExist.roleName === "ADMIN" || roleExist.roleName === "TEACHER" || roleExist.roleName === "ACCOUNTANT" || roleExist.roleName === "ASSISTANT" )) isAdmin = true;
@@ -102,6 +104,7 @@ module.exports = {
                     {
                       userId: user.id,
                       isAdmin: isAdmin,
+                      isStudent: isStudent
                     },
                     SECRET,
                     { expiresIn:expireDay}

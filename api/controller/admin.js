@@ -3711,7 +3711,8 @@ module.exports = {
   getAllImages:async(req, res)=>{
     const bucket = admin.storage().bucket();
     try {
-      const allStudentPhoto = await userModel.find({$and:[activeParam, {'userInfo.roleName':'STUDENT'},{'document.stPhoto':{$exists:true}}]},{'document.stPhoto':1})
+      const selectedClass = req.query.selectedClass || undefined
+      const allStudentPhoto = await userModel.find({$and:[activeParam, {'userInfo.roleName':'STUDENT'},{'document.stPhoto':{$exists:true}},{'userInfo.class': selectedClass}]},{'document.stPhoto':1})
       //console.log("allStudentPhoto", allStudentPhoto)
       const studentPhotoSet = new Set(allStudentPhoto.map((item) => item.document.stPhoto));
       const expirationTime = new Date();
