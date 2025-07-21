@@ -51,6 +51,9 @@ const paymentSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  busRouteId:{
+    type: String,
+  },
   dueAmount:{
     type: Number
   },

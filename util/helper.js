@@ -722,5 +722,26 @@ module.exports = {
         id = (Date.now().toString(36).slice(-6)).toUpperCase();
     } while (id.startsWith("0")); 
     return id;
+  },
+  getRankedResult:(resultList)=>{
+    const sortResultData = resultList.sort((a, b) => b.total - a.total);
+    
+    let currentRank = 1;
+    let lastScore = null;
+    let sameScoreCount = 0;
+    return sortResultData.map((data, index) => {
+      if (data.total === lastScore) {
+        sameScoreCount++;
+      } else {
+        currentRank = index + 1;
+        sameScoreCount = 1;
+        lastScore = data.total;
+      }
+      return {
+        ...data,
+        rank: currentRank
+      };
+    });
+    
   }
 };

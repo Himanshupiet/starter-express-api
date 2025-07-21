@@ -17,7 +17,7 @@ const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const cloudinary = require("cloudinary").v2;
 const { ocrSpace } = require('ocr-space-api-wrapper');
-const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime} = require('../../util/helper')
+const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime, getRankedResult} = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
@@ -41,6 +41,7 @@ let slugify = require('slugify')
 const axios = require('axios');
 const user=require("./user");
 const myCache=require("../..");
+const { userInfo } = require("os");
 
 
 
@@ -140,26 +141,26 @@ const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, s
   let busFee= 0
   let monthlyFee=0
   if(userPayDetail.busService && busRouteFareList.length>0){
-    const busFeeData= busRouteFareList.find(busData => busData.busRouteId === sData?.userInfo?.busRouteId)
+    const busFeeData= busRouteFareList.find(busData => busData.busRouteId === userPayDetail?.busRouteId)
     busFee = (busFeeData && busFeeData.fare)? busFeeData.fare:0
   }
   if(monthlyFeeList.length>0  && userPayDetail.feeFree !=true){
     //console.log("userPayDetail.class",userPayDetail.class)
     const monthlyFeeData = monthlyFeeList.find(data => data.className === userPayDetail.class)
-    monthlyFee =  monthlyFeeData && monthlyFeeData.monthlyFee ? monthlyFeeData.monthlyFee :0
+    monthlyFee = monthlyFeeData && monthlyFeeData.monthlyFee ? monthlyFeeData.monthlyFee :0
   }
   let monthPayData={}
   for (const month of monthList) {
     let monthData={}
     const monthEnable =  checkAdmissionDate(sData, month, session)
-      if(monthEnable && (userPayDetail.feeFree != true || userPayDetail.busService===true)){
-        monthData['monthlyFee']= userPayDetail.feeFree===true? 0: monthlyFee
-        monthData['busFee']= userPayDetail.busService ==true? busFee:0
-        monthData['payEnable']=true
-        monthData['paidDone']=userPayDetail && userPayDetail[month]? true: false
-        monthData['amt'] = userPayDetail && userPayDetail[month]? (parseInt(userPayDetail[month].monthlyFee) + parseInt(userPayDetail[month].busFee)):"000"
+      if(monthEnable && (userPayDetail.feeFree != true || userPayDetail.busService === true)){
+        monthData['monthlyFee']= userPayDetail.feeFree === true ? 0: monthlyFee
+        monthData['busFee']= userPayDetail.busService === true ? busFee:0
+        monthData['payEnable']= true
+        monthData['paidDone']= userPayDetail && userPayDetail[month]? true: false
+        monthData['amt'] = userPayDetail && userPayDetail[month] ? (parseInt(userPayDetail[month].monthlyFee) + parseInt(userPayDetail[month].busFee)):"000"
       }else{  
-        monthData['payEnable']=false
+        monthData['payEnable']= false
       }
       monthPayData[month]= monthData
   }
@@ -238,6 +239,20 @@ module.exports = {
       //console.log("gggggggggggggghhhhhhhhhhhhhhhh", JSON.stringify(query))
       const users = await userModel.find(query);
       if(users && users.length>0){
+
+
+        // if (req.body.selectedClass) {
+        //   for (const it of users) {
+        //     if (it.userInfo && it.userInfo.busService && it.userInfo.busRouteId && it.userInfo.userId) {
+        //     const data =  await paymentModel.updateMany(
+        //         { userId: it.userInfo.userId },
+        //         { busRouteId: it.userInfo.busRouteId }
+        //       );
+        //     console.log("data===============>", data)
+        //     }
+        //   }
+        // }
+
         return res.status(200).json({
           success: true,
           message: 'Successfully get all users.',
@@ -814,12 +829,26 @@ module.exports = {
               excessAmount:0,
               totalFineAmount:0,
               feeFree: req.body.feeFree,
-              busService: req.body.busService
+              busService: req.body.busService,
+              busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined,
+              paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage
             })
             const  newPaymentDataCreated = await newPaymentData.save()
           }else{
-            await paymentModel.findOneAndUpdate({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]},{'class': updatedUser.userInfo.class , feeFree: req.body.feeFree, busService: req.body.busService, paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage})
+            const payData ={
+              class: updatedUser.userInfo.class , 
+              feeFree: req.body.feeFree, 
+              busService: req.body.busService,
+              busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined, 
+              paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage
+            }
+            await paymentModel.findOneAndUpdate({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]}, payData)
+          
           }
+            
+          const RedisPaymentKey =`payment-${updatedUser.userInfo.class}-${updatedUser.userInfo.session}`
+          redisDeleteCall({key:RedisPaymentKey})
+
         }
         return res.status(200).json({
           success: true,
@@ -886,6 +915,8 @@ module.exports = {
                 userId:response.userInfo.userId,
                 session:response.userInfo.session,
                 class:response.userInfo.class,
+                busService: response.userInfo.busService,
+                busRouteId: response.userInfo.busService? reponse.userInfo.busRouteId : undefined,
                 dueAmount: 0,
                 excessAmount:0,
                 totalFineAmount:0
@@ -1166,7 +1197,7 @@ module.exports = {
             result:resultData
           });
     
-      }else if(resultQuery.resultPermissionData.role==='ADMIN'){
+      }else if(resultQuery.resultPermissionData.role === 'ADMIN' && ['TOPADMIN', 'ADMIN'].includes(req.user.userInfo.roleName)){
        
         const fullMarks =resultQuery.fullMarks
         const classBetween1to10 = resultQuery.classBetween1to10
@@ -1309,22 +1340,23 @@ module.exports = {
                         newResultData.push(studentResultData)
                       }
                   
-                  const sortResultData =  newResultData.slice().sort((a,b) => b.total - a.total);
-                  const actualResult = newResultData.map(originalData=> {
-                      const sortDataIndex = sortResultData.findIndex((sortdata)=> (originalData && originalData.userId) === (sortdata && sortdata.userId))
-                          const percentage = percentageMarks(originalData.total, fullMarks)
-                          const grade = getGrade(percentage)
-                          const performance= getPerformance(grade)
-                          const ddd= {
-                            ...originalData,
-                            rank:sortDataIndex +1,
-                            percentage :percentage,
-                            grade:grade ,
-                            performance:performance,
-                            fullMarks:fullMarks,
-                            fullAttendance:fullAttendance
-                          }
-                          return ddd
+                      const sortResultData =  getRankedResult(newResultData)
+                      // Assign rank with handling same scores
+                        const actualResult = newResultData.map(originalData=> {
+                        const rankedUser = sortResultData.find((sortdata)=> originalData.userId === sortdata.userId)
+                        const percentage = percentageMarks(originalData.total, fullMarks)
+                        const grade = getGrade(percentage)
+                        const performance= getPerformance(grade)
+                        const ddd= {
+                          ...originalData,
+                          rank: rankedUser ? rankedUser.rank : 0,
+                          percentage :percentage,
+                          grade:grade ,
+                          performance:performance,
+                          fullMarks:fullMarks,
+                          fullAttendance:fullAttendance
+                        }
+                        return ddd
                       }
                     )
                 return res.status(200).json({
@@ -1369,9 +1401,9 @@ module.exports = {
                     }
                 })
               
-              const sortResultData =  newResultData.slice().sort((a,b) => b.total - a.total);
+              const sortResultData =  getRankedResult(newResultData)
               const actualResult = newResultData.map(originalData=> {
-                  const sortDataIndex = sortResultData.findIndex((sortdata)=> originalData.userId === sortdata.userId)
+                  const rankedUser = sortResultData.find((sortdata)=> originalData.userId === sortdata.userId)
                   let ddd = {}
                   if(mainExams){
                     const percentage = percentageMarks(originalData.total, fullMarks)
@@ -1379,7 +1411,7 @@ module.exports = {
                     const performance= getPerformance(grade)
                      ddd= {
                       ...originalData,
-                      rank:sortDataIndex +1,
+                      rank: rankedUser ? rankedUser.rank: 0, 
                       percentage :percentage,
                       grade:grade ,
                       performance:performance,
@@ -1389,7 +1421,7 @@ module.exports = {
                   }else{
                      ddd = {
                       ...originalData,
-                      rank:sortDataIndex +1
+                      rank: rankedUser ? rankedUser.rank: 0,
                     }
                   }
                       return ddd
@@ -1408,6 +1440,12 @@ module.exports = {
               message: "Result not found.",
             });
           }
+      }else{
+        return res.status(400).json({
+          success: true,
+          message: "Result Permssion not allowed. Please contact to admin",
+          result:[]
+        });
       }
     } catch (err) {
       console.log(err);
@@ -2434,7 +2472,9 @@ module.exports = {
                         excessAmount: 0,
                         totalFineAmount: 0,
                         feeFree: student.userInfo.feeFree,
-                        busService: student.userInfo.busService
+                        busService: student.userInfo.busService,
+                        busRouteId: student.userInfo.busService ? student.userInfo.busRouteId : undefined,
+                        paymentLedgerPage: student.userInfo.paymentLedgerPage 
                     });
     
                     await newPaymentData.save();
@@ -3767,6 +3807,49 @@ module.exports = {
         message: err.message,
       })
     }
+  },
+
+  userPaymentSetting:async(req, res)=>{
+    try {
+      const {busOptionEnable, busRouteId, userId, paymentId, session}= req.body
+      const userDetail = await userModel.findOne({$and:[activeParam,{'userInfo.userId': userId}]})
+      const paymentDetail = await paymentModel.findOne({_id: paymentId})
+      if(userId && paymentId && userDetail && paymentDetail){
+        const payData = {
+          busService: busOptionEnable ? true: false,
+          busRouteId: busRouteId 
+        } 
+        if(userDetail.userInfo.session === paymentDetail.session){
+          await userModel.findOneAndUpdate({_id: userDetail._id},{'userInfo.busService': payData.busService, 'userInfo.busRouteId': payData.busRouteId})
+        } 
+        const payDetailUpdated = await paymentModel.findOneAndUpdate({_id: paymentDetail._id},{...payData},{$new :true})
+        if(payDetailUpdated){
+          const  RedisPaymentKey =`payment-${payDetailUpdated.class}-${payDetailUpdated.session}`
+          redisDeleteCall({key:RedisPaymentKey})
+
+          return res.status(200).json({
+            success: true,
+            message: 'Pay detail updated successfully'
+          })
+        }else{
+          return res.status(200).json({
+            success: true,
+            message: 'Pay detail not updated. Please contact to admin.'
+          })
+        }
+      }else{
+        return res.status(400).json({
+          success: false,
+          message: 'User not found.'
+        })
+      }
+    } catch (err) {
+      console.log(err)
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    } 
   },
 
   createBuckup: async (req, res) => {

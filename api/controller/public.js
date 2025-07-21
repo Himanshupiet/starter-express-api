@@ -306,6 +306,8 @@ module.exports = {
                   dueAmount: 0,
                   excessAmount:0,
                   totalFineAmount:0,
+                  busService: userData.userInfo.busService,
+                  busRouteId: userData.userInfo.busService ? userData.userInfo.busRouteId : undefined, 
                   paymentLedgerPage: userData.userInfo.paymentLedgerPage
                 })
                 const  newPaymentDataCreated = await newPaymentData.save()
