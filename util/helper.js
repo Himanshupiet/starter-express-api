@@ -723,25 +723,64 @@ module.exports = {
     } while (id.startsWith("0")); 
     return id;
   },
-  getRankedResult:(resultList)=>{
-    const sortResultData = resultList.sort((a, b) => b.total - a.total);
+  getRankedResult:async(resultList)=>{
+    //const sortResultData = resultList.slice().sort((a, b) => b.total - a.total)
     
-    let currentRank = 1;
-    let lastScore = null;
-    let sameScoreCount = 0;
-    return sortResultData.map((data, index) => {
-      if (data.total === lastScore) {
-        sameScoreCount++;
-      } else {
-        currentRank = index + 1;
-        sameScoreCount = 1;
-        lastScore = data.total;
+    // let currentRank = 1;
+    // let lastScore = null;
+    // let sameScoreCount = 0;
+    // return sortResultData.map((data, index) => {
+    //   if (data.total === lastScore) {
+    //     sameScoreCount++;
+    //   } else {
+    //     currentRank = index + 1;
+    //     sameScoreCount = 1;
+    //     lastScore = data.total;
+    //   }
+    //   return {
+    //     ...data,
+    //     rank: currentRank
+    //   }; 
+    // });
+
+    denseRank(resultList, 'total')
+    function denseRank(data, key, order = 'desc') {
+      const sortedData = [...data].sort((a, b) => {
+        if (order === 'desc') {
+          return b[key] - a[key];
+        } else {
+          return a[key] - b[key];
+        }
+      });
+    
+      if (sortedData.length === 0) {
+        return [];
       }
-      return {
-        ...data,
-        rank: currentRank
-      };
-    });
     
+      let currentRank = 1;
+      let previousValue = sortedData[0][key];
+    
+      sortedData[0].rank = currentRank;
+    
+      for (let i = 1; i < sortedData.length; i++) {
+        const currentValue = sortedData[i][key];
+    
+        if (order === 'desc') {
+          if (currentValue < previousValue) {
+            currentRank++;
+          }
+        } else { // ascending
+          if (currentValue > previousValue) {
+            currentRank++;
+          }
+        }
+    
+        sortedData[i].rank = currentRank;
+        previousValue = currentValue;
+      }
+      
+      return sortedData;
+    }
+  
   }
 };

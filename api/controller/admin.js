@@ -1343,13 +1343,13 @@ module.exports = {
                       const sortResultData =  getRankedResult(newResultData)
                       // Assign rank with handling same scores
                         const actualResult = newResultData.map(originalData=> {
-                        const rankedUser = sortResultData.find((sortdata)=> originalData.userId === sortdata.userId)
+                        //const rankedUser = sortResultData.find((sortdata)=> originalData.userId === sortdata.userId)
                         const percentage = percentageMarks(originalData.total, fullMarks)
                         const grade = getGrade(percentage)
                         const performance= getPerformance(grade)
                         const ddd= {
                           ...originalData,
-                          rank: rankedUser ? rankedUser.rank : 0,
+                          //rank: rankedUser ? rankedUser.rank : 0,
                           percentage :percentage,
                           grade:grade ,
                           performance:performance,
@@ -1401,9 +1401,11 @@ module.exports = {
                     }
                 })
               
-              const sortResultData =  getRankedResult(newResultData)
+              const sortResultData = getRankedResult(newResultData)
+              //console.log("sortResultData", Array.isArray(sortResultData))
               const actualResult = newResultData.map(originalData=> {
-                  const rankedUser = sortResultData.find((sortdata)=> originalData.userId === sortdata.userId)
+                
+                  //const rankedUser = sortResultData.find((sortdata)=> console.log("sortdata find", sortdata))
                   let ddd = {}
                   if(mainExams){
                     const percentage = percentageMarks(originalData.total, fullMarks)
@@ -1411,7 +1413,7 @@ module.exports = {
                     const performance= getPerformance(grade)
                      ddd= {
                       ...originalData,
-                      rank: rankedUser ? rankedUser.rank: 0, 
+                      // rank: rankedUser ? rankedUser.rank: 0, 
                       percentage :percentage,
                       grade:grade ,
                       performance:performance,
@@ -1421,7 +1423,7 @@ module.exports = {
                   }else{
                      ddd = {
                       ...originalData,
-                      rank: rankedUser ? rankedUser.rank: 0,
+                      // rank: rankedUser ? rankedUser.rank: 0,
                     }
                   }
                       return ddd
