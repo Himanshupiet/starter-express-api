@@ -2819,7 +2819,7 @@ module.exports = {
               if(submitType==='MONTHLY'){
                 for(const data of req.body.feeList){
                   if(paymentFound[data.month.toLowerCase()] && paymentFound[data.month.toLowerCase()].paidStatus===true){
-                      await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
+                      await invoiceModel.deleteOne({_id:newInvoiceCreatedId}) 
                       return res.status(200).json({
                         success: false,
                         message: `Payment is already done of this "${data.month}" month.`,
@@ -2965,7 +2965,9 @@ module.exports = {
                 newPaymentInfo['userId'] = req.body.userId
                 newPaymentInfo['session'] = req.body.session
                 newPaymentInfo['class'] = req.body.class
-                newPaymentInfo['paymentLedgerPage'] = req.body.paymentLedgerPage? req.body.paymentLedgerPage: undefined
+                newPaymentInfo['paymentLedgerPage'] = req.body.paymentLedgerPage? req.body.paymentLedgerPage : undefined
+                // newPaymentInfo['busService'] = userData.userInfo.busService,
+                // newPaymentInfo['busRouteId'] = userData.userInfo.busService ? userData.userInfo.busRouteId : undefined
                 // newPaymentInfo['totalPaidAmount'] = req.body.paidAmount
                 // newPaymentInfo['totalAmount'] = req.body.totalAmount
             }

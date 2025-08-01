@@ -244,13 +244,18 @@ module.exports = {
     return encryptedBase64;
   },
   newInvoiceIdGenrate: async()=>{
-    const currentYear = (Number(moment.tz(Date.now(), "Asia/Kolkata").format('YY')))
-    let lastInvoice =  await invoiceModel.findOne({},{invoiceId:1, _id:0}).sort({_id:-1})
-    const lastInvoiceIdYear= (lastInvoice && lastInvoice.invoiceId)? lastInvoice.invoiceId.substring(0, 2): currentYear
-    const invoiceGenNumber =  (parseInt(lastInvoiceIdYear) === currentYear && lastInvoice && lastInvoice.invoiceId)? parseInt(lastInvoice.invoiceId.substring(2)):0
-    const newInvoiceId = currentYear + (invoiceGenNumber+1).toString().padStart(5, '0')
-
-    return newInvoiceId
+    const currentYear = moment.tz(Date.now(), "Asia/Kolkata").format('YY');
+    // Fetch only the latest invoice that belongs to the current year
+    const lastInvoice = await invoiceModel.findOne({
+      invoiceId: { $regex: `^${currentYear}` }
+    }, { invoiceId: 1, _id: 0 }).sort({ _id: -1 });
+  
+    const lastNumber = lastInvoice
+      ? parseInt(lastInvoice.invoiceId.substring(2))  // Get numeric part
+      : 0;
+  
+    const newInvoiceId = currentYear + (lastNumber + 1).toString().padStart(5, '0');
+    return newInvoiceId;
   }, 
   getCurrentSession :()=> {
     const currentYear = Number(moment.tz(Date.now(), "Asia/Kolkata").format('YYYY'))
