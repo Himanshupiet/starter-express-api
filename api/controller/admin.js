@@ -2997,7 +2997,7 @@ module.exports = {
       }
       if(paymentAdded){
         if(reqSession === CURRENTSESSION && req.body.paymentLedgerPage){
-          await userModel.findByIdAndUpdate({'userInfo.userId': req.body.userId},{
+          await userModel.findOneAndUpdate({'userInfo.userId': req.body.userId},{
             $set:{
               'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
             }
