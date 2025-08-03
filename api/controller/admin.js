@@ -845,6 +845,15 @@ module.exports = {
             await paymentModel.findOneAndUpdate({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]}, payData)
           
           }
+          // case if admission date previous session to new cuurent session then delete previous payment delete 
+          if(userData.userInfo.admissionDate && updatedUser.userInfo.admissionDate){
+            const admSessionPrev = getAdmissionSession(userData.userInfo.admissionDate)
+            const admSessionNew = getAdmissionSession(updatedUser.userInfo.admissionDate)
+            if(admSessionPrev !== admSessionNew){
+              // previous session get from previous admission date and then delete  
+              await paymentModel.findOneAndUpdate({$and:[{session:admSessionPrev},{'userId': updatedUser.userInfo.userId},{deleted:false}]},{deleted:true})
+            }
+          }
             
           const RedisPaymentKey =`payment-${updatedUser.userInfo.class}-${updatedUser.userInfo.session}`
           redisDeleteCall({key:RedisPaymentKey})
@@ -2839,7 +2848,8 @@ module.exports = {
                       }
                     }
                 }
-                paymentFound['dueAmount'] = parseInt(req.body.paidAmount) >= parseInt(req.body.totalAmount)? 0 : parseInt(req.body.dueAmount|| 0) + parseInt(req.body.overDueAmount || 0)
+                // remove + parseInt(req.body.overDueAmount || 0) in due amount 
+                paymentFound['dueAmount'] = parseInt(req.body.paidAmount) >= parseInt(req.body.totalAmount)? 0 : parseInt(req.body.dueAmount|| 0) 
                 paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
                 paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
                 paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
@@ -3131,7 +3141,7 @@ module.exports = {
         const userIds= allPayDetail.map(data=> data.userId)
         const allStudents = await userModel.find({'userInfo.userId': {$in:[...userIds]}})
         const PREV_SESSSION = previousSession()
-        const allPreviousPayDetail = reqSession===CURRENTSESSION? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:PREV_SESSSION}]}):undefined
+        const allPreviousPayDetail = reqSession===CURRENTSESSION? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:PREV_SESSSION},deletedParam]}):undefined
         const prev_busRouteFareList = await vehicleRouteFareModel.find({session:PREV_SESSSION})
         const prev_monthlyFeeList = await monthlyFeeListModel.find({session: PREV_SESSSION})
         for (const it of allPayDetail) {

@@ -33,8 +33,9 @@ module.exports = {
         const zipData = fs.readFileSync(zipFilePath);
         const zip = await JSZip.loadAsync(zipData);
 
+        //Note: ***********************also change schema export *********************//
         /** user backup */
-            // Check if users.json exists in the ZIP
+            //Check if users.json exists in the ZIP
             // if (!zip.files["users.json"]) {
             // console.error("Error: users.json not found in ZIP.");
             // return;
