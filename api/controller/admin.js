@@ -852,6 +852,35 @@ module.exports = {
             if(admSessionPrev !== admSessionNew){
               // previous session get from previous admission date and then delete  
               await paymentModel.findOneAndUpdate({$and:[{session:admSessionPrev},{'userId': updatedUser.userInfo.userId},{deleted:false}]},{deleted:true})
+
+              const existingPaymentForNewSession = await paymentModel.findOne({
+                session: admSessionNew,
+                userId: updatedUser.userInfo.userId
+              });
+              if (existingPaymentForNewSession) {
+                const payData ={
+                  class: updatedUser.userInfo.class , 
+                  feeFree: req.body.feeFree, 
+                  busService: req.body.busService,
+                  busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined, 
+                  paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage
+                }
+                await paymentModel.findOneAndUpdate({$and:[{session:admSessionNew},{'userId': updatedUser.userInfo.userId}]}, payData)
+              }else{
+                const newPaymentForNewSession = new paymentModel({
+                  userId: updatedUser.userInfo.userId,
+                  session: admSessionNew,
+                  class: updatedUser.userInfo.class,
+                  dueAmount: 0,
+                  excessAmount: 0,
+                  totalFineAmount: 0,
+                  feeFree: req.body.feeFree,
+                  busService: req.body.busService,
+                  busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined,
+                  paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage
+                });
+                await newPaymentForNewSession.save();
+              }
             }
           }
             
@@ -2793,7 +2822,6 @@ module.exports = {
     try{
       const CURRENTSESSION = getCurrentSession()
       const reqSession = req.body.session || CURRENTSESSION
-      let paymentAdded=null
       const newInvoiceIdGen = await newInvoiceIdGenrate()
       const submitType= req.body.submitType
       if(!submitType){
@@ -2952,7 +2980,29 @@ module.exports = {
               // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
               // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
               paymentFound.modified = new Date()
-              paymentAdded = await paymentModel.findByIdAndUpdate({_id: paymentFound._id},paymentFound)
+              const paymentAdded = await paymentModel.findByIdAndUpdate({_id: paymentFound._id},paymentFound)
+              if(paymentAdded){
+                if(reqSession === CURRENTSESSION && req.body.paymentLedgerPage){
+                  await userModel.findOneAndUpdate({'userInfo.userId': req.body.userId},{
+                    $set:{
+                      'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
+                    }
+                  })
+                }
+                const RedisPaymentKey =`payment-${req.body.class}-${reqSession}`
+                redisDeleteCall({key:RedisPaymentKey})
+                return res.status(200).json({
+                  success: true,
+                  message: "Payment Added successfully.",
+                  invoiceId: newInvoiceCreate.invoiceId
+                })
+              }else{
+                await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
+                return res.status(200).json({
+                  success: false,
+                  message: "Payment not added, Please try again!",
+                })
+              }
           }else{
             let newPaymentInfo= new paymentModel({})
             if(submitType==='MONTHLY'){
@@ -3002,31 +3052,34 @@ module.exports = {
                 newPaymentInfo['session'] = req.body.session
                 newPaymentInfo['class'] = req.body.class
             }
-            paymentAdded = await newPaymentInfo.save();
-          }
-      }
-      if(paymentAdded){
-        if(reqSession === CURRENTSESSION && req.body.paymentLedgerPage){
-          await userModel.findOneAndUpdate({'userInfo.userId': req.body.userId},{
-            $set:{
-              'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
+            // other payement found 
+            const paymentAdded = await newPaymentInfo.save();
+            if(paymentAdded){
+              if(reqSession === CURRENTSESSION && req.body.paymentLedgerPage){
+                await userModel.findOneAndUpdate({'userInfo.userId': req.body.userId},{
+                  $set:{
+                    'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
+                  }
+                })
+              }
+              const RedisPaymentKey =`payment-${req.body.class}-${reqSession}`
+              redisDeleteCall({key:RedisPaymentKey})
+              return res.status(200).json({
+                success: true,
+                message: "Payment Added successfully.",
+                invoiceId: newInvoiceCreate.invoiceId
+              })
+            }else{
+              await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
+              return res.status(200).json({
+                success: false,
+                message: "Payment not added, Please try again!",
+              })
             }
-          })
-        }
-        const RedisPaymentKey =`payment-${req.body.class}-${reqSession}`
-        redisDeleteCall({key:RedisPaymentKey})
-        return res.status(200).json({
-          success: true,
-          message: "Payment Added successfully.",
-          invoiceId: newInvoiceCreate.invoiceId
-        })
-      }else{
-        await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
-        return res.status(200).json({
-          success: false,
-          message: "Payment not added, Please try again!",
-        })
+          }
+
       }
+
     }catch(err){
       if(newInvoiceCreatedId){
         await invoiceModel.deleteOne({_id:newInvoiceCreatedId}) 
