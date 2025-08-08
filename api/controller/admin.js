@@ -851,8 +851,9 @@ module.exports = {
             const admSessionNew = getAdmissionSession(updatedUser.userInfo.admissionDate)
             if(admSessionPrev !== admSessionNew){
               // previous session get from previous admission date and then delete  
-              await paymentModel.findOneAndUpdate({$and:[{session:admSessionPrev},{'userId': updatedUser.userInfo.userId},{deleted:false}]},{deleted:true})
-
+              if(admSessionPrev !== CURRENTSESSION){
+                await paymentModel.findOneAndUpdate({$and:[{session:admSessionPrev},{'userId': updatedUser.userInfo.userId},{deleted:false}]},{deleted:true})
+              }
               const existingPaymentForNewSession = await paymentModel.findOne({
                 session: admSessionNew,
                 userId: updatedUser.userInfo.userId
