@@ -274,6 +274,30 @@ module.exports = {
   },
   getAllStudents: async (req, res) => {
     try {
+
+      // async function findDuplicatePayments() {
+      //   try {
+      //     const duplicates = await paymentModel.aggregate([
+      //       {
+      //         $group: {
+      //           _id: { userId: "$userId", session: "$session" }, // group by userId + session
+      //           count: { $sum: 1 },
+      //           // payments: { $push: "$$ROOT" } // store full documents
+      //         }
+      //       },
+      //       {
+      //         $match: { count: { $gt: 1 } } // only keep groups with duplicates
+      //       }
+      //     ]);
+
+      //     console.log("Duplicate payments found:", JSON.stringify(duplicates, null, 2));
+      //   } catch (err) {
+      //     console.error("Error finding duplicates:", err);
+      //   }
+      // }
+
+      //findDuplicatePayments();
+
       const CURRENTSESSION = getCurrentSession()
       const searchStr= req.body.searchStr
       let studentAprroveParam =  {$and:[{deleted:false},{isApproved:true}]}
@@ -3217,6 +3241,17 @@ module.exports = {
             // Main logic
             const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, prev_monthlyFeeList, prev_busRouteFareList, previousSession());
             let dueAmt = 0;
+            let userPrevDues = {
+              monthlyFee: 0,
+              busFee: 0,
+              preDueAmount: Number(previousPayDetail.dueAmount || 0),
+              halfExamFee: 0,
+              annualExamFee: 0,
+              // reAdmissionFee: 0,
+              preExcessAmount: 0, // minus this amount
+              otherDue: 0,
+              totalDues: 0
+            };
             const feeData = prev_monthlyFeeList.find(data => data.className === previousPayDetail.class);
             const isPrevOtherPay= previousPayDetail && previousPayDetail.other && previousPayDetail.other.length > 0? true:false
             const isAnnualExamFeeNotPaid = isPrevOtherPay? !previousPayDetail.other.some(data => data.name === 'ANNUAL EXAM') : true
@@ -3228,45 +3263,56 @@ module.exports = {
                 const isCurrentSession = isAdmissionInCurrentSession(admissionSession, previousSession());
                 if(isCurrentSession){
                   if(admissionMonthIndex<HalfYearlyMonthIndex && isHalfExamFeeNotPaid){
-                    dueAmt += addExamFees(feeData, false, true)
+                    userPrevDues.halfExamFee = addExamFees(feeData, false, true)
                   }
                   if(admissionMonthIndex<AnualExamMonthIndex && isAnnualExamFeeNotPaid){
-                    dueAmt += addExamFees(feeData, true, false)
+                    userPrevDues.annualExamFee = addExamFees(feeData, true, false)
                   }
                 }else{
                   if(isHalfExamFeeNotPaid){
-                    dueAmt += addExamFees(feeData, false, true)
+                    userPrevDues.halfExamFee = addExamFees(feeData, false, true)
                   }
                   if(isAnnualExamFeeNotPaid){
-                    dueAmt += addExamFees(feeData, true, false)
+                   userPrevDues.annualExamFee = addExamFees(feeData, true, false)
                   }
                 }
             } else {
               if(isHalfExamFeeNotPaid){
-                dueAmt += addExamFees(feeData, false, true)
+                userPrevDues.halfExamFee = addExamFees(feeData, false, true)
               }
               if(isAnnualExamFeeNotPaid){
-                dueAmt += addExamFees(feeData, true, false)
+                userPrevDues.annualExamFee = addExamFees(feeData, true, false)
               }
             }  
 
             if(previousPayDetail && previousPayDetail.otherDue){
               for(const key in previousPayDetail.otherDue) {
-                dueAmt+= previousPayDetail.otherDue[key]? Number(previousPayDetail.otherDue[key]):0;
+                userPrevDues.otherDue = previousPayDetail.otherDue[key]? Number(previousPayDetail.otherDue[key]):0;
               }
             }
             //console.log("prevMonthPayDetail", prevMonthPayDetail)
-            monthList.map(mData=>{
-              if(prevMonthPayDetail[mData].payEnable){
+            for (const mData of monthList) {
+                  if(prevMonthPayDetail[mData].payEnable){
                 if(prevMonthPayDetail[mData].paidDone){
                  // paidAmt+=prevMonthPayDetail[mData].amt?Number(prevMonthPayDetail[mData].amt):0
                 }else{
-                  dueAmt+=Number(prevMonthPayDetail[mData].monthlyFee)+ Number(prevMonthPayDetail[mData].busFee)
+                  userPrevDues.monthlyFee+= Number(prevMonthPayDetail[mData].monthlyFee)
+                  userPrevDues.busFee+= Number(prevMonthPayDetail[mData].busFee)
                 }
               }
-            })
+            }
+
+            for (let [key, value] of Object.entries(userPrevDues)) {
+              //console.log(key, value);
+              dueAmt+= value
+            }
+            userPrevDues.preExcessAmount = Number(previousPayDetail.excessAmount)
+            userPrevDues.totalDues = dueAmt - Number(previousPayDetail.excessAmount) 
           
-            prevAmtDue= dueAmt + Number(previousPayDetail.dueAmount) - Number(previousPayDetail.excessAmount)                                       
+            // console.log("preExcessAmount -- minus",userPrevDues.preExcessAmount )
+            // console.log("totalDues",userPrevDues.totalDues )
+          
+            prevAmtDue = userPrevDues.totalDues                                 
           }
           const newData= {
             sData,
