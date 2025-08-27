@@ -52,7 +52,7 @@ const transporter = nodemailer.createTransport({
     //secure: false,
     auth: {
       // TODO: replace `user` and `pass` values from <https://forwardemail.net>
-      user: 'hkc.kumar@gmail.com',
+      user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASSWORD
     },
     // tls: {

@@ -22,6 +22,7 @@ const {roleModel}=require("../models/role");
 const {bucket}=require("./firebasebucket.js");
 const removeBg=require("./removeBgOfPhoto.js");
 const {getRedisClient}=require("./redisDB.js");
+const { counterModel } = require("../models/counter.js");
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
@@ -244,17 +245,32 @@ module.exports = {
     return encryptedBase64;
   },
   newInvoiceIdGenrate: async()=>{
+
+    //old way
+    // const currentYear = moment.tz(Date.now(), "Asia/Kolkata").format('YY');
+    // // Fetch only the latest invoice that belongs to the current year
+    // const lastInvoice = await invoiceModel.findOne({
+    //   invoiceId: { $regex: `^${currentYear}` }
+    // }, { invoiceId: 1, _id: 0 }).sort({ _id: -1 });
+  
+    // const lastNumber = lastInvoice
+    //   ? parseInt(lastInvoice.invoiceId.substring(2))  // Get numeric part
+    //   : 0;
+  
+    // const newInvoiceId = currentYear + (lastNumber + 1).toString().padStart(5, '0');
+    // return newInvoiceId;
+
+    // new way
     const currentYear = moment.tz(Date.now(), "Asia/Kolkata").format('YY');
-    // Fetch only the latest invoice that belongs to the current year
-    const lastInvoice = await invoiceModel.findOne({
-      invoiceId: { $regex: `^${currentYear}` }
-    }, { invoiceId: 1, _id: 0 }).sort({ _id: -1 });
-  
-    const lastNumber = lastInvoice
-      ? parseInt(lastInvoice.invoiceId.substring(2))  // Get numeric part
-      : 0;
-  
-    const newInvoiceId = currentYear + (lastNumber + 1).toString().padStart(5, '0');
+
+    // Atomically increment the counter
+    const counter = await counterModel.findOneAndUpdate(
+      { _id: `invoice_${currentYear}` },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    const newInvoiceId = currentYear + counter.seq.toString().padStart(5, '0');
     return newInvoiceId;
   }, 
   getCurrentSession :()=> {

@@ -21,6 +21,7 @@ const invoiceSchema = new mongoose.Schema({
   invoiceId: {
     require: true,
     type: String,
+    unique: true
   },
   insertedId: {
     require: true,

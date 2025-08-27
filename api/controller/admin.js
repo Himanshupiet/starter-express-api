@@ -2862,18 +2862,32 @@ module.exports = {
           message: "User data not found, Contact to admin!",
         })
       }
-      let newInvoiceInfo= new invoiceModel({})
-      newInvoiceInfo['invoiceInfo'] = {...req.body}
-      newInvoiceInfo['invoiceType'] = submitType
-      newInvoiceInfo['transactionType'] ='credit'
-      newInvoiceInfo['paidStatus'] = true
-      newInvoiceInfo['userId'] = req.body.userId,
-      newInvoiceInfo['class'] = req.body.class,
-      newInvoiceInfo['amount'] = req.body.paidAmount
-      newInvoiceInfo['invoiceId'] = newInvoiceIdGen
-      newInvoiceInfo['insertedId'] = req.body.insertedId
-      newInvoiceInfo['session']= reqSession
-      const newInvoiceCreate = await newInvoiceInfo.save();
+
+      // let newInvoiceInfo= new invoiceModel({})
+      // newInvoiceInfo['invoiceInfo'] = {...req.body}
+      // newInvoiceInfo['invoiceType'] = submitType
+      // newInvoiceInfo['transactionType'] ='credit'
+      // newInvoiceInfo['paidStatus'] = true
+      // newInvoiceInfo['userId'] = req.body.userId,
+      // newInvoiceInfo['class'] = req.body.class,
+      // newInvoiceInfo['amount'] = req.body.paidAmount
+      // newInvoiceInfo['invoiceId'] = newInvoiceIdGen
+      // newInvoiceInfo['insertedId'] = req.body.insertedId
+      // newInvoiceInfo['session']= reqSession
+      // const newInvoiceCreate = await newInvoiceInfo.save();
+          
+      let newInvoiceCreate = await invoiceModel.create({ 
+          invoiceId: newInvoiceIdGen,
+          invoiceInfo: {...req.body},
+          invoiceType: submitType,
+          transactionType:'credit',
+          paidStatus: true,
+          userId: req.body.userId,
+          class: req.body.class,
+          amount: req.body.paidAmount,
+          insertedId: req.body.insertedId,
+          session: reqSession,
+        });
       if(newInvoiceCreate){
         newInvoiceCreatedId = newInvoiceCreate._id
         let paymentFound =  await paymentModel.findOne({$and:[{userId: req.body.userId},{session: reqSession}]})
@@ -3107,7 +3121,7 @@ module.exports = {
 
     }catch(err){
       if(newInvoiceCreatedId){
-        await invoiceModel.deleteOne({_id:newInvoiceCreatedId}) 
+        await invoiceModel.findOneAndUpdate({_id:newInvoiceCreatedId},{deleted:true}) 
       }
       console.log(err)
       return res.status(400).json({
