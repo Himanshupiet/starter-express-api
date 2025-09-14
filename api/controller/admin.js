@@ -2915,6 +2915,22 @@ module.exports = {
                       }
                     }
                 }
+                if(req.body.otherFeeList && req.body.otherFeeList.length>0){
+                  let othertPay=[]
+                  for(const data of req.body.otherFeeList){
+                    othertPay.push({
+                        name: data.name,
+                        amount: Number(data.amount),
+                        paymentRecieverId: req.body.paymentRecieverId,
+                        paidStatus: true,
+                        submittedDate : req.body.submittedDate,
+                        invoiceId: newInvoiceCreate.invoiceId,
+                        receiptNumber: req.body.receiptNumber 
+                      })
+                  }
+                  paymentFound.other=[...(paymentFound.other ?? []), ...othertPay]
+                }
+       
                 // remove + parseInt(req.body.overDueAmount || 0) in due amount 
                 paymentFound['dueAmount'] = parseInt(req.body.paidAmount) >= parseInt(req.body.totalAmount)? 0 : parseInt(req.body.dueAmount|| 0) 
                 paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
@@ -3388,33 +3404,65 @@ module.exports = {
 
   getAllInvoice: async(req, res)=>{
     try{
-      let invoiceData
-      let limit = (req.query.limit && parseInt(req.query.limit) > 0 )? parseInt(req.query.limit):10
+      let invoiceData;
+      let limit = (req.query.limit && parseInt(req.query.limit) > 0 ) ? parseInt(req.query.limit) : 10;
       let pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber) : 0 ;
-      let totalCount=0
-      let totalPaidAmount=0
-      let isDesc= req.query.isDesc? req.query.isDesc=='true'? 'desc':'asc': 'desc'
-      let sortOrder={'created':isDesc}
+      let totalCount = 0
+      let totalPaidAmount =0 ;
+      let isDesc = req.query.isDesc? req.query.isDesc === 'true' ? 'desc' : 'asc' : 'desc';
+      let sortOrder = { 'created': isDesc }
       let startOfDateRange;
       let endOfDateRange;
-      let dayCount
-      const topAdminRole = req.user.userInfo.roleName==='TOPADMIN'?true:false
-      const timeZone ='Asia/Kolkata'
+      let dateFilter = {};
+      let dayCount;
+      let dayCountForDownload;
+      let downloadAllow = false;
+      const topAdminRole = req.user.userInfo.roleName === 'TOPADMIN' ? true : false
+      const timeZone = 'Asia/Kolkata'
       const TodayDate = moment.tz(timeZone).endOf('day').toDate()
       if(req.query.fromDate&&req.query.toDate){
            startOfDateRange = moment.tz(req.query.fromDate, timeZone).startOf('day').toDate().toISOString();
            endOfDateRange = moment.tz(req.query.toDate, timeZone).endOf('day').toDate().toISOString();
            dayCount = moment(TodayDate).diff(startOfDateRange, 'days')+1;
-           
+           dayCountForDownload = moment(endOfDateRange).diff(moment(startOfDateRange), "days") + 1;
       }else if(req.query.fromDate && !req.query.toDate){
           startOfDateRange = moment.tz(req.query.fromDate, timeZone).startOf('day').toDate().toISOString();
          
           dayCount = moment(TodayDate).diff(startOfDateRange, 'days')+1;
+          dayCountForDownload = moment(TodayDate).diff(moment(startOfDateRange), "days") + 1;
       }
 
    
       console.log("dayCount", dayCount)
-      let dateFilter={};
+      console.log("download", req.query.download)
+      console.log("dayCountForDownload", dayCountForDownload)
+     
+      if (req.query.download) {
+        if (topAdminRole) {
+          downloadAllow = true;
+          limit = 500;
+        } else {
+          if(req.query.userId){
+            downloadAllow = true;
+            limit = 500;
+          }else if (dayCountForDownload === undefined || dayCountForDownload === null || dayCountForDownload < 0) {
+            return res.status(200).json({
+              success: false,
+              message: "Please select proper date to download."
+            })
+          } else if (dayCountForDownload > 7) {
+            return res.status(200).json({
+              success: false,
+              message: "Download allowed only for max 7 days."
+            })
+          } else {
+            downloadAllow = true;
+            limit = 500;
+          }
+        }
+      }
+
+     
       if(req.query.fromDate && !req.query.toDate){
         if(req.query.dateFilterType && req.query.dateFilterType==='sub_date'){
           dateFilter = {
@@ -3449,9 +3497,12 @@ module.exports = {
       }
 
       console.log("dateFilter", dateFilter)
-
       if(req.query.invoiceId){
         invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
+        dateFilter={}
+        dayCount= undefined
+      }else if(req.query.userId){
+        invoiceData= await invoiceModel.find({userId:req.query.userId })
         dateFilter={}
         dayCount= undefined
       }else{
@@ -3485,7 +3536,11 @@ module.exports = {
         // console.log("sumData", sumData[0]? sumData[0].totalAmount:0)
         totalPaidAmount= sumData[0]? sumData[0].totalAmount:0
         totalCount= await invoiceModel.find(dateFilter).countDocuments()
-        invoiceData= await invoiceModel.find(dateFilter).sort(sortOrder).limit(limit).skip(limit * pageNumber)
+        if (downloadAllow){
+          invoiceData= await invoiceModel.find(dateFilter).sort(sortOrder).limit(limit)
+        }else{
+          invoiceData= await invoiceModel.find(dateFilter).sort(sortOrder).skip(limit * pageNumber).limit(limit)
+        }
       }
       if(invoiceData && invoiceData.length>0){
         let allInvoice=[]
