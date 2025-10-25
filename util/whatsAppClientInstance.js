@@ -1,6 +1,6 @@
 const { makeWASocket, DisconnectReason } = require('@whiskeysockets/baileys');
 const QRCode = require('qrcode');
-const WhatsappSession = require('../models/WhatsappSession');
+const WhatsappSession = require('../models/whatsappSession');
 
 let sock; // global socket instance
 
@@ -43,8 +43,7 @@ async function wpInitClient(sessionId = 'bmms_office') {
 
   let session = await WhatsappSession.findOne({ sessionId });
   let authState;
-  let saveFromMongo = true
-  if (session?.data && saveFromMongo) {
+  if (session?.data) {
     // Use existing MongoDB session
     const restoredCreds = restoreBuffers(session.data.creds);
     authState = {
@@ -52,17 +51,17 @@ async function wpInitClient(sessionId = 'bmms_office') {
       keys: makeMongoKeyStore(session.data.keys),
     };
   } else {
-    // FIRST TIME: use temp folder to generate QR & creds
-    const { useMultiFileAuthState } = require('@whiskeysockets/baileys');
-    const { state, saveCreds } = await useMultiFileAuthState('./temp');
-    authState = state;
+    // -----LOCAL RUN only with prod db on -----FIRST TIME: use temp folder to generate QR & creds. 
+    // const { useMultiFileAuthState } = require('@whiskeysockets/baileys');
+    // const { state, saveCreds } = await useMultiFileAuthState('./temp');
+    // authState = state;
 
-    // Save initial state to MongoDB
-    await WhatsappSession.updateOne(
-      { sessionId },
-      { data: { creds: state.creds, keys: {} } },
-      { upsert: true }
-    );
+    // // Save initial state to MongoDB
+    // await WhatsappSession.updateOne(
+    //   { sessionId },
+    //   { data: { creds: state.creds, keys: {} } },
+    //   { upsert: true }
+    // );
   }
 
   sock = makeWASocket({
@@ -105,4 +104,4 @@ function getQRorPairCode() {
   return  qr
 }
 
-module.exports = { wpInitClient };
+module.exports = { wpInitClient, getQRorPairCode };
