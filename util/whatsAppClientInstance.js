@@ -1,89 +1,100 @@
-// helpers/whatsappHelper.js
-const {
-  makeWASocket,
-  useMultiFileAuthState,
-  fetchLatestBaileysVersion,
-  DisconnectReason
-} = require('@whiskeysockets/baileys');
+const { makeWASocket, DisconnectReason } = require('@whiskeysockets/baileys');
 const QRCode = require('qrcode');
+const WhatsappSession = require('../models/WhatsappSession');
 
 let sock; // global socket instance
 
-/**
- * Initialize WhatsApp client
- */
-async function wpInitClient() {
-  const { state, saveCreds } = await useMultiFileAuthState('./temp'); // session folder
-  const { version } = await fetchLatestBaileysVersion();
+function makeMongoKeyStore(initialKeys = {}) {
+  const store = { ...initialKeys };
+  return {
+    get: async (type, ids) => {
+      const result = {};
+      ids.forEach(id => {
+        if (store[type]?.[id]) result[id] = store[type][id];
+      });
+      return result;
+    },
+    set: async (data) => {
+      for (const type in data) {
+        if (!store[type]) store[type] = {};
+        Object.assign(store[type], data[type]);
+      }
+    },
+    clear: async () => { for (const type in store) delete store[type]; },
+    export: async () => store,
+  };
+}
+
+function restoreBuffers(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  if (obj._bsontype === 'Binary' && obj.buffer) {
+    return Buffer.from(obj.buffer);
+  }
+
+  for (const key of Object.keys(obj)) {
+    obj[key] = restoreBuffers(obj[key]);
+  }
+  return obj;
+}
+
+async function wpInitClient(sessionId = 'bmms_office') {
+  console.log(`🟢 Initializing WhatsApp session: ${sessionId}`);
+
+  let session = await WhatsappSession.findOne({ sessionId });
+  let authState;
+  let saveFromMongo = true
+  if (session?.data && saveFromMongo) {
+    // Use existing MongoDB session
+    const restoredCreds = restoreBuffers(session.data.creds);
+    authState = {
+      creds: restoredCreds,
+      keys: makeMongoKeyStore(session.data.keys),
+    };
+  } else {
+    // FIRST TIME: use temp folder to generate QR & creds
+    const { useMultiFileAuthState } = require('@whiskeysockets/baileys');
+    const { state, saveCreds } = await useMultiFileAuthState('./temp');
+    authState = state;
+
+    // Save initial state to MongoDB
+    await WhatsappSession.updateOne(
+      { sessionId },
+      { data: { creds: state.creds, keys: {} } },
+      { upsert: true }
+    );
+  }
 
   sock = makeWASocket({
-    version,
-    auth: state,
-    printQRInTerminal: false, // we'll handle QR manually
+    auth: authState,
+    printQRInTerminal: false,
   });
 
-  // Save session credentials when updated
-  sock.ev.on('creds.update', saveCreds);
+  // Save session creds on updates
+  sock.ev.on('creds.update', async () => {
+    await WhatsappSession.updateOne(
+      { sessionId },
+      { data: { creds: sock.authState.creds, keys: await authState.keys.export() } },
+      { upsert: true }
+    );
+  });
 
-  // Listen for connection updates
+  // Handle connection updates
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
-
     if (qr) {
-      // Generate QR as Data URL for frontend use
-      const qrData = await QRCode.toDataURL(qr);
-      global.currentQr = qrData;
+      global.currentQr = await QRCode.toDataURL(qr);
       console.log('📲 QR code generated. Scan it to connect.');
     }
-
-    if (connection === 'open') {
-      console.log('✅ WhatsApp connected successfully!');
-      global.currentQr = null; // clear QR when connected
-    }
-
+    if (connection === 'open') global.currentQr = null;
     if (connection === 'close') {
-      const reason =
-        lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.message;
-      console.log('❌ Connection closed:', reason);
-
       const shouldReconnect =
         lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-
-      if (shouldReconnect) {
-        console.log('🔁 Reconnecting in 5 seconds...');
-        setTimeout(wpInitClient, 5000);
-      } else {
-        console.log('🚫 Logged out — need to re-scan QR.');
-      }
-    }
-  });
-
-  // Handle received messages (optional)
-  sock.ev.on('messages.upsert', async ({ messages }) => {
-    const msg = messages[0];
-    if (!msg.message) return;
-
-    const sender = msg.key.remoteJid;
-    const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
-
-    if (text) {
-      console.log(`📩 Message from ${sender}: ${text}`);
+      if (shouldReconnect) setTimeout(() => wpInitClient(sessionId), 5000);
     }
   });
 
   return sock;
-}
-
-/**
- * Send WhatsApp message
- * @param {string} number - Phone number without country code prefix (+91 not needed)
- * @param {string} message - Message text
- */
-async function sendMessage(number, message) {
-  if (!sock) throw new Error('⚠️ WhatsApp not connected yet.');
-  const jid = `${number}@s.whatsapp.net`;
-  await sock.sendMessage(jid, { text: message });
-  console.log(`📤 Message sent to ${number}: ${message}`);
 }
 
 /**
@@ -94,8 +105,4 @@ function getQRorPairCode() {
   return  qr
 }
 
-module.exports = {
-  wpInitClient,
-  sendMessage,
-  getQRorPairCode,
-};
+module.exports = { wpInitClient };
