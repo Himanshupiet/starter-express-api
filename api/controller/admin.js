@@ -42,6 +42,9 @@ const axios = require('axios');
 const user=require("./user");
 const myCache=require("../..");
 const { userInfo } = require("os");
+const { getQRorPairCode } = require("../../util/whatsAppClientInstance");
+const { syncGroups, sendMessageToGroup } = require("../../util/whatsappHelper");
+const { wAppGroupModel } = require("../../models/groupWPModel");
 
 
 
@@ -4034,6 +4037,43 @@ module.exports = {
       })
     } 
   },
+
+
+
+// ✅ Get QR code (admin scans)
+getQRCode: async (req, res) => {
+  const {qr, pairCode} = await getQRorPairCode();
+  if (!qr && ! pairCode) return res.status(400).json({ success: false, message: "QR not available or disabled." });
+  res.json({ success: true, qr:{qr, pairCode}});
+},
+
+// ✅ Sync WhatsApp groups and save to DB
+syncGroupsController: async (req, res) => {
+  try {
+    const groups = await syncGroups();
+    res.json({ success: true, groups });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+},
+
+// ✅ Get saved groups from DB
+getGroups: async (req, res) => {
+  const groups = await syncGroups()
+  res.json({ success: true, groups });
+},
+
+// ✅ Send message to specific group
+sendGroupMessage: async (req, res) => {
+  const { groupId, message } = req.body;
+  if (!groupId || !message)
+    return res.status(400).json({ success: false, message: "groupId and message required" });
+
+  const result = await sendMessageToGroup(groupId, message);
+  res.json(result);
+},
+
+
 
   createBuckup: async (req, res) => {
     sendDailyBackupEmail()

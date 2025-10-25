@@ -57,6 +57,7 @@ router.post('/removeDoc', admin.removeDocFireBase)
 router.get('/download-all-images', admin.getAllImages)
 router.post('/resetRedisCache', admin.resetRedisCashe)
 router.post('/userPaymentSetting',admin.userPaymentSetting)
+router.get('/getWpQR', admin.getQRCode)
 
 // router for blog
 

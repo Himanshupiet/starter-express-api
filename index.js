@@ -30,6 +30,7 @@ const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
 
 const SECRET = process.env.SECRET;
+let sockInstance = null
 
 app.use(cors());
 app.options("*", cors());
@@ -78,6 +79,7 @@ const {downloadAllImages}=require("./util/dowloadAllfile");
 const {connectRedis}=require("./util/redisDB");
 const {uploadPhotos}=require("./util/uploadMultipleImage");
 const { restoreBackup } = require("./util/restoreDbBakup");
+const { wpInitClient } = require("./util/whatsAppClientInstance");
 
 app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);
@@ -109,13 +111,21 @@ await mongoose
     dbName: mongoDbName,
   }
 )
-  .then(() => {
+  .then(async () => {
     console.log("Connected to MongoDB")
     server.listen(PORT || 3010, () => {
       console.log(`server is running http://localhost:${PORT}`);
     });
     if(process.env.REDIS_START && process.env.REDIS_START === 'true'){
-      connectRedis()
+      await connectRedis()
+    }
+    if(process.env.WP_GROUP_MESSAGE_START && process.env.WP_GROUP_MESSAGE_START === 'true'){
+      try {
+        if (!sockInstance) sockInstance = await wpInitClient('bmms_office');
+          console.log('init started' );
+      } catch (e) {
+        console.error('start error', e);
+      }
     }
 
     //*** Backup restore  */
