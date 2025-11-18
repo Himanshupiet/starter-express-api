@@ -1,12 +1,16 @@
 
 const { wAppGroupModel } = require("../models/groupWPModel");
-const { client } = require("./whatsAppClientInstance");
+const { wpInitClient } = require("./whatsAppClientInstance");
 
 
 
 // 🟢 Find or fetch all groups, save to DB
 async function syncGroups() {
   try {
+    const client = await wpInitClient();
+    console.log("client222222222222====================>", client)
+    if (!client) return { success: false, error: "WhatsApp not connected" };
+   
     const chats = await client.getChats();
     const groups = chats.filter((chat) => chat.isGroup);
     const dbGroups = await wAppGroupModel.find();
@@ -23,10 +27,10 @@ async function syncGroups() {
       }
     }
 
-    return await wAppGroupModel.find();
+    return {success: true, data : await wAppGroupModel.find()};
   } catch (err) {
     console.error("❌ Error syncing groups:", err);
-    throw err;
+    return {success :false, error: 'WhatsApp connection failed'}
   }
 }
 

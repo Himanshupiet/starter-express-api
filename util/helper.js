@@ -476,7 +476,81 @@ module.exports = {
               ]  
               } 
             }
-          }  
+          } 
+          if(templateType ==='notification'){
+            //This message from BM Memorial School
+            // {{1}} Notification
+            // =====================
+            // Details:{{2}}
+            // Date:{{3}}
+            WAMessageData={
+              "messaging_product": "whatsapp", 
+              "to": `91${toNumber}`, 
+              "type": "template",
+              "template": { 
+                "name": "notification", 
+                "language": { 
+                  "code": "en" 
+                },
+                "components": [
+                  {
+                      "type" : "body",
+                      "parameters": [
+                          {
+                              "type": "text",
+                              "text": `${data.title}`
+                          },
+                          {
+                              "type": "text",
+                              "text": `${data.details}`
+                          },
+                          {
+                            "type": "text",
+                            "text": `${data.date}`
+                        }
+                  ]
+                }
+              ]  
+              } 
+            }
+          } 
+          if(templateType ==='bitrthday_wish'){
+            // This message from BM Memorial School
+            // BIRTHDAY Notification
+            // =====================
+            // Details:Today Birthday, {{text}}
+            
+            WAMessageData={
+              "messaging_product": "whatsapp", 
+              "to": `91${toNumber}`, 
+              "type": "template",
+              "template": { 
+                "name": "bitrthday_wish", 
+                "language": { 
+                  "code": "en" 
+                },
+                "components": [
+                  {
+                      "type" : "body",
+                      "parameters": [
+                          {
+                              "type": "text",
+                              "text": `${data.list}`
+                          },
+                          // {
+                          //     "type": "text",
+                          //     "text": `${data.details}`
+                          // },
+                          // {
+                          //   "type": "text",
+                          //   "text": `${data.date}`
+                          // }
+                  ]
+                }
+              ]  
+              } 
+            }
+          }
         }else{
             return false
         }

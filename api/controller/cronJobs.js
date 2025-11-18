@@ -240,17 +240,19 @@ module.exports = {
     if(birthDayUser2 && birthDayUser2.length>0){
       let list=[]
       const title= 'जन्मदिन की हार्दिक शुभकामनाएँ'
-      const tempType = 'general'
+      const tempType = 'birthday_wish_student' //'general'
       const msg=null
       let data={
-        title,
-        sendMessageFor:'BIRTHDAY'
+
+        //title,
+        //sendMessageFor:'BIRTHDAY'
       }
       for(const it of birthDayUser2){
        const birthdayUser =createFormattedString(it)
        list.push(birthdayUser)
-        const message= `${it.userInfo.fullName}, Class ${it.userInfo.class}, आपके जन्मदिन के इस शुभ अवसर पर B.M. Memorial School परिवार की ओर से आपको ढेर सारी शुभकामनाएँ। हम आपके उज्ज्वल भविष्य और सफलता की कामना करते हैं। आपकी मेहनत और समर्पण से आप हमेशा आगे बढ़ते रहें। आपका दिन खुशियों से भरा हो!`
-        data={...data, message, userId: it.userInfo.userId}
+        //const message= `${it.userInfo.fullName}, Class ${it.userInfo.class}, आपके जन्मदिन के इस शुभ अवसर पर B.M. Memorial School परिवार की ओर से आपको ढेर सारी शुभकामनाएँ। हम आपके उज्ज्वल भविष्य और सफलता की कामना करते हैं। आपकी मेहनत और समर्पण से आप हमेशा आगे बढ़ते रहें। आपका दिन खुशियों से भरा हो!`
+        // data={...data, message, userId: it.userInfo.userId}
+        data={...data, userId: it.userInfo.userId, stName: it.userInfo.fullName, class: it.userInfo.class}
         if(it.userInfo.phoneNumber1){
           const response = await whatsAppMessage(it.userInfo.phoneNumber1, msg, tempType, data)
         }
@@ -258,9 +260,14 @@ module.exports = {
           const response = await whatsAppMessage(it.userInfo.phoneNumber2, msg, tempType, data)
         }
       }
-      await whatsAppMessage('7870421111', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})// Dinker
-      await whatsAppMessage('7250175700', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})// kailash
-      await whatsAppMessage('8233443106', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})
+      // await whatsAppMessage('7870421111', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})// Dinker
+      // await whatsAppMessage('7250175700', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})// kailash
+      // await whatsAppMessage('8233443106', null, 'notification', {title:"BIRTHDAY", sendMessageFor:'BIRTHDAY_CRON_JOB', details:`Today Birthday, ${list}`, date:today})
+      
+      await whatsAppMessage('7870421111', null, 'bitrthday_wish', {list, date:today})// Dinker
+      //await whatsAppMessage('7250175700', null, 'bitrthday_wish', {list, date:today})// kailash
+      await whatsAppMessage('8233443106', null, 'bitrthday_wish', {list, date:today})
+
       if(res || req){
         return res.status(200).json({
           success: true,

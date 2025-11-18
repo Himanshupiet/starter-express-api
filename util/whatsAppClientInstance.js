@@ -2,7 +2,8 @@ const { makeWASocket, DisconnectReason } = require('@whiskeysockets/baileys');
 const QRCode = require('qrcode');
 const WhatsappSession = require('../models/whatsappSession');
 
-let sock; // global socket instance
+let client; // global socket instance
+let isConnecting = false
 
 function makeMongoKeyStore(initialKeys = {}) {
   const store = { ...initialKeys };
@@ -41,6 +42,20 @@ function restoreBuffers(obj) {
 async function wpInitClient(sessionId = 'bmms_office') {
   console.log(`🟢 Initializing WhatsApp session: ${sessionId}`);
 
+  if (client) return client; // already initialized
+  if (isConnecting) {
+    return new Promise((resolve) => {
+      const check = setInterval(() => {
+        if (client) {
+          clearInterval(check);
+          resolve(client);
+        }
+      }, 500);
+    });
+  }
+
+  isConnecting = true;
+
   let session = await WhatsappSession.findOne({ sessionId });
   let authState;
   if (session?.data) {
@@ -64,22 +79,22 @@ async function wpInitClient(sessionId = 'bmms_office') {
     // );
   }
 
-  sock = makeWASocket({
+  client = makeWASocket({
     auth: authState,
     printQRInTerminal: false,
   });
 
   // Save session creds on updates
-  sock.ev.on('creds.update', async () => {
+  client.ev.on('creds.update', async () => {
     await WhatsappSession.updateOne(
       { sessionId },
-      { data: { creds: sock.authState.creds, keys: await authState.keys.export() } },
+      { data: { creds: client.authState.creds, keys: await authState.keys.export() } },
       { upsert: true }
     );
   });
 
   // Handle connection updates
-  sock.ev.on('connection.update', async (update) => {
+  client.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
     if (qr) {
       global.currentQr = await QRCode.toDataURL(qr);
@@ -92,8 +107,8 @@ async function wpInitClient(sessionId = 'bmms_office') {
       if (shouldReconnect) setTimeout(() => wpInitClient(sessionId), 5000);
     }
   });
-
-  return sock;
+  isConnecting = false;
+  return client;
 }
 
 /**
@@ -101,7 +116,9 @@ async function wpInitClient(sessionId = 'bmms_office') {
  */
 function getQRorPairCode() {
   const qr ={ qr : global.currentQr || null , pairCode: ''}
-  return  qr
+  return qr
 }
 
-module.exports = { wpInitClient, getQRorPairCode };
+console.log("client ========================================>", client)
+
+module.exports = {wpInitClient, getQRorPairCode, get client() { return client; } };
