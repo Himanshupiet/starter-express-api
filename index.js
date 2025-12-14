@@ -14,11 +14,11 @@ const errorHandler = require("./util/errorHandler");
 const { roleModel } = require("./models/role");
 const { userModel } = require("./models/user");
 const fileUpload = require('express-fileupload')
-const { decryptAES} = require("./util/helper");
+const { decryptAES } = require("./util/helper");
 const cloudinary = require("cloudinary").v2;
 
 const bcrypt = require("bcryptjs");
-const NodeCache = require( "node-cache" );
+const NodeCache = require("node-cache");
 const myCache = new NodeCache();
 module.exports = myCache;
 const api = process.env.API_URL;
@@ -42,7 +42,7 @@ app.use(errorHandler);
 app.use(fileUpload({
   //useTempFiles : true,
   //tempFileDir : '/tmp/',
-  limits: {fileSize: 50 * 1024 * 1024},
+  limits: { fileSize: 50 * 1024 * 1024 },
 }));
 
 
@@ -74,10 +74,10 @@ const securitylog = require("./routes/secuirtylog");
 const cronJob = require("./routes/cronJob");
 const student = require("./routes/student");
 const { passwordEncryptAES } = require("./util/helper");
-const {fetchBirthdays, sendDailyBackupEmail}=require("./api/controller/cronJobs");
-const {downloadAllImages}=require("./util/dowloadAllfile");
-const {connectRedis}=require("./util/redisDB");
-const {uploadPhotos}=require("./util/uploadMultipleImage");
+const { fetchBirthdays, sendDailyBackupEmail } = require("./api/controller/cronJobs");
+const { downloadAllImages } = require("./util/dowloadAllfile");
+const { connectRedis } = require("./util/redisDB");
+const { uploadPhotos } = require("./util/uploadMultipleImage");
 const { restoreBackup } = require("./util/restoreDbBakup");
 const { wpInitClient } = require("./util/whatsAppClientInstance");
 
@@ -100,94 +100,94 @@ io.on('connection', (socket) => {
 });
 
 //Database
-const connectToMongo = async() => {
-await mongoose
-  .connect(mongoUrl, 
-    {
-    serverSelectionTimeoutMS: 9000,
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
-    // useFindAndModify: false,
-    dbName: mongoDbName,
-  }
-)
-  .then(async () => {
-    console.log("Connected to MongoDB")
-    server.listen(PORT || 3010, () => {
-      console.log(`server is running http://localhost:${PORT}`);
-    });
-    if(process.env.REDIS_START && process.env.REDIS_START === 'true'){
-      await connectRedis()
-    }
-    if(process.env.WP_GROUP_MESSAGE_START && process.env.WP_GROUP_MESSAGE_START === 'true'){
-      try {
-        if (!sockInstance) sockInstance = await wpInitClient('bmms_office');
-          console.log('init started' );
-      } catch (e) {
-        console.error('start error', e);
+const connectToMongo = async () => {
+  await mongoose
+    .connect(mongoUrl,
+      {
+        serverSelectionTimeoutMS: 9000,
+        // useNewUrlParser: true,
+        // useUnifiedTopology: true,
+        // useFindAndModify: false,
+        dbName: mongoDbName,
       }
-    }
-
-    //*** Backup restore  */
-    //const zipFilePath = "/home/anshu/Downloads/BMMS_Daily_Backup_01_08_2025.zip";
-    //restoreBackup(zipFilePath);
-
-    const getAdmin = async () => {
-      try {
-        let topAdminRoleId = "";
-        const topAdminRole = await roleModel.findOne({ roleName: "TOPADMIN" });
-        if (topAdminRole) {
-          topAdminRoleId = topAdminRole._id;
-        } else {
-          let newTopAdminRole = new roleModel({
-            roleName: "TOPADMIN",
-          });
-          const newTopAdminRoleCreated = await newTopAdminRole.save();
-          topAdminRoleId = newTopAdminRoleCreated._id;
+    )
+    .then(async () => {
+      console.log("Connected to MongoDB")
+      server.listen(PORT || 3010, () => {
+        console.log(`server is running http://localhost:${PORT}`);
+      });
+      if (process.env.REDIS_START && process.env.REDIS_START === 'true') {
+        await connectRedis()
+      }
+      if (process.env.WP_GROUP_MESSAGE_START && process.env.WP_GROUP_MESSAGE_START === 'true') {
+        try {
+          if (!sockInstance) sockInstance = await wpInitClient('bmms_office');
+          console.log('init started');
+        } catch (e) {
+          console.error('start error', e);
         }
-        if (topAdminRoleId) {
-          const topAdminUser = await userModel.findOne({
-            "userInfo.email": "topadmin@bmmshool.in",
-          });
-          if (!topAdminUser) {
-            const newTopAdmin = new userModel({
-              userInfo: {
-                userId: "000000",
-                email: "topadmin@bmmshool.in",
-                fullName: "TopAdmin",
-                motherName:"1",
-                fatherName:"1",
-                class:"1",
-                dob:new Date(),
-                password: passwordEncryptAES("password removed"),
-                phoneNumber1: "1234567890",
-                roleId: topAdminRoleId,
-                roleName: "TOPADMIN",
-              },
-              isActive: true,
-              isApproved:true
+      }
+
+      //*** Backup restore  */
+      //const zipFilePath = "/home/anshu/Downloads/BMMS_Daily_Backup_01_08_2025.zip";
+      //restoreBackup(zipFilePath);
+
+      const getAdmin = async () => {
+        try {
+          let topAdminRoleId = "";
+          const topAdminRole = await roleModel.findOne({ roleName: "TOPADMIN" });
+          if (topAdminRole) {
+            topAdminRoleId = topAdminRole._id;
+          } else {
+            let newTopAdminRole = new roleModel({
+              roleName: "TOPADMIN",
             });
-            newTopAdminCreated = await newTopAdmin.save();
+            const newTopAdminRoleCreated = await newTopAdminRole.save();
+            topAdminRoleId = newTopAdminRoleCreated._id;
           }
+          if (topAdminRoleId) {
+            const topAdminUser = await userModel.findOne({
+              "userInfo.email": "topadmin@bmmshool.in",
+            });
+            if (!topAdminUser) {
+              const newTopAdmin = new userModel({
+                userInfo: {
+                  userId: "000000",
+                  email: "topadmin@bmmshool.in",
+                  fullName: "TopAdmin",
+                  motherName: "1",
+                  fatherName: "1",
+                  class: "1",
+                  dob: new Date(),
+                  password: passwordEncryptAES("password removed"),
+                  phoneNumber1: "1234567890",
+                  roleId: topAdminRoleId,
+                  roleName: "TOPADMIN",
+                },
+                isActive: true,
+                isApproved: true
+              });
+              newTopAdminCreated = await newTopAdmin.save();
+            }
+          }
+        } catch (err) {
+          console.log(err);
         }
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    //const folderPath='/home/decipher/myproject/final images/redketchup'
-    // uploadPhotos(folderPath).then(() => {
-    //   console.log('Upload completed.');
-    // });
-    //downloadAllImages('');
-    //getAdmin();
-    //sendDailyBackupEmail()
-    //sendDailyBackupEmailCron
-    //fetchBirthdays()
-    //redisConnection()
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+      };
+      //const folderPath='/home/decipher/myproject/final images/redketchup'
+      // uploadPhotos(folderPath).then(() => {
+      //   console.log('Upload completed.');
+      // });
+      //downloadAllImages('');
+      //getAdmin();
+      //sendDailyBackupEmail()
+      //sendDailyBackupEmailCron
+      //fetchBirthdays()
+      //redisConnection()
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 }
 connectToMongo()
 
@@ -224,19 +224,19 @@ connectToMongo()
 cron.schedule('0 22 * * *', async () => {
   console.log('Running cron job at 10:00 PM IST');
   await mongoose
-  .connect(mongoUrl, 
-    {
-    serverSelectionTimeoutMS: 9000,
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
-    // useFindAndModify: false,
-    dbName: mongoDbName,
-  }
-)
-  .then(() => {
-    // fetchBirthdays();
-    sendDailyBackupEmail()
-  })
+    .connect(mongoUrl,
+      {
+        serverSelectionTimeoutMS: 9000,
+        // useNewUrlParser: true,
+        // useUnifiedTopology: true,
+        // useFindAndModify: false,
+        dbName: mongoDbName,
+      }
+    )
+    .then(() => {
+      // fetchBirthdays();
+      sendDailyBackupEmail()
+    })
 }, {
   timezone: "Asia/Kolkata"
 });

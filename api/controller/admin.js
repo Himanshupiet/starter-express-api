@@ -13,36 +13,36 @@ const { StandardCheckoutPayRequest, CreateSdkOrderRequest } = require('pg-sdk-no
 const URL = process.env.MONGO_LOCAL_CONN_URL;
 const { userModel } = require("../../models/user");
 const { examModel } = require("../../models/exam");
-const {roleModel} = require("../../models/role")
+const { roleModel } = require("../../models/role")
 const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const cloudinary = require("cloudinary").v2;
 const { ocrSpace } = require('ocr-space-api-wrapper');
-const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime, getRankedResult} = require('../../util/helper')
+const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime, getRankedResult } = require('../../util/helper')
 const {
   getAllActiveRoi,
   withDrawalBalance,
-  
+
 } = require("../../util/income");
-const {getRedisClient}= require('../../util/redisDB')
+const { getRedisClient } = require('../../util/redisDB')
 const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
-const {examDateAndSubModel}=require("../../models/examDateAndSub");
+const { examDateAndSubModel } = require("../../models/examDateAndSub");
 const { blogModel } = require("../../models/blog");
-const {vehicleModel}=require("../../models/vehicle");
-const {vehicleRouteFareModel}=require("../../models/vehicleRouteFare");
-const {monthlyFeeListModel}=require("../../models/monthlyFeeList");
-const {paymentModel}=require("../../models/payment");
-const {invoiceModel}=require("../../models/invoice ");
-const {messageModel} = require('../../models/message')
+const { vehicleModel } = require("../../models/vehicle");
+const { vehicleRouteFareModel } = require("../../models/vehicleRouteFare");
+const { monthlyFeeListModel } = require("../../models/monthlyFeeList");
+const { paymentModel } = require("../../models/payment");
+const { invoiceModel } = require("../../models/invoice ");
+const { messageModel } = require('../../models/message')
 const fastcsv = require("fast-csv");
 const fs = require("fs");
-const {payOptionModel}=require("../../models/payOption");
+const { payOptionModel } = require("../../models/payOption");
 let slugify = require('slugify')
 const axios = require('axios');
-const user=require("./user");
-const myCache=require("../..");
+const user = require("./user");
+const myCache = require("../..");
 const { userInfo } = require("os");
 const { getQRorPairCode } = require("../../util/whatsAppClientInstance");
 const { syncGroups, sendMessageToGroup } = require("../../util/whatsappHelper");
@@ -53,7 +53,7 @@ const { wAppGroupModel } = require("../../models/groupWPModel");
 
 const authorization = process.env.SMS_API;
 const UPLOAD_IMAGE_URL = process.env.UPLOAD_IMAGE_URL
-const OCR_API_KEY= process.env.OCR_SPACE_IMAGE_TO_TEXT_API_KEY
+const OCR_API_KEY = process.env.OCR_SPACE_IMAGE_TO_TEXT_API_KEY
 const { PHONEPE_MERCHANT_ID, PHONEPE_MERCHANT_KEY, PHONEPE_MERCHANT_SALT, PHONEPE_CALLBACK_URL } = process.env;
 const HalfYearlyMonthIndex = 6
 const AnualExamMonthIndex = 12
@@ -64,123 +64,123 @@ const AnualExamMonthIndex = 12
 const generateHash = (data) => {
   return crypto.createHash('sha256').update(data).digest('hex');
 };
-const classList=["1 A","1 B","2 A","2 B","3 A","3 B","4 A","4 B","5 A","5 B","6 A","6 B","7 A","7 B","8 A","9 A","10 A","UKG A","UKG B","LKG A","LKG B","NUR A","NUR B","PRE NUR A", "PRE NUR B"]
-const examList =['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
-const yearList =['2022-23', '2023-24', '2024-25', '2025-26']
-const subjectList =['HINDI', 'ENGLISH', 'MATH','SCIENCE','SST','COMPUTER','COMP PRACT','HINDI NOTES','ENGLISH NOTES','MATH NOTES','SCIENCE NOTES','SST NOTES','HINDI SUB ENRICH','ENGLISH SUB ENRICH','MATH SUB ENRICH','SCIENCE SUB ENRICH','SST SUB ENRICH','HINDI RHYMES','ENGLISH RHYMES','DRAWING','GK MV','ATTENDANCE']
-const monthList =  ["april", "may", "june", "july", "august", "september", "october", "november", "december","january", "february", "march"] 
+const classList = ["1 A", "1 B", "2 A", "2 B", "3 A", "3 B", "4 A", "4 B", "5 A", "5 B", "6 A", "6 B", "7 A", "7 B", "8 A", "9 A", "10 A", "UKG A", "UKG B", "LKG A", "LKG B", "NUR A", "NUR B", "PRE NUR A", "PRE NUR B"]
+const examList = ['UNIT TEST-I', 'UNIT TEST-II', 'HALF YEARLY EXAM', 'ANNUAL EXAM']
+const yearList = ['2022-23', '2023-24', '2024-25', '2025-26']
+const subjectList = ['HINDI', 'ENGLISH', 'MATH', 'SCIENCE', 'SST', 'COMPUTER', 'COMP PRACT', 'HINDI NOTES', 'ENGLISH NOTES', 'MATH NOTES', 'SCIENCE NOTES', 'SST NOTES', 'HINDI SUB ENRICH', 'ENGLISH SUB ENRICH', 'MATH SUB ENRICH', 'SCIENCE SUB ENRICH', 'SST SUB ENRICH', 'HINDI RHYMES', 'ENGLISH RHYMES', 'DRAWING', 'GK MV', 'ATTENDANCE']
+const monthList = ["april", "may", "june", "july", "august", "september", "october", "november", "december", "january", "february", "march"]
 const monthNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-const performanceList= [
-  {grade:'A1', performance:'Outstanding'},
-  {grade:'A2', performance:'Excellent'},
-  {grade:'B1', performance:'Very Good'},
-  {grade:'B2', performance:'Good'},
-  {grade:'C1', performance:'Above Average'},
-  {grade:'C2', performance:'Average'},
-  {grade:'D',  performance:'Pass'},
-  {grade:'E',  performance:'Fail'},
+const performanceList = [
+  { grade: 'A1', performance: 'Outstanding' },
+  { grade: 'A2', performance: 'Excellent' },
+  { grade: 'B1', performance: 'Very Good' },
+  { grade: 'B2', performance: 'Good' },
+  { grade: 'C1', performance: 'Above Average' },
+  { grade: 'C2', performance: 'Average' },
+  { grade: 'D', performance: 'Pass' },
+  { grade: 'E', performance: 'Fail' },
 ]
-const getGrade=(score)=>{
-  if(score > 100 || score < 0) return "INVALID SCORE";
-  if(score >=91) {
+const getGrade = (score) => {
+  if (score > 100 || score < 0) return "INVALID SCORE";
+  if (score >= 91) {
     return "A1"
-  }else if(score >=81) {
+  } else if (score >= 81) {
     return "A2"
-  }else if(score >=71) {
+  } else if (score >= 71) {
     return "B1"
-  }else if(score >=61) {
+  } else if (score >= 61) {
     return "B2"
-  }else if(score >=51) {
+  } else if (score >= 51) {
     return "C1"
-  }else if(score >=41) {
+  } else if (score >= 41) {
     return "C2"
-  }else if(score >=33) {
+  } else if (score >= 33) {
     return "D"
-  }else{
+  } else {
     return "E"
   }
- }
+}
 
-const getPerformance =(grade)=>{
-  
-  const performanceObj = performanceList.find( data => data.grade === grade)
-  if(performanceObj){
+const getPerformance = (grade) => {
+
+  const performanceObj = performanceList.find(data => data.grade === grade)
+  if (performanceObj) {
     return performanceObj.performance
-  }else{
+  } else {
     return 'Invalid'
   }
 }
-const percentageMarks= (getTotal, fullMarks)=>{
-  return ((Number(getTotal)*100)/Number(fullMarks)).toFixed(2)
+const percentageMarks = (getTotal, fullMarks) => {
+  return ((Number(getTotal) * 100) / Number(fullMarks)).toFixed(2)
 }
 
-checkAdmissionDate=(user, columnMonth, session)=>{
-  let pay=true
-  if(user.created){
-    let columnMonthIndex=  monthNames.indexOf(columnMonth.toLowerCase())
-    if(user.userInfo.admissionDate){
-        const admissionDate = new Date(user.userInfo.admissionDate)
-        //console.log("admissionDateadmissionDate",admissionDate)
-        const admissionDay = admissionDate.getDate()
-        //console.log("admissionDay",admissionDay) 
-        const admissionYear = admissionDate.getFullYear()
-        const admissionMonthIndex = admissionDate.getMonth()
-        let admissionSession=''
-        if(admissionMonthIndex>=3){
-          admissionSession = `${(admissionYear).toString()}-${(admissionYear+1).toString().substring(2)}`
-        }else if(admissionMonthIndex<3 ){
-          admissionSession = `${(admissionYear-1).toString()}-${(admissionYear).toString().substring(2)}`
-        }
-        if(columnMonthIndex>=3 && session===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=21 || (admissionMonthIndex<3 && admissionMonthIndex<columnMonthIndex )) )){
-          pay= false
-        
-        }else if(columnMonthIndex<3 && admissionMonthIndex<3 && session ===admissionSession && (admissionMonthIndex>columnMonthIndex || (admissionMonthIndex===columnMonthIndex && admissionDay>=21))){
-          pay= false
-        }
+checkAdmissionDate = (user, columnMonth, session) => {
+  let pay = true
+  if (user.created) {
+    let columnMonthIndex = monthNames.indexOf(columnMonth.toLowerCase())
+    if (user.userInfo.admissionDate) {
+      const admissionDate = new Date(user.userInfo.admissionDate)
+      //console.log("admissionDateadmissionDate",admissionDate)
+      const admissionDay = admissionDate.getDate()
+      //console.log("admissionDay",admissionDay) 
+      const admissionYear = admissionDate.getFullYear()
+      const admissionMonthIndex = admissionDate.getMonth()
+      let admissionSession = ''
+      if (admissionMonthIndex >= 3) {
+        admissionSession = `${(admissionYear).toString()}-${(admissionYear + 1).toString().substring(2)}`
+      } else if (admissionMonthIndex < 3) {
+        admissionSession = `${(admissionYear - 1).toString()}-${(admissionYear).toString().substring(2)}`
+      }
+      if (columnMonthIndex >= 3 && session === admissionSession && (admissionMonthIndex > columnMonthIndex || (admissionMonthIndex === columnMonthIndex && admissionDay >= 21 || (admissionMonthIndex < 3 && admissionMonthIndex < columnMonthIndex)))) {
+        pay = false
+
+      } else if (columnMonthIndex < 3 && admissionMonthIndex < 3 && session === admissionSession && (admissionMonthIndex > columnMonthIndex || (admissionMonthIndex === columnMonthIndex && admissionDay >= 21))) {
+        pay = false
+      }
     }
   }
   return pay
 
 }
-                    //(Sdata, userPayDetail, monthlyFeeList, busRouteFareList, session)
-const getMonthPayData=(sData, userPayDetail, monthlyFeeList, busRouteFareList, session )=>{
-  let busFee= 0
-  let monthlyFee=0
-  if(userPayDetail.busService && busRouteFareList.length>0){
-    const busFeeData= busRouteFareList.find(busData => busData.busRouteId === userPayDetail?.busRouteId)
-    busFee = (busFeeData && busFeeData.fare)? busFeeData.fare:0
+//(Sdata, userPayDetail, monthlyFeeList, busRouteFareList, session)
+const getMonthPayData = (sData, userPayDetail, monthlyFeeList, busRouteFareList, session) => {
+  let busFee = 0
+  let monthlyFee = 0
+  if (userPayDetail.busService && busRouteFareList.length > 0) {
+    const busFeeData = busRouteFareList.find(busData => busData.busRouteId === userPayDetail?.busRouteId)
+    busFee = (busFeeData && busFeeData.fare) ? busFeeData.fare : 0
   }
-  if(monthlyFeeList.length>0  && userPayDetail.feeFree !=true){
+  if (monthlyFeeList.length > 0 && userPayDetail.feeFree != true) {
     //console.log("userPayDetail.class",userPayDetail.class)
     const monthlyFeeData = monthlyFeeList.find(data => data.className === userPayDetail.class)
-    monthlyFee = monthlyFeeData && monthlyFeeData.monthlyFee ? monthlyFeeData.monthlyFee :0
+    monthlyFee = monthlyFeeData && monthlyFeeData.monthlyFee ? monthlyFeeData.monthlyFee : 0
   }
-  let monthPayData={}
+  let monthPayData = {}
   for (const month of monthList) {
-    let monthData={}
-    const monthEnable =  checkAdmissionDate(sData, month, session)
-      if(monthEnable && (userPayDetail.feeFree != true || userPayDetail.busService === true)){
-        monthData['monthlyFee']= userPayDetail.feeFree === true ? 0: monthlyFee
-        monthData['busFee']= userPayDetail.busService === true ? busFee:0
-        monthData['payEnable']= true
-        monthData['paidDone']= userPayDetail && userPayDetail[month]? true: false
-        monthData['amt'] = userPayDetail && userPayDetail[month] ? (parseInt(userPayDetail[month].monthlyFee) + parseInt(userPayDetail[month].busFee)):"000"
-      }else{  
-        monthData['payEnable']= false
-      }
-      monthPayData[month]= monthData
+    let monthData = {}
+    const monthEnable = checkAdmissionDate(sData, month, session)
+    if (monthEnable && (userPayDetail.feeFree != true || userPayDetail.busService === true)) {
+      monthData['monthlyFee'] = userPayDetail.feeFree === true ? 0 : monthlyFee
+      monthData['busFee'] = userPayDetail.busService === true ? busFee : 0
+      monthData['payEnable'] = true
+      monthData['paidDone'] = userPayDetail && userPayDetail[month] ? true : false
+      monthData['amt'] = userPayDetail && userPayDetail[month] ? (parseInt(userPayDetail[month].monthlyFee) + parseInt(userPayDetail[month].busFee)) : "000"
+    } else {
+      monthData['payEnable'] = false
+    }
+    monthPayData[month] = monthData
   }
   return monthPayData
 }
 
-function encryptObj(objecData){
-  objecData.userInfo.roleName= encryptAES(objecData.userInfo.roleName)
-  objecData.userInfo.roleId= encryptAES(objecData.userInfo.roleId)
-  objecData.userInfo.phoneNumber1= encryptAES(objecData.userInfo.phoneNumber1)
-  objecData.userInfo.phoneNumber2= encryptAES(objecData.userInfo.phoneNumber2)
-  objecData.userInfo.aadharNumber= encryptAES(objecData.userInfo.aadharNumber)
-  objecData.userInfo.userId= encryptAES(objecData.userInfo.userId)
-  objecData.userInfo.fullName= encryptAES(objecData.userInfo.fullName)
+function encryptObj(objecData) {
+  objecData.userInfo.roleName = encryptAES(objecData.userInfo.roleName)
+  objecData.userInfo.roleId = encryptAES(objecData.userInfo.roleId)
+  objecData.userInfo.phoneNumber1 = encryptAES(objecData.userInfo.phoneNumber1)
+  objecData.userInfo.phoneNumber2 = encryptAES(objecData.userInfo.phoneNumber2)
+  objecData.userInfo.aadharNumber = encryptAES(objecData.userInfo.aadharNumber)
+  objecData.userInfo.userId = encryptAES(objecData.userInfo.userId)
+  objecData.userInfo.fullName = encryptAES(objecData.userInfo.fullName)
   //delete objecData.userInfo.isPaymentReciever
 
   return objecData
@@ -188,12 +188,12 @@ function encryptObj(objecData){
 
 // Helper function to add exam fees
 const addExamFees = (feeData, isAnnualExamFeeNotPaid, isHalfExamFeeNotPaid) => {
-  let dueAmt=0
+  let dueAmt = 0
   if (isAnnualExamFeeNotPaid) {
-      dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
+    dueAmt += feeData && feeData.annualExamFee ? Number(feeData.annualExamFee) : 0;
   }
   if (isHalfExamFeeNotPaid) {
-      dueAmt += feeData && feeData.halfExamFee ? Number(feeData.halfExamFee) : 0;
+    dueAmt += feeData && feeData.halfExamFee ? Number(feeData.halfExamFee) : 0;
   }
   return dueAmt;
 };
@@ -202,49 +202,49 @@ const addExamFees = (feeData, isAnnualExamFeeNotPaid, isHalfExamFeeNotPaid) => {
 const isAdmissionInCurrentSession = (admissionSession, previousSession) => admissionSession === previousSession;
 
 
-const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}
+const activeParam = { $and: [{ deleted: false }, { isApproved: true }, { isActive: true }] }
 
 
 module.exports = {
   getAllUsers: async (req, res) => {
     try {
-      const searchStr= req.body.searchStr
-      let searchParam={}
-      let classParam={}
-      let roleParam={}
-       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
-         searchParam={
-          $or:[
-            {'userInfo.roleName': new RegExp(searchStr, 'i')},
-            {'userInfo.fullName': new RegExp(searchStr, 'i')},
-            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
-            {'userInfo.motherName': new RegExp(searchStr, 'i')},
-            {'userInfo.email': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
-            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
-            {'userInfo.userId':new RegExp(searchStr, 'i')}
+      const searchStr = req.body.searchStr
+      let searchParam = {}
+      let classParam = {}
+      let roleParam = {}
+      if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null) {
+        searchParam = {
+          $or: [
+            { 'userInfo.roleName': new RegExp(searchStr, 'i') },
+            { 'userInfo.fullName': new RegExp(searchStr, 'i') },
+            { 'userInfo.fatherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.motherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.email': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber1': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber2': new RegExp(searchStr, 'i') },
+            { 'userInfo.aadharNumber': new RegExp(searchStr, 'i') },
+            { 'userInfo.userId': new RegExp(searchStr, 'i') }
           ]
         }
       }
-      if(req.body.selectedClass){
-          classParam={'userInfo.class':req.body.selectedClass}
+      if (req.body.selectedClass) {
+        classParam = { 'userInfo.class': req.body.selectedClass }
       }
 
-      if(req.body.selectedRole){
-        roleParam={'userInfo.roleName':req.body.selectedRole}
+      if (req.body.selectedRole) {
+        roleParam = { 'userInfo.roleName': req.body.selectedRole }
       }
 
-      if(req.body.studentId){
-        searchParam={'_id':req.body.studentId}
+      if (req.body.studentId) {
+        searchParam = { '_id': req.body.studentId }
       }
       let query = {
-        $and: [ { deleted: false },searchParam,classParam,roleParam]
+        $and: [{ deleted: false }, searchParam, classParam, roleParam]
       }
 
       //console.log("gggggggggggggghhhhhhhhhhhhhhhh", JSON.stringify(query))
       const users = await userModel.find(query);
-      if(users && users.length>0){
+      if (users && users.length > 0) {
 
 
         // if (req.body.selectedClass) {
@@ -264,7 +264,7 @@ module.exports = {
           message: 'Successfully get all users.',
           users,
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: 'Users not found.',
@@ -305,145 +305,145 @@ module.exports = {
       //findDuplicatePayments();
 
       const CURRENTSESSION = getCurrentSession()
-      const searchStr= req.body.searchStr
-      let studentAprroveParam =  {$and:[{deleted:false},{isApproved:true}]}
-      let searchParam={}
-      let classParam={}
-      let filterOptionParam={}
-      let dataFilterParam={}
-      let studentById={}
-      let sortingOption={'created':'desc'}
-       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
-         searchParam={
-          $or:[
-            {'userInfo.fullName': new RegExp(searchStr, 'i')},
-            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
-            {'userInfo.motherName': new RegExp(searchStr, 'i')},
-            {'userInfo.email': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
-            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
-            {'userInfo.userId':new RegExp(searchStr, 'i')}
+      const searchStr = req.body.searchStr
+      let studentAprroveParam = { $and: [{ deleted: false }, { isApproved: true }] }
+      let searchParam = {}
+      let classParam = {}
+      let filterOptionParam = {}
+      let dataFilterParam = {}
+      let studentById = {}
+      let sortingOption = { 'created': 'desc' }
+      if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null) {
+        searchParam = {
+          $or: [
+            { 'userInfo.fullName': new RegExp(searchStr, 'i') },
+            { 'userInfo.fatherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.motherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.email': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber1': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber2': new RegExp(searchStr, 'i') },
+            { 'userInfo.aadharNumber': new RegExp(searchStr, 'i') },
+            { 'userInfo.userId': new RegExp(searchStr, 'i') }
           ]
         }
       }
-      if(req.body.role==='TEACHER'){
-        dataFilterParam={
+      if (req.body.role === 'TEACHER') {
+        dataFilterParam = {
           'userInfo.phoneNumber': 0,
           'userInfo.phoneNumber1': 0,
-          'userInfo.phoneNumber2': 0,  
+          'userInfo.phoneNumber2': 0,
           'userInfo.aadharNumber': 0,
         }
-        sortingOption={
+        sortingOption = {
           created: 1
         }
-        studentAprroveParam={$and:[{deleted:false},{isApproved:true},{isActive:true}]}
+        studentAprroveParam = { $and: [{ deleted: false }, { isApproved: true }, { isActive: true }] }
       }
 
-      if(req.body.selectedClass){
-        classParam={'userInfo.class':req.body.selectedClass}
+      if (req.body.selectedClass) {
+        classParam = { 'userInfo.class': req.body.selectedClass }
       }
-      if(req.body.filterOption && req.body.docFilter===true){
-        const filterKey= [`document.${req.body.filterOption}`]
-        filterOptionParam={
+      if (req.body.filterOption && req.body.docFilter === true) {
+        const filterKey = [`document.${req.body.filterOption}`]
+        filterOptionParam = {
           $or: [
             { [filterKey]: { $exists: false } },  // Field does not exist
             { [filterKey]: "" }  // Field is an empty string
           ]
         }
-      }else if(req.body.filterOption && req.body.docFilter===false){
-        if(req.body.filterOption==='No Mobile Number'){
-          filterOptionParam={$or:[{'userInfo.phoneNumber1':{$in:['','0000000001', '0000000000','1234567890']}}]}
+      } else if (req.body.filterOption && req.body.docFilter === false) {
+        if (req.body.filterOption === 'No Mobile Number') {
+          filterOptionParam = { $or: [{ 'userInfo.phoneNumber1': { $in: ['', '0000000001', '0000000000', '1234567890'] } }] }
         }
-        if(req.body.filterOption==='No Aadhar'){
-          filterOptionParam={'userInfo.aadharNumber':''}
+        if (req.body.filterOption === 'No Aadhar') {
+          filterOptionParam = { 'userInfo.aadharNumber': '' }
         }
-        if(req.body.filterOption==='Deactive'){
-          studentAprroveParam={$and:[{deleted:false},{isApproved:true},{isActive:false}]}
+        if (req.body.filterOption === 'Deactive') {
+          studentAprroveParam = { $and: [{ deleted: false }, { isApproved: true }, { isActive: false }] }
         }
-        if(req.body.filterOption==='Free Students'){
-          studentAprroveParam={$and:[{'userInfo.feeFree':true}]}
+        if (req.body.filterOption === 'Free Students') {
+          studentAprroveParam = { $and: [{ 'userInfo.feeFree': true }] }
         }
-        if(req.body.filterOption==='Bus Students'){
-          if(req.body.selectedRouteId){
-            studentAprroveParam={$and:[{'userInfo.busService':true},{'userInfo.busRouteId':req.body.selectedRouteId}]}
-          }else{
-            studentAprroveParam={$and:[{'userInfo.busService':true}]}
+        if (req.body.filterOption === 'Bus Students') {
+          if (req.body.selectedRouteId) {
+            studentAprroveParam = { $and: [{ 'userInfo.busService': true }, { 'userInfo.busRouteId': req.body.selectedRouteId }] }
+          } else {
+            studentAprroveParam = { $and: [{ 'userInfo.busService': true }] }
           }
         }
       }
-      if(req.body.studentId){
-        studentById={'_id': req.body.studentId}
+      if (req.body.studentId) {
+        studentById = { '_id': req.body.studentId }
       }
-      const condParam={
+      const condParam = {
         $and: [
           studentAprroveParam,
           {
-            'userInfo.roleName':'STUDENT'
+            'userInfo.roleName': 'STUDENT'
           },
           searchParam,
           classParam,
           filterOptionParam,
           studentById,
-          {'userInfo.session': CURRENTSESSION}
+          { 'userInfo.session': CURRENTSESSION }
         ],
       }
-      if(req.body.sortByClass){
-        sortingOption={'userInfo.class':req.body.sortByClass}
+      if (req.body.sortByClass) {
+        sortingOption = { 'userInfo.class': req.body.sortByClass }
       }
       //console.log("condParammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", JSON.stringify(condParam))
-      const users = await userModel.find(condParam,dataFilterParam).sort(sortingOption);
-    
-      if(users && users.length>0){
+      const users = await userModel.find(condParam, dataFilterParam).sort(sortingOption);
 
- 
+      if (users && users.length > 0) {
 
-  async function updateInvoiceClasses() {
-    const session = await mongoose.startSession();
-    session.startTransaction();
 
-    try {
-      const classList = ["4", "5", "6", "7", "8", "9", "10"];
 
-      // const resultBanrches = classList.map(cls=>({
-      //   case: {$eq: ["$class", cls]},
-      //   then: `${cls} A`
-      // })) 
+        async function updateInvoiceClasses() {
+          const session = await mongoose.startSession();
+          session.startTransaction();
 
-      // await resultModel.updateMany(
-      //   {"class": {$in: classList}},
-      //   [
-      //     {
-      //       $set:{
-      //         "class":{
-      //           $switch:{
-      //             branches: resultBanrches,
-      //             default: "$class"
-      //           }
-      //         }
-      //       }
-      //     }
-      //   ],
-      //   {session}
-      // )
+          try {
+            const classList = ["4", "5", "6", "7", "8", "9", "10"];
 
-      // Commit the transaction
-      await session.commitTransaction();
-      session.endSession();
+            // const resultBanrches = classList.map(cls=>({
+            //   case: {$eq: ["$class", cls]},
+            //   then: `${cls} A`
+            // })) 
 
-      console.log("Transaction committed successfully.");
-    } catch (error) {
-      // Abort transaction in case of error
-      await session.abortTransaction();
-      session.endSession();
+            // await resultModel.updateMany(
+            //   {"class": {$in: classList}},
+            //   [
+            //     {
+            //       $set:{
+            //         "class":{
+            //           $switch:{
+            //             branches: resultBanrches,
+            //             default: "$class"
+            //           }
+            //         }
+            //       }
+            //     }
+            //   ],
+            //   {session}
+            // )
 
-      console.error("Transaction aborted due to error:", error);
-    }
-  }
+            // Commit the transaction
+            await session.commitTransaction();
+            session.endSession();
 
-  // Call the function
-  //updateInvoiceClasses();
+            console.log("Transaction committed successfully.");
+          } catch (error) {
+            // Abort transaction in case of error
+            await session.abortTransaction();
+            session.endSession();
+
+            console.error("Transaction aborted due to error:", error);
+          }
+        }
+
+        // Call the function
+        //updateInvoiceClasses();
 
 
         const classList = ["5", "6", "7", "8", "9", "10"];
@@ -470,11 +470,11 @@ module.exports = {
         //   ]
         // );
 
-           //**** users update */
-        const userbranches = classList.map((cls)=>{
-          return{
-            case: {$eq:["$userInfo.class", cls]},
-            then:`${cls} A`
+        //**** users update */
+        const userbranches = classList.map((cls) => {
+          return {
+            case: { $eq: ["$userInfo.class", cls] },
+            then: `${cls} A`
           }
         })
 
@@ -497,10 +497,10 @@ module.exports = {
 
         /***  payment update */
 
-        const payBranches = classList.map(cls=>({
-          case: {$eq: ["$class", cls]},
+        const payBranches = classList.map(cls => ({
+          case: { $eq: ["$class", cls] },
           then: `${cls} A`
-        })) 
+        }))
 
         // await paymentModel.updateMany(
         //   {"class": {$in: classList}},
@@ -521,8 +521,8 @@ module.exports = {
 
         /*** monthlyfeelist update */
 
-        const monthFeeBranches= classList.map(cls=>({
-          case: {$eq:["$className", cls]},
+        const monthFeeBranches = classList.map(cls => ({
+          case: { $eq: ["$className", cls] },
           then: `${cls} A`
         }))
 
@@ -545,10 +545,10 @@ module.exports = {
 
         /***  result update */
 
-        const resultBanrches = classList.map(cls=>({
-          case: {$eq: ["$class", cls]},
+        const resultBanrches = classList.map(cls => ({
+          case: { $eq: ["$class", cls] },
           then: `${cls} A`
-        })) 
+        }))
 
         // await resultModel.updateMany(
         //   {"class": {$in: classList}},
@@ -567,7 +567,7 @@ module.exports = {
         //   {session}
         // )
 
-        /*** resultPer update */     
+        /*** resultPer update */
         // await resultEntryPerModel.updateMany(
         //   { "allowedList.class": { $in: classList } },  // Match documents with relevant class values
         //   [
@@ -605,12 +605,12 @@ module.exports = {
             // Fetch bus route records
             const busRoutes = await vehicleRouteFareModel.find({ session: '2024-25' })
               .select('_id busRouteId');
-        
+
             if (!busRoutes.length) {
               console.log("No bus routes found for the session.");
               return;
             }
-        
+
             // Create bulk update operations
             // const updateOperations = busRoutes.map(route => ({
             //   updateMany: {
@@ -618,20 +618,20 @@ module.exports = {
             //     update: { $set: { "userInfo.busRouteId": route.busRouteId } } // Update with busRouteId
             //   }
             // }));
-        
+
             // // Perform bulk update if there are any operations
             // if (updateOperations.length > 0) {
             //   await userModel.bulkWrite(updateOperations);
             // }
-        
+
             console.log("Update operation completed successfully.");
           } catch (error) {
             console.error("Error occurred:", error);
           }
         }
-        
+
         //updateVehicleFareIdForEachStudent()
-        
+
         //**** get all file name and update */
         // const folderPath='/home/decipher/myproject/final images/otherphoto22'
         // const fileNames= await uploadPhotos(folderPath)
@@ -646,8 +646,8 @@ module.exports = {
         //     }
         // }
 
-      //  for (const it of users) {
-        
+        //  for (const it of users) {
+
         //await userModel.findOneAndUpdate({_id: it._id},{'userInfo.session':'2024-25'})
         // const stClass = it.userInfo.class
         //         // let newStClass=''
@@ -671,7 +671,7 @@ module.exports = {
         //         // if(stClass =='LKG B') {newStClass= 'NUR B'}else
         //         // if(stClass =='NUR A') {newStClass= 'PRE NUR A'}else
         //         // if(stClass =='NUR B') {newStClass= 'PRE NUR B'}
-                
+
         // const  payFound = await paymentModel.findOneAndUpdate({$and:[{userId: it.userInfo.userId},{session:'2024-25'}]},{class: it.userInfo.class})
         //    if(!payFound){
         //     const newPaymentData = paymentModel({
@@ -692,7 +692,7 @@ module.exports = {
           message: 'Successfully get all students.',
           users,
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: 'Students not found.',
@@ -708,46 +708,46 @@ module.exports = {
   },
   getAllTeacherAndStaff: async (req, res) => {
     try {
-      const searchStr= req.body.searchStr
-      let searchParam={}
-      let classParam={}
-      let roleParam=   {$or:[{'userInfo.roleName':'TEACHER'},{'userInfo.roleName':'ACCOUNTANT'}]}
-       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
-         searchParam={
-          $or:[
-            {'userInfo.roleName': new RegExp(searchStr, 'i')},
-            {'userInfo.fullName': new RegExp(searchStr, 'i')},
-            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
-            {'userInfo.motherName': new RegExp(searchStr, 'i')},
-            {'userInfo.email': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
-            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
-            {'userInfo.userId':new RegExp(searchStr, 'i')}
+      const searchStr = req.body.searchStr
+      let searchParam = {}
+      let classParam = {}
+      let roleParam = { $or: [{ 'userInfo.roleName': 'TEACHER' }, { 'userInfo.roleName': 'ACCOUNTANT' }] }
+      if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null) {
+        searchParam = {
+          $or: [
+            { 'userInfo.roleName': new RegExp(searchStr, 'i') },
+            { 'userInfo.fullName': new RegExp(searchStr, 'i') },
+            { 'userInfo.fatherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.motherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.email': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber1': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber2': new RegExp(searchStr, 'i') },
+            { 'userInfo.aadharNumber': new RegExp(searchStr, 'i') },
+            { 'userInfo.userId': new RegExp(searchStr, 'i') }
           ]
         }
       }
-   
-      if(req.body.selectedClass){
-          classParam={'userInfo.class':req.body.selectedClass}
+
+      if (req.body.selectedClass) {
+        classParam = { 'userInfo.class': req.body.selectedClass }
       }
 
       const users = await userModel.find({
-        $and: [ { deleted: false },searchParam,classParam,roleParam]
+        $and: [{ deleted: false }, searchParam, classParam, roleParam]
       });
-      if(users && users.length>0){
+      if (users && users.length > 0) {
         return res.status(200).json({
           success: true,
           message: 'Successfully get all teacher and staff',
           users,
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Teacher and staff not found.",
         });
       }
-   
+
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -758,14 +758,14 @@ module.exports = {
   },
   deleteUser: async (req, res) => {
     try {
-    const updatedUser=  await userModel.findOneAndUpdate({_id:req.params.id},{deleted: true, modified:new Date()});
-     if(updatedUser){
-      await paymentModel.updateMany({ 'userId': updatedUser.userInfo.userId },{ $set: { deleted: true, modified: new Date() } });
+      const updatedUser = await userModel.findOneAndUpdate({ _id: req.params.id }, { deleted: true, modified: new Date() });
+      if (updatedUser) {
+        await paymentModel.updateMany({ 'userId': updatedUser.userInfo.userId }, { $set: { deleted: true, modified: new Date() } });
         return res.status(200).json({
           success: true,
           message: 'Deleted user successfully',
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Not deleted user.",
@@ -783,7 +783,7 @@ module.exports = {
     try {
       // console.log("1222222", req.body.rollNumberData)
       for (const it of req.body.rollNumberData) {
-        await userModel.findOneAndUpdate({'userInfo.userId': it.userId},{'rollNumber': it.rollNumber, modified:new Date()});
+        await userModel.findOneAndUpdate({ 'userInfo.userId': it.userId }, { 'rollNumber': it.rollNumber, modified: new Date() });
       }
       return res.status(200).json({
         success: true,
@@ -801,41 +801,41 @@ module.exports = {
   updateUserById: async (req, res) => {
     try {
       const CURRENTSESSION = getCurrentSession()
-      const userData =  await userModel.findOne({_id:req.params.id});
-      if(!userData){
+      const userData = await userModel.findOne({ _id: req.params.id });
+      if (!userData) {
         return res.status(200).json({
           success: false,
           message: "user not found.",
         });
       }
-      if(req.body.roleUpdate){
-          const newRoleName = req.body.newRoleName
-          delete req.body.roleUpdate
-          delete req.body.newRoleName
-          const getNewRoleData = await roleModel.findOne({$and:[{roleName:newRoleName},{ roleName:{$nin:['TOPADMIN','ADMIN']}}]})
-          if(!getNewRoleData){
-            return res.status(200).json({
-              success: false,
-              message: "Role not found. Please choose correct role.",
-            });
-          }
-          req.body.roleName = getNewRoleData.roleName
-          req.body.roleId = getNewRoleData._id.toString()
-          if(newRoleName!=='STUDENT'){
-            await paymentModel.findOneAndDelete({'userId': userData.userInfo.userId})
-          }
+      if (req.body.roleUpdate) {
+        const newRoleName = req.body.newRoleName
+        delete req.body.roleUpdate
+        delete req.body.newRoleName
+        const getNewRoleData = await roleModel.findOne({ $and: [{ roleName: newRoleName }, { roleName: { $nin: ['TOPADMIN', 'ADMIN'] } }] })
+        if (!getNewRoleData) {
+          return res.status(200).json({
+            success: false,
+            message: "Role not found. Please choose correct role.",
+          });
+        }
+        req.body.roleName = getNewRoleData.roleName
+        req.body.roleId = getNewRoleData._id.toString()
+        if (newRoleName !== 'STUDENT') {
+          await paymentModel.findOneAndDelete({ 'userId': userData.userInfo.userId })
+        }
       }
 
       let user = JSON.parse(JSON.stringify(userData))
-      if(req.body.student_document){
-        user['document']={
+      if (req.body.student_document) {
+        user['document'] = {
           ...user['document'],
           ...req.body.student_document
         }
-      }else if(req.body.passwordChange){
-        user.userInfo.password= passwordEncryptAES(req.body.password)
-      }else{
-        user.userInfo={
+      } else if (req.body.passwordChange) {
+        user.userInfo.password = passwordEncryptAES(req.body.password)
+      } else {
+        user.userInfo = {
           ...user.userInfo,
           ...req.body
         }
@@ -843,61 +843,61 @@ module.exports = {
 
       user.modified = new Date();
 
-     const updatedUser= await userModel.findOneAndUpdate({_id:req.params.id}, user,{new:true});
-      if(updatedUser && req.body.passwordChange){
+      const updatedUser = await userModel.findOneAndUpdate({ _id: req.params.id }, user, { new: true });
+      if (updatedUser && req.body.passwordChange) {
         await AuthToken.deleteMany({ userId: user.userInfo.userId })
       }
-      if(updatedUser){
-        if(updatedUser.userInfo.roleName==='STUDENT'){
-          const foundPayment = await paymentModel.findOne({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]})
-          if(!foundPayment){
+      if (updatedUser) {
+        if (updatedUser.userInfo.roleName === 'STUDENT') {
+          const foundPayment = await paymentModel.findOne({ $and: [{ session: CURRENTSESSION }, { 'userId': updatedUser.userInfo.userId }] })
+          if (!foundPayment) {
             const newPaymentData = paymentModel({
-              userId:updatedUser.userInfo.userId,
+              userId: updatedUser.userInfo.userId,
               session: CURRENTSESSION,
-              class:updatedUser.userInfo.class,
+              class: updatedUser.userInfo.class,
               dueAmount: 0,
-              excessAmount:0,
-              totalFineAmount:0,
+              excessAmount: 0,
+              totalFineAmount: 0,
               feeFree: req.body.feeFree,
               busService: req.body.busService,
               busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined,
               paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage
             })
-            const  newPaymentDataCreated = await newPaymentData.save()
-          }else{
-            const payData ={
-              class: updatedUser.userInfo.class , 
-              feeFree: req.body.feeFree, 
+            const newPaymentDataCreated = await newPaymentData.save()
+          } else {
+            const payData = {
+              class: updatedUser.userInfo.class,
+              feeFree: req.body.feeFree,
               busService: req.body.busService,
-              busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined, 
+              busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined,
               paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage
             }
-            await paymentModel.findOneAndUpdate({$and:[{session:CURRENTSESSION},{'userId': updatedUser.userInfo.userId}]}, payData)
-          
+            await paymentModel.findOneAndUpdate({ $and: [{ session: CURRENTSESSION }, { 'userId': updatedUser.userInfo.userId }] }, payData)
+
           }
           // case if admission date previous session to new cuurent session then delete previous payment delete 
-          if(userData.userInfo.admissionDate && updatedUser.userInfo.admissionDate){
+          if (userData.userInfo.admissionDate && updatedUser.userInfo.admissionDate) {
             const admSessionPrev = getAdmissionSession(userData.userInfo.admissionDate)
             const admSessionNew = getAdmissionSession(updatedUser.userInfo.admissionDate)
-            if(admSessionPrev !== admSessionNew){
+            if (admSessionPrev !== admSessionNew) {
               // previous session get from previous admission date and then delete  
-              if(admSessionPrev !== CURRENTSESSION){
-                await paymentModel.findOneAndUpdate({$and:[{session:admSessionPrev},{'userId': updatedUser.userInfo.userId},{deleted:false}]},{deleted:true})
+              if (admSessionPrev !== CURRENTSESSION) {
+                await paymentModel.findOneAndUpdate({ $and: [{ session: admSessionPrev }, { 'userId': updatedUser.userInfo.userId }, { deleted: false }] }, { deleted: true })
               }
               const existingPaymentForNewSession = await paymentModel.findOne({
                 session: admSessionNew,
                 userId: updatedUser.userInfo.userId
               });
               if (existingPaymentForNewSession) {
-                const payData ={
-                  class: updatedUser.userInfo.class , 
-                  feeFree: req.body.feeFree, 
+                const payData = {
+                  class: updatedUser.userInfo.class,
+                  feeFree: req.body.feeFree,
                   busService: req.body.busService,
-                  busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined, 
+                  busRouteId: req.body.busService ? updatedUser.userInfo.busRouteId : undefined,
                   paymentLedgerPage: updatedUser.userInfo.paymentLedgerPage
                 }
-                await paymentModel.findOneAndUpdate({$and:[{session:admSessionNew},{'userId': updatedUser.userInfo.userId}]}, payData)
-              }else{
+                await paymentModel.findOneAndUpdate({ $and: [{ session: admSessionNew }, { 'userId': updatedUser.userInfo.userId }] }, payData)
+              } else {
                 const newPaymentForNewSession = new paymentModel({
                   userId: updatedUser.userInfo.userId,
                   session: admSessionNew,
@@ -914,17 +914,17 @@ module.exports = {
               }
             }
           }
-            
-          const RedisPaymentKey =`payment-${updatedUser.userInfo.class}-${updatedUser.userInfo.session}`
-          redisDeleteCall({key:RedisPaymentKey})
+
+          const RedisPaymentKey = `payment-${updatedUser.userInfo.class}-${updatedUser.userInfo.session}`
+          redisDeleteCall({ key: RedisPaymentKey })
 
         }
         return res.status(200).json({
           success: true,
           message: "Updated successfully.",
-          data:updatedUser
+          data: updatedUser
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Not updated user.",
@@ -941,76 +941,76 @@ module.exports = {
   },
 
   updateStatus: async (req, res, next) => {
-      try{
+    try {
       const CURRENTSESSION = getCurrentSession()
       const userId = req.body.userId;
-      
-      const user= await userModel.findOne({ 'userInfo.userId': userId })
-      if(!user){
+
+      const user = await userModel.findOne({ 'userInfo.userId': userId })
+      if (!user) {
         return res.status(200).json({
           success: false,
           message: "User not found."
         })
       }
       let datatoUpdate = JSON.parse(JSON.stringify(user))
-      const recoverTrue= req.body.recover
-      if(recoverTrue){
-        datatoUpdate.isActive=true
-        datatoUpdate.isApproved= true
-        datatoUpdate.modified= new Date()
-        datatoUpdate.deleted=false
-        datatoUpdate.userInfo.session= CURRENTSESSION
-      }else{
-        if(req.body.task==='isApproved'){
-            datatoUpdate.isApproved = req.body.isApproved
-            datatoUpdate.modified = new Date()
+      const recoverTrue = req.body.recover
+      if (recoverTrue) {
+        datatoUpdate.isActive = true
+        datatoUpdate.isApproved = true
+        datatoUpdate.modified = new Date()
+        datatoUpdate.deleted = false
+        datatoUpdate.userInfo.session = CURRENTSESSION
+      } else {
+        if (req.body.task === 'isApproved') {
+          datatoUpdate.isApproved = req.body.isApproved
+          datatoUpdate.modified = new Date()
         }
-    
-        if(req.body.task==='isActive'){
-            datatoUpdate.isActive = req.body.isActive 
-            datatoUpdate.modified = new Date()
+
+        if (req.body.task === 'isActive') {
+          datatoUpdate.isActive = req.body.isActive
+          datatoUpdate.modified = new Date()
         }
       }
 
-       const response = await userModel.findOneAndUpdate({ 'userInfo.userId': userId},datatoUpdate,{$new:true})
-        if(response) {
-          if(datatoUpdate.isActive ===false || datatoUpdate.isApproved===false){
-            await AuthToken.deleteMany({ userId: userId })
-          }
-          if(recoverTrue && response && response.userInfo.roleName==='STUDENT'){
-            const foundPayment = await paymentModel.findOne({$and:[{session:response.userInfo.session},{'userId': response.userInfo.userId}]})
-            if(!foundPayment){
-              const newPaymentData = paymentModel({
-                userId:response.userInfo.userId,
-                session:response.userInfo.session,
-                class:response.userInfo.class,
-                busService: response.userInfo.busService,
-                busRouteId: response.userInfo.busService? reponse.userInfo.busRouteId : undefined,
-                dueAmount: 0,
-                excessAmount:0,
-                totalFineAmount:0
-              })
-              await newPaymentData.save()
-              const RedisPaymentKey =`payment-${response.userInfo.class}-${response.userInfo.session}`
-              redisDeleteCall({key:RedisPaymentKey})
-            }
-              await paymentModel.updateMany({'userId': response.userInfo.userId},{deleted: false, modified:new Date()})
-              const paymentlList = await paymentModel.find({'userId': response.userInfo.userId})
-              for (const it of paymentlList){
-                const  RedisPaymentKey =`payment-${it.class}-${it.session}`
-                redisDeleteCall({key:RedisPaymentKey})
-              }
-          }
-          return res.status(200).json({
-            success: true,
-            message: "Update status successfully.",
-          });
-        }else{
-          return res.status(200).json({
-            success: false,
-            message: "Status not updated",
-          });
+      const response = await userModel.findOneAndUpdate({ 'userInfo.userId': userId }, datatoUpdate, { $new: true })
+      if (response) {
+        if (datatoUpdate.isActive === false || datatoUpdate.isApproved === false) {
+          await AuthToken.deleteMany({ userId: userId })
         }
+        if (recoverTrue && response && response.userInfo.roleName === 'STUDENT') {
+          const foundPayment = await paymentModel.findOne({ $and: [{ session: response.userInfo.session }, { 'userId': response.userInfo.userId }] })
+          if (!foundPayment) {
+            const newPaymentData = paymentModel({
+              userId: response.userInfo.userId,
+              session: response.userInfo.session,
+              class: response.userInfo.class,
+              busService: response.userInfo.busService,
+              busRouteId: response.userInfo.busService ? reponse.userInfo.busRouteId : undefined,
+              dueAmount: 0,
+              excessAmount: 0,
+              totalFineAmount: 0
+            })
+            await newPaymentData.save()
+            const RedisPaymentKey = `payment-${response.userInfo.class}-${response.userInfo.session}`
+            redisDeleteCall({ key: RedisPaymentKey })
+          }
+          await paymentModel.updateMany({ 'userId': response.userInfo.userId }, { deleted: false, modified: new Date() })
+          const paymentlList = await paymentModel.find({ 'userId': response.userInfo.userId })
+          for (const it of paymentlList) {
+            const RedisPaymentKey = `payment-${it.class}-${it.session}`
+            redisDeleteCall({ key: RedisPaymentKey })
+          }
+        }
+        return res.status(200).json({
+          success: true,
+          message: "Update status successfully.",
+        });
+      } else {
+        return res.status(200).json({
+          success: false,
+          message: "Status not updated",
+        });
+      }
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -1019,49 +1019,49 @@ module.exports = {
       });
     }
   },
-  updatePaymentRecieverUser:  async (req, res, next) => {
-    try{
-        const response= await userModel.findOne({ 'userInfo.userId': req.body.userId })
-        if(response){
-            const role= response.userInfo.roleName
-            if(role==='ADMIN' || role==='ACCOUNTANT'){
-              response['isPaymentReciever'] = req.body.status
-              response.modified = new Date()
-              response.save()
-              return res.status(200).json({
-                success: true,
-                message: "Update status successfully.",
-              });
-            }else{
-              return res.status(200).json({
-                success: false,
-                message: "Can't update as payment reciever. Contact to Admin"
-              })
-            }
-          }else{
-            return res.status(200).json({
-              success: false,
-              message: "User not found"
-            })
-          }  
-  } catch (err) {
-    console.log(err);
-    return res.status(400).json({
-      success: false,
-      message: err.message,
-    });
-  }
+  updatePaymentRecieverUser: async (req, res, next) => {
+    try {
+      const response = await userModel.findOne({ 'userInfo.userId': req.body.userId })
+      if (response) {
+        const role = response.userInfo.roleName
+        if (role === 'ADMIN' || role === 'ACCOUNTANT') {
+          response['isPaymentReciever'] = req.body.status
+          response.modified = new Date()
+          response.save()
+          return res.status(200).json({
+            success: true,
+            message: "Update status successfully.",
+          });
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: "Can't update as payment reciever. Contact to Admin"
+          })
+        }
+      } else {
+        return res.status(200).json({
+          success: false,
+          message: "User not found"
+        })
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
   },
   getPaymentRecieverUser: async (req, res) => {
     try {
-      let allPaymentRecieverUser = await userModel.find({$and:[{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{isPaymentReciever:true}]})
-      if(allPaymentRecieverUser && allPaymentRecieverUser.length>0){
+      let allPaymentRecieverUser = await userModel.find({ $and: [{ 'userInfo.roleName': { $in: ['ADMIN', 'ACCOUNTANT'] } }, { isPaymentReciever: true }] })
+      if (allPaymentRecieverUser && allPaymentRecieverUser.length > 0) {
         return res.status(200).json({
           success: true,
           message: "Payment Reciever List successfully.",
-          data:allPaymentRecieverUser
+          data: allPaymentRecieverUser
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Payment Reciever List not found.",
@@ -1078,7 +1078,7 @@ module.exports = {
   getSmsData: async (req, res) => {
     try {
       const { wallet } = await fast2sms.getWalletBalance(authorization);
-       if (wallet) {
+      if (wallet) {
         return res.status(200).json({
           success: true,
           message: "SMS data get Successfully",
@@ -1102,11 +1102,11 @@ module.exports = {
   submitResult: async (req, res) => {
     try {
       //console.log("req", req.body)
-      const resultData= req.body
+      const resultData = req.body
 
-      if(resultData.resultPermissionData.role==='TEACHER' && resultData.subject){
-          let subjectName=  resultData.subject.toLowerCase().trim()
-          subjectName = subjectName.includes(' ')? subjectName.split(' ').join('_'):subjectName
+      if (resultData.resultPermissionData.role === 'TEACHER' && resultData.subject) {
+        let subjectName = resultData.subject.toLowerCase().trim()
+        subjectName = subjectName.includes(' ') ? subjectName.split(' ').join('_') : subjectName
         //  console.log("subject", subjectName)
         const examType = resultData.resultPermissionData.examType
         for (const it of resultData.resultMarks) {
@@ -1123,11 +1123,11 @@ module.exports = {
           //   //   result.subjects['COMPUTER']=0
           //   // }
           //   result.subjects[subjectName]=it.marks
-       
+
           //   console.log("resultttttttttttttttt",result)
           //   const subjectParam= `subjects.${subjectName}`
-            
-       
+
+
           //  const newAndUpdateRsultEntry= await resultModel.findOneAndUpdate({$and:[
           //   {userId:it.userId},
           //   {resultYear:resultData.resultPermissionData.resultYear},
@@ -1140,66 +1140,68 @@ module.exports = {
           //   );
 
 
-          const resultParam ={$and:[
-            {userId:it.userId},
-            {resultYear:resultData.resultPermissionData.resultYear},
-            {examType:resultData.resultPermissionData.examType},
-            {class:resultData.class},
-            ]}
-            let resultEntryFound= await resultModel.findOne(resultParam);
-            if(resultEntryFound){
-              if(subjectName==='attendance'){
-                if(examType.includes('HALF')){
-                  resultEntryFound.attendance1 = it.marks
-                }else{
-                  resultEntryFound.attendance2 = it.marks
-                }
-              }else{
-                if(resultEntryFound.subjects){
-                  resultEntryFound.subjects[subjectName]=it.marks
-                }else{
-                  let resultEntryData=resultEntryFound
-                  resultEntryData['subjects']={
-                    [subjectName]:it.marks
-                  }
+          const resultParam = {
+            $and: [
+              { userId: it.userId },
+              { resultYear: resultData.resultPermissionData.resultYear },
+              { examType: resultData.resultPermissionData.examType },
+              { class: resultData.class },
+            ]
+          }
+          let resultEntryFound = await resultModel.findOne(resultParam);
+          if (resultEntryFound) {
+            if (subjectName === 'attendance') {
+              if (examType.includes('HALF')) {
+                resultEntryFound.attendance1 = it.marks
+              } else {
+                resultEntryFound.attendance2 = it.marks
+              }
+            } else {
+              if (resultEntryFound.subjects) {
+                resultEntryFound.subjects[subjectName] = it.marks
+              } else {
+                let resultEntryData = resultEntryFound
+                resultEntryData['subjects'] = {
+                  [subjectName]: it.marks
                 }
               }
-              await resultModel.findOneAndUpdate(resultParam,resultEntryFound )
-
-            }else{
-                let result={
-                    subjects:{}
-                  }
-                  if(subjectName==='attendance'){
-                    if(examType.includes('HALF')){
-                      result.attendance1 = it.marks
-                    }else{
-                      result.attendance2 = it.marks
-                    }
-                  }else{
-                    result.subjects[subjectName] = it.marks
-                  }
-                  const newResultEntryData=resultModel({
-                    userId:it.userId,
-                    resultYear:resultData.resultPermissionData.resultYear,
-                    examType:resultData.resultPermissionData.examType,
-                    class:resultData.class,
-                    ...result
-                  })
-                  //console.log('newRsultEntryDataaaaaaaaaaaaaaaaaaaa',newResultEntryData)
-                 const  newResultEntryCreated = await newResultEntryData.save()
             }
+            await resultModel.findOneAndUpdate(resultParam, resultEntryFound)
+
+          } else {
+            let result = {
+              subjects: {}
+            }
+            if (subjectName === 'attendance') {
+              if (examType.includes('HALF')) {
+                result.attendance1 = it.marks
+              } else {
+                result.attendance2 = it.marks
+              }
+            } else {
+              result.subjects[subjectName] = it.marks
+            }
+            const newResultEntryData = resultModel({
+              userId: it.userId,
+              resultYear: resultData.resultPermissionData.resultYear,
+              examType: resultData.resultPermissionData.examType,
+              class: resultData.class,
+              ...result
+            })
+            //console.log('newRsultEntryDataaaaaaaaaaaaaaaaaaaa',newResultEntryData)
+            const newResultEntryCreated = await newResultEntryData.save()
+          }
         }
 
         return res.status(200).json({
-            success: true,
-            message: "Update result successfully.",
+          success: true,
+          message: "Update result successfully.",
         });
 
       }
       // else if(resultData.resultPermissionData.role==='ADMIN'){
       //     for (let it of resultData.totalResultMarks) {
-          
+
       //      const updateRsultEntry= await resultModel.findOneAndUpdate({$and:[
       //       {userId:it.userId},
       //       {resultYear:resultData.resultPermissionData.resultYear},
@@ -1215,8 +1217,8 @@ module.exports = {
 
       // }
 
-    
-   
+
+
 
     } catch (err) {
       console.log(err);
@@ -1230,292 +1232,297 @@ module.exports = {
   getResult: async (req, res) => {
     try {
       //console.log("req", req.body)
-    const resultQuery= req.body
-     const userData =  await userModel.find({$and:[{'userInfo.class':resultQuery.selectedClass},{'userInfo.roleName':'STUDENT'},activeParam]});
-      if(resultQuery.resultPermissionData.action==='ENTRY'){
-          let subjectName=  resultQuery.selectedSubject && resultQuery.selectedSubject.toLowerCase().trim()
-          subjectName = subjectName.includes(' ')?subjectName.split(' ').join('_'):subjectName
-          let subjectPermissionParam={
-            userId:1,
-          }
-          if(subjectName==='attendance' && resultQuery.resultPermissionData.examType.includes('HALF')) {
-            subjectPermissionParam.attendance1=1
-            
-          } else if(subjectName==='attendance' && resultQuery.resultPermissionData.examType.includes('ANNUAL')){
-            subjectPermissionParam.attendance2=1
+      const resultQuery = req.body
+      const userData = await userModel.find({ $and: [{ 'userInfo.class': resultQuery.selectedClass }, { 'userInfo.roleName': 'STUDENT' }, activeParam] });
+      if (resultQuery.resultPermissionData.action === 'ENTRY') {
+        let subjectName = resultQuery.selectedSubject && resultQuery.selectedSubject.toLowerCase().trim()
+        subjectName = subjectName.includes(' ') ? subjectName.split(' ').join('_') : subjectName
+        let subjectPermissionParam = {
+          userId: 1,
+        }
+        if (subjectName === 'attendance' && resultQuery.resultPermissionData.examType.includes('HALF')) {
+          subjectPermissionParam.attendance1 = 1
 
-          }else{
-            subjectPermissionParam={
-              userId:1,
-              subjects:{}
-            }
-            subjectPermissionParam.subjects[subjectName]=1
-          }  
- 
-          let resultParam={
-            $and:[
-            {resultYear:resultQuery.resultPermissionData.resultYear},
-            {examType:resultQuery.resultPermissionData.examType},
-            {class:resultQuery.selectedClass},
-            ]
+        } else if (subjectName === 'attendance' && resultQuery.resultPermissionData.examType.includes('ANNUAL')) {
+          subjectPermissionParam.attendance2 = 1
+
+        } else {
+          subjectPermissionParam = {
+            userId: 1,
+            subjects: {}
           }
-        const resultData = await resultModel.find(resultParam,subjectPermissionParam);
-          return res.status(200).json({
-            success: true,
-            message: "Result get successfully.",
-            result:resultData
-          });
-    
-      }else if(resultQuery.resultPermissionData.role === 'ADMIN' && ['TOPADMIN', 'ADMIN'].includes(req.user.userInfo.roleName)){
-       
-        const fullMarks =resultQuery.fullMarks
+          subjectPermissionParam.subjects[subjectName] = 1
+        }
+
+        let resultParam = {
+          $and: [
+            { resultYear: resultQuery.resultPermissionData.resultYear },
+            { examType: resultQuery.resultPermissionData.examType },
+            { class: resultQuery.selectedClass },
+          ]
+        }
+        const resultData = await resultModel.find(resultParam, subjectPermissionParam);
+        return res.status(200).json({
+          success: true,
+          message: "Result get successfully.",
+          result: resultData
+        });
+
+      } else if (resultQuery.resultPermissionData.role === 'ADMIN' && ['TOPADMIN', 'ADMIN'].includes(req.user.userInfo.roleName)) {
+
+        const fullMarks = resultQuery.fullMarks
         const classBetween1to10 = resultQuery.classBetween1to10
         const class9to10 = resultQuery.class9to10
-        const examType= resultQuery.resultPermissionData.examType
-        const resultYear= resultQuery.resultPermissionData.resultYear
+        const examType = resultQuery.resultPermissionData.examType
+        const resultYear = resultQuery.resultPermissionData.resultYear
         // console.log("examTypeexamType", examType)
         // console.log("resultYearresultYear", resultYear)
-        const examData = await examModel.findOne({$and:[{examType:examType},{examYear:resultYear}]});
-       
+        const examData = await examModel.findOne({ $and: [{ examType: examType }, { examYear: resultYear }] });
+
         //console.log("examDataexamData", examData.fullAttendance)
-        const fullAttendance = examData && examData.fullAttendance?examData.fullAttendance:0
-        const mainExams =  (examType==='ANNUAL EXAM' || examType==='HALF YEARLY EXAM')?true:false
-        let resultParam={}
-        let secondResultParam={}
-        
-      
-          if(userData && userData.length>0){
-            if(mainExams && classBetween1to10){
-              if(examType==='ANNUAL EXAM'){
-                resultParam = { 
-                  resultYear:resultYear,
-                  examType:'UNIT TEST-II',
-                  class:resultQuery.selectedClass
-                }
-                secondResultParam = {
-                  resultYear:resultYear,
-                  examType:examType,
-                  class:resultQuery.selectedClass
-                }
-              }else{
-                resultParam = { 
-                  resultYear:resultYear,
-                  examType:'UNIT TEST-I',
-                  class:resultQuery.selectedClass
-                }
-                secondResultParam = {
-                  resultYear:resultYear,
-                  examType:examType,
-                  class:resultQuery.selectedClass
-                }
+        const fullAttendance = examData && examData.fullAttendance ? examData.fullAttendance : 0
+        const mainExams = (examType === 'ANNUAL EXAM' || examType === 'HALF YEARLY EXAM') ? true : false
+        let resultParam = {}
+        let secondResultParam = {}
+
+
+        if (userData && userData.length > 0) {
+          if (mainExams && classBetween1to10) {
+            if (examType === 'ANNUAL EXAM') {
+              resultParam = {
+                resultYear: resultYear,
+                examType: 'UNIT TEST-II',
+                class: resultQuery.selectedClass
               }
-      
-                let newResultData=[]
-                    for (const studentData of userData) {
-                    let studentResultData = {
-                      ...studentData.userInfo,
-                      document: {
-                        stPhoto: studentData.document.stPhoto
-                      },
-                      rollNumber: studentData.rollNumber
-                    }
-                    let total = 0 
-                    const secondResultData = await resultModel.findOne({$and:[
-                      {
-                        ...secondResultParam,
-                        userId:studentData.userInfo.userId}
-                    ]})
-                    
-                        if(secondResultData){
-                          let subjectsValues=0
-                          if(class9to10){
-
-                            const copyOfSecondResultData = JSON.parse(JSON.stringify(secondResultData));
-                       
-                            Object.defineProperty(copyOfSecondResultData.subjects , 'computer', {
-                              enumerable: false,  
-                            });
-                            Object.defineProperty(copyOfSecondResultData.subjects , 'comp_pract', {
-                              enumerable: false,  
-                            });
-                            subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects)? Object.values(copyOfSecondResultData.subjects):0;
-                          }else{
-                            subjectsValues = (secondResultData && secondResultData.subjects)? Object.values(secondResultData.subjects):0;
-                          }
-                          
-                          total = subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
-                          studentResultData={
-                            ...studentResultData,
-                            studentResultSecond: secondResultData? secondResultData:{},
-                            total: total
-                          }
-
-                        }else{
-                          studentResultData = {
-                            ...studentResultData,
-                            studentResultSecond: {},
-                            total: total
-                          }
-                        }
-
-                      const unitResultData = await resultModel.findOne({$and:[
-                          {...resultParam,userId: studentData.userInfo.userId}
-                        ]})
-
-                        if(unitResultData){
-                          let subjectsValues=0
-                          if(class9to10){
-                            // const copyOfUnitResultData= unitResultData
-                            // console.log("copyOfUnitResultData",copyOfUnitResultData)
-                            // Object.defineProperty(copyOfUnitResultData.subjects, 'computer', {
-                            //   enumerable: false,  
-                            // });
-                            let unitTotal=0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi)/2:0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english)/2:0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math)/2:0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science)/2:0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst)/2:0
-
-                            // subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
-                            // total += subjectsValues ? (subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0))/2:0
-                            total +=unitTotal
-                          }else{
-                            let unitTotal=0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.computer ? Number(unitResultData.subjects.computer):0
-                            // subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
-                            // total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
-                            total += unitTotal
-                          }
-                         
-                       
-                          studentResultData = {
-                            ...studentResultData,
-                            studentResult: unitResultData? unitResultData:{},
-                            total: total
-                          }
-                        }else{
-                          studentResultData = {
-                            ...studentResultData,
-                            studentResult: {},
-                            total: total
-                          }
-                        }
-                        newResultData.push(studentResultData)
-                      }
-                  
-                      const sortResultData =  getRankedResult(newResultData)
-                      // Assign rank with handling same scores
-                        const actualResult = newResultData.map(originalData=> {
-                        //const rankedUser = sortResultData.find((sortdata)=> originalData.userId === sortdata.userId)
-                        const percentage = percentageMarks(originalData.total, fullMarks)
-                        const grade = getGrade(percentage)
-                        const performance= getPerformance(grade)
-                        const ddd= {
-                          ...originalData,
-                          //rank: rankedUser ? rankedUser.rank : 0,
-                          percentage :percentage,
-                          grade:grade ,
-                          performance:performance,
-                          fullMarks:fullMarks,
-                          fullAttendance:fullAttendance
-                        }
-                        return ddd
-                      }
-                    )
-                return res.status(200).json({
-                  success: true,
-                  message: "Result get successfully.",
-                  result:actualResult
-                });
-            }else{
-            
-              const resultParam={
-                $and:[
-                {resultYear:resultYear},
-                {examType:resultQuery.resultPermissionData.examType},
-                {class:resultQuery.selectedClass}
-                ]
+              secondResultParam = {
+                resultYear: resultYear,
+                examType: examType,
+                class: resultQuery.selectedClass
               }
-            
-              const resultData = await resultModel.find(resultParam);
-              if(userData && userData.length>0){
-                const newResultData = userData.map(data=>{
-                  const found = resultData.find(element => element.userId === data.userInfo.userId);
-                    if(found){
-                      const subjectsValues = Object.values(found.subjects);
-                      const total = subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0)
-                  
-                      let newResultData = {
-                        ...data.userInfo,
-                        rollNumber:data.rollNumber,
-                        studentResult:found,
-                        total:total
-                        }
-                    
-                        return newResultData
-                    }else{
-                      const newResultData = {
-                        ...data.userInfo,
-                        rollNumber:data.rollNumber,
-                        studentResult:{},
-                        total:0
-                        }
-                        return newResultData
-                    }
-                })
-              
-              const sortResultData = getRankedResult(newResultData)
-              //console.log("sortResultData", Array.isArray(sortResultData))
-              const actualResult = newResultData.map(originalData=> {
-                
-                  //const rankedUser = sortResultData.find((sortdata)=> console.log("sortdata find", sortdata))
-                  let ddd = {}
-                  if(mainExams){
-                    const percentage = percentageMarks(originalData.total, fullMarks)
-                    const grade = getGrade(percentage)
-                    const performance= getPerformance(grade)
-                     ddd= {
-                      ...originalData,
-                      // rank: rankedUser ? rankedUser.rank: 0, 
-                      percentage :percentage,
-                      grade:grade ,
-                      performance:performance,
-                      fullMarks:fullMarks,
-                      fullAttendance:fullAttendance
-                    }
-                  }else{
-                     ddd = {
-                      ...originalData,
-                      // rank: rankedUser ? rankedUser.rank: 0,
-                    }
-                  }
-                      return ddd
-                  }
-                )
-                return res.status(200).json({
-                  success: true,
-                  message: "Result get successfully.",
-                  result:actualResult
-                });
+            } else {
+              resultParam = {
+                resultYear: resultYear,
+                examType: 'UNIT TEST-I',
+                class: resultQuery.selectedClass
+              }
+              secondResultParam = {
+                resultYear: resultYear,
+                examType: examType,
+                class: resultQuery.selectedClass
               }
             }
-          }else{
+
+            let newResultData = []
+            for (const studentData of userData) {
+              let studentResultData = {
+                ...studentData.userInfo,
+                document: {
+                  stPhoto: studentData.document.stPhoto
+                },
+                rollNumber: studentData.rollNumber
+              }
+              let total = 0
+              const secondResultData = await resultModel.findOne({
+                $and: [
+                  {
+                    ...secondResultParam,
+                    userId: studentData.userInfo.userId
+                  }
+                ]
+              })
+
+              if (secondResultData) {
+                let subjectsValues = 0
+                if (class9to10) {
+
+                  const copyOfSecondResultData = JSON.parse(JSON.stringify(secondResultData));
+
+                  Object.defineProperty(copyOfSecondResultData.subjects, 'computer', {
+                    enumerable: false,
+                  });
+                  Object.defineProperty(copyOfSecondResultData.subjects, 'comp_pract', {
+                    enumerable: false,
+                  });
+                  subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects) ? Object.values(copyOfSecondResultData.subjects) : 0;
+                } else {
+                  subjectsValues = (secondResultData && secondResultData.subjects) ? Object.values(secondResultData.subjects) : 0;
+                }
+
+                total = subjectsValues ? subjectsValues.reduce((sum, curr) => sum + Number(curr), 0) : 0
+                studentResultData = {
+                  ...studentResultData,
+                  studentResultSecond: secondResultData ? secondResultData : {},
+                  total: total
+                }
+
+              } else {
+                studentResultData = {
+                  ...studentResultData,
+                  studentResultSecond: {},
+                  total: total
+                }
+              }
+
+              const unitResultData = await resultModel.findOne({
+                $and: [
+                  { ...resultParam, userId: studentData.userInfo.userId }
+                ]
+              })
+
+              if (unitResultData) {
+                let subjectsValues = 0
+                if (class9to10) {
+                  // const copyOfUnitResultData= unitResultData
+                  // console.log("copyOfUnitResultData",copyOfUnitResultData)
+                  // Object.defineProperty(copyOfUnitResultData.subjects, 'computer', {
+                  //   enumerable: false,  
+                  // });
+                  let unitTotal = 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi) / 2 : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english) / 2 : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math) / 2 : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science) / 2 : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst) / 2 : 0
+
+                  // subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
+                  // total += subjectsValues ? (subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0))/2:0
+                  total += unitTotal
+                } else {
+                  let unitTotal = 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi) : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english) : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math) : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science) : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst) : 0
+                  unitTotal += unitResultData.subjects && unitResultData.subjects.computer ? Number(unitResultData.subjects.computer) : 0
+                  // subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
+                  // total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
+                  total += unitTotal
+                }
+
+
+                studentResultData = {
+                  ...studentResultData,
+                  studentResult: unitResultData ? unitResultData : {},
+                  total: total
+                }
+              } else {
+                studentResultData = {
+                  ...studentResultData,
+                  studentResult: {},
+                  total: total
+                }
+              }
+              newResultData.push(studentResultData)
+            }
+
+            const sortResultData = getRankedResult(newResultData)
+            // Assign rank with handling same scores
+            const actualResult = newResultData.map(originalData => {
+              //const rankedUser = sortResultData.find((sortdata)=> originalData.userId === sortdata.userId)
+              const percentage = percentageMarks(originalData.total, fullMarks)
+              const grade = getGrade(percentage)
+              const performance = getPerformance(grade)
+              const ddd = {
+                ...originalData,
+                //rank: rankedUser ? rankedUser.rank : 0,
+                percentage: percentage,
+                grade: grade,
+                performance: performance,
+                fullMarks: fullMarks,
+                fullAttendance: fullAttendance
+              }
+              return ddd
+            }
+            )
             return res.status(200).json({
-              success: false,
-              message: "Result not found.",
+              success: true,
+              message: "Result get successfully.",
+              result: actualResult
             });
+          } else {
+
+            const resultParam = {
+              $and: [
+                { resultYear: resultYear },
+                { examType: resultQuery.resultPermissionData.examType },
+                { class: resultQuery.selectedClass }
+              ]
+            }
+
+            const resultData = await resultModel.find(resultParam);
+            if (userData && userData.length > 0) {
+              const newResultData = userData.map(data => {
+                const found = resultData.find(element => element.userId === data.userInfo.userId);
+                if (found) {
+                  const subjectsValues = Object.values(found.subjects);
+                  const total = subjectsValues.reduce((sum, curr) => sum + Number(curr), 0)
+
+                  let newResultData = {
+                    ...data.userInfo,
+                    rollNumber: data.rollNumber,
+                    studentResult: found,
+                    total: total
+                  }
+
+                  return newResultData
+                } else {
+                  const newResultData = {
+                    ...data.userInfo,
+                    rollNumber: data.rollNumber,
+                    studentResult: {},
+                    total: 0
+                  }
+                  return newResultData
+                }
+              })
+
+              const sortResultData = getRankedResult(newResultData)
+              //console.log("sortResultData", Array.isArray(sortResultData))
+              const actualResult = newResultData.map(originalData => {
+
+                //const rankedUser = sortResultData.find((sortdata)=> console.log("sortdata find", sortdata))
+                let ddd = {}
+                if (mainExams) {
+                  const percentage = percentageMarks(originalData.total, fullMarks)
+                  const grade = getGrade(percentage)
+                  const performance = getPerformance(grade)
+                  ddd = {
+                    ...originalData,
+                    // rank: rankedUser ? rankedUser.rank: 0, 
+                    percentage: percentage,
+                    grade: grade,
+                    performance: performance,
+                    fullMarks: fullMarks,
+                    fullAttendance: fullAttendance
+                  }
+                } else {
+                  ddd = {
+                    ...originalData,
+                    // rank: rankedUser ? rankedUser.rank: 0,
+                  }
+                }
+                return ddd
+              }
+              )
+              return res.status(200).json({
+                success: true,
+                message: "Result get successfully.",
+                result: actualResult
+              });
+            }
           }
-      }else{
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: "Result not found.",
+          });
+        }
+      } else {
         return res.status(400).json({
           success: true,
           message: "Result Permssion not allowed. Please contact to admin",
-          result:[]
+          result: []
         });
       }
     } catch (err) {
@@ -1529,237 +1536,241 @@ module.exports = {
   oldExamResult: async (req, res) => {
     try {
       //console.log("req", req.body)
-    const resultQuery= req.body
-     //const userData =  await userModel.find({$and:[{'userInfo.class':resultQuery.selectedClass},{'userInfo.roleName':'STUDENT'},activeParam]});
+      const resultQuery = req.body
+      //const userData =  await userModel.find({$and:[{'userInfo.class':resultQuery.selectedClass},{'userInfo.roleName':'STUDENT'},activeParam]});
 
-        const fullAttendance =resultQuery.fullAttendance
-        const fullMarks =resultQuery.fullMarks
-        const classBetween1to10 = resultQuery.classBetween1to10
-        const class9to10 = resultQuery.class9to10
-        const examType= resultQuery.resultPermissionData.examType
-        const mainExams =  (examType==='ANNUAL EXAM' || examType==='HALF YEARLY EXAM')?true:false
-        let resultParam={}
-        let secondResultParam={}
-            if(mainExams && classBetween1to10){
-              if(examType==='ANNUAL EXAM'){
-                resultParam = { 
-                  resultYear:resultQuery.resultPermissionData.resultYear,
-                  examType:'UNIT TEST-II',
-                  class:resultQuery.selectedClass
-                }
-                secondResultParam = {
-                  resultYear:resultQuery.resultPermissionData.resultYear,
-                  examType:examType,
-                  class:resultQuery.selectedClass
-                }
-              }else{
-                resultParam = { 
-                  resultYear:resultQuery.resultPermissionData.resultYear,
-                  examType:'UNIT TEST-I',
-                  class:resultQuery.selectedClass
-                }
-                secondResultParam = {
-                  resultYear:resultQuery.resultPermissionData.resultYear,
-                  examType:examType,
-                  class:resultQuery.selectedClass
-                }
-              }
-      
-                let newResultData=[]
-                    let total = 0 
-                    const secondResultDataAll = await resultModel.find({$and:[
-                      {
-                        ...secondResultParam,
-                      }
-                    ]})
-                    if(secondResultDataAll && secondResultDataAll.length>0){
-                      for(const secondResultData of secondResultDataAll){
-                        const studentData= await userModel.findOne({'userInfo.userId':secondResultData.userId})
-                        let studentResultData={}
-                        if(studentData){
-                          studentResultData = {
-                            ...studentData.userInfo,
-                          }
-                        }
-                    
-                        if(secondResultData){
-                          let subjectsValues=0
-                          if(class9to10){
+      const fullAttendance = resultQuery.fullAttendance
+      const fullMarks = resultQuery.fullMarks
+      const classBetween1to10 = resultQuery.classBetween1to10
+      const class9to10 = resultQuery.class9to10
+      const examType = resultQuery.resultPermissionData.examType
+      const mainExams = (examType === 'ANNUAL EXAM' || examType === 'HALF YEARLY EXAM') ? true : false
+      let resultParam = {}
+      let secondResultParam = {}
+      if (mainExams && classBetween1to10) {
+        if (examType === 'ANNUAL EXAM') {
+          resultParam = {
+            resultYear: resultQuery.resultPermissionData.resultYear,
+            examType: 'UNIT TEST-II',
+            class: resultQuery.selectedClass
+          }
+          secondResultParam = {
+            resultYear: resultQuery.resultPermissionData.resultYear,
+            examType: examType,
+            class: resultQuery.selectedClass
+          }
+        } else {
+          resultParam = {
+            resultYear: resultQuery.resultPermissionData.resultYear,
+            examType: 'UNIT TEST-I',
+            class: resultQuery.selectedClass
+          }
+          secondResultParam = {
+            resultYear: resultQuery.resultPermissionData.resultYear,
+            examType: examType,
+            class: resultQuery.selectedClass
+          }
+        }
 
-                            const copyOfSecondResultData = JSON.parse(JSON.stringify(secondResultData));
-                       
-                            Object.defineProperty(copyOfSecondResultData.subjects , 'computer', {
-                              enumerable: false,  
-                            });
-                            Object.defineProperty(copyOfSecondResultData.subjects , 'comp_pract', {
-                              enumerable: false,  
-                            });
-                            subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects)? Object.values(copyOfSecondResultData.subjects):0;
-                          }else{
-                            subjectsValues = (secondResultData && secondResultData.subjects)? Object.values(secondResultData.subjects):0;
-                          }
-                          
-                          total = subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
-                          studentResultData={
-                            ...studentResultData,
-                            studentResultSecond: secondResultData? secondResultData:{},
-                            total: total
-                          }
-
-                        }else{
-                          studentResultData = {
-                            ...studentResultData,
-                            studentResultSecond: {},
-                            total: total
-                          }
-                        }
-
-                      const unitResultData = await resultModel.findOne({$and:[
-                          {...resultParam,userId: studentData.userInfo.userId}
-                        ]})
-
-                        if(unitResultData){
-                          let subjectsValues=0
-                          if(class9to10){
-                            // const copyOfUnitResultData= unitResultData
-                            // console.log("copyOfUnitResultData",copyOfUnitResultData)
-                            // Object.defineProperty(copyOfUnitResultData.subjects, 'computer', {
-                            //   enumerable: false,  
-                            // });
-                            let unitTotal=0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi)/2:0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english)/2:0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math)/2:0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science)/2:0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst)/2:0
-
-                            // subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
-                            // total += subjectsValues ? (subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0))/2:0
-                            total +=unitTotal
-                          }else{
-                            let unitTotal=0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst):0
-                            unitTotal +=  unitResultData.subjects && unitResultData.subjects.computer ? Number(unitResultData.subjects.computer):0
-                            // subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
-                            // total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
-                            total += unitTotal
-                          }
-                         
-                       
-                          studentResultData = {
-                            ...studentResultData,
-                            studentResult: unitResultData? unitResultData:{},
-                            total: total
-                          }
-                        }else{
-                          studentResultData = {
-                            ...studentResultData,
-                            studentResult: {},
-                            total: total
-                          }
-                        }
-                        newResultData.push(studentResultData)
-                      }
-                    }else{
-                      return res.status(200).json({
-                            success: false,
-                            message: "Result not found.",
-                          });
-                    }
-                  
-                  const sortResultData =  newResultData.slice().sort((a,b) => b.total - a.total);
-                  const actualResult = newResultData.map(originalData=> {
-                      const sortDataIndex = sortResultData.findIndex((sortdata)=> (originalData && originalData.userId) === (sortdata && sortdata.userId))
-                          const percentage = percentageMarks(originalData.total, fullMarks)
-                          const grade = getGrade(percentage)
-                          const performance= getPerformance(grade)
-                          const ddd= {
-                            ...originalData,
-                            rank:sortDataIndex +1,
-                            percentage :percentage,
-                            grade:grade ,
-                            performance:performance,
-                            fullMarks:fullMarks,
-                            fullAttendance:fullAttendance
-                          }
-                          return ddd
-                      }
-                    )
-                return res.status(200).json({
-                  success: true,
-                  message: "Result get successfully.",
-                  result:actualResult
-                });
-              
-            }else{
-              const resultParam={
-                $and:[
-                {resultYear:resultQuery.resultPermissionData.resultYear},
-                {examType:resultQuery.resultPermissionData.examType},
-                {class:resultQuery.selectedClass}
-                ]
-              }
-              let newResultData=[]
-              const allResultData = await resultModel.find(resultParam);
-              if(allResultData && allResultData.length>0){
-                for(const rData of allResultData){
-
-                  const userfound = await userModel.findOne({'userInfo.userId':rData.userId});
-                    if(userfound){
-                      const subjectsValues = Object.values(rData.subjects);
-                      const total = subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0)
-                      let resultData = {
-                        ...userfound.userInfo,
-                        studentResult:rData,
-                        total:total
-                        }
-                        newResultData.push(resultData)
-                    }
-                }
-              
-              const sortResultData =  newResultData.slice().sort((a,b) => b.total - a.total);
-              const actualResult = newResultData.map(originalData=> {
-                  const sortDataIndex = sortResultData.findIndex((sortdata)=> originalData.userId === sortdata.userId)
-                  let ddd = {}
-                  if(mainExams){
-                    const percentage = percentageMarks(originalData.total, fullMarks)
-                    const grade = getGrade(percentage)
-                    const performance= getPerformance(grade)
-                     ddd= {
-                      ...originalData,
-                      rank:sortDataIndex +1,
-                      percentage :percentage,
-                      grade:grade ,
-                      performance:performance,
-                      fullMarks:fullMarks,
-                      fullAttendance:fullAttendance
-                    }
-                  }else{
-                     ddd = {
-                      ...originalData,
-                      rank:sortDataIndex +1
-                    }
-                  }
-                      return ddd
-                  }
-                )
-                return res.status(200).json({
-                  success: true,
-                  message: "Result get successfully.",
-                  result:actualResult
-                });
-              }else{
-                return res.status(200).json({
-                  success: false,
-                  message: "Result not found.",
-                });
+        let newResultData = []
+        let total = 0
+        const secondResultDataAll = await resultModel.find({
+          $and: [
+            {
+              ...secondResultParam,
+            }
+          ]
+        })
+        if (secondResultDataAll && secondResultDataAll.length > 0) {
+          for (const secondResultData of secondResultDataAll) {
+            const studentData = await userModel.findOne({ 'userInfo.userId': secondResultData.userId })
+            let studentResultData = {}
+            if (studentData) {
+              studentResultData = {
+                ...studentData.userInfo,
               }
             }
-     
+
+            if (secondResultData) {
+              let subjectsValues = 0
+              if (class9to10) {
+
+                const copyOfSecondResultData = JSON.parse(JSON.stringify(secondResultData));
+
+                Object.defineProperty(copyOfSecondResultData.subjects, 'computer', {
+                  enumerable: false,
+                });
+                Object.defineProperty(copyOfSecondResultData.subjects, 'comp_pract', {
+                  enumerable: false,
+                });
+                subjectsValues = (copyOfSecondResultData && copyOfSecondResultData.subjects) ? Object.values(copyOfSecondResultData.subjects) : 0;
+              } else {
+                subjectsValues = (secondResultData && secondResultData.subjects) ? Object.values(secondResultData.subjects) : 0;
+              }
+
+              total = subjectsValues ? subjectsValues.reduce((sum, curr) => sum + Number(curr), 0) : 0
+              studentResultData = {
+                ...studentResultData,
+                studentResultSecond: secondResultData ? secondResultData : {},
+                total: total
+              }
+
+            } else {
+              studentResultData = {
+                ...studentResultData,
+                studentResultSecond: {},
+                total: total
+              }
+            }
+
+            const unitResultData = await resultModel.findOne({
+              $and: [
+                { ...resultParam, userId: studentData.userInfo.userId }
+              ]
+            })
+
+            if (unitResultData) {
+              let subjectsValues = 0
+              if (class9to10) {
+                // const copyOfUnitResultData= unitResultData
+                // console.log("copyOfUnitResultData",copyOfUnitResultData)
+                // Object.defineProperty(copyOfUnitResultData.subjects, 'computer', {
+                //   enumerable: false,  
+                // });
+                let unitTotal = 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi) / 2 : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english) / 2 : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math) / 2 : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science) / 2 : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst) / 2 : 0
+
+                // subjectsValues = (copyOfUnitResultData && copyOfUnitResultData.subjects)? Object.values(copyOfUnitResultData.subjects):0;
+                // total += subjectsValues ? (subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0))/2:0
+                total += unitTotal
+              } else {
+                let unitTotal = 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.hindi ? Number(unitResultData.subjects.hindi) : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.english ? Number(unitResultData.subjects.english) : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.math ? Number(unitResultData.subjects.math) : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.science ? Number(unitResultData.subjects.science) : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.sst ? Number(unitResultData.subjects.sst) : 0
+                unitTotal += unitResultData.subjects && unitResultData.subjects.computer ? Number(unitResultData.subjects.computer) : 0
+                // subjectsValues = (unitResultData && unitResultData.subjects)? Object.values(unitResultData.subjects):0;
+                // total += subjectsValues ? subjectsValues.reduce((sum, curr)=> sum+Number(curr), 0):0
+                total += unitTotal
+              }
+
+
+              studentResultData = {
+                ...studentResultData,
+                studentResult: unitResultData ? unitResultData : {},
+                total: total
+              }
+            } else {
+              studentResultData = {
+                ...studentResultData,
+                studentResult: {},
+                total: total
+              }
+            }
+            newResultData.push(studentResultData)
+          }
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: "Result not found.",
+          });
+        }
+
+        const sortResultData = newResultData.slice().sort((a, b) => b.total - a.total);
+        const actualResult = newResultData.map(originalData => {
+          const sortDataIndex = sortResultData.findIndex((sortdata) => (originalData && originalData.userId) === (sortdata && sortdata.userId))
+          const percentage = percentageMarks(originalData.total, fullMarks)
+          const grade = getGrade(percentage)
+          const performance = getPerformance(grade)
+          const ddd = {
+            ...originalData,
+            rank: sortDataIndex + 1,
+            percentage: percentage,
+            grade: grade,
+            performance: performance,
+            fullMarks: fullMarks,
+            fullAttendance: fullAttendance
+          }
+          return ddd
+        }
+        )
+        return res.status(200).json({
+          success: true,
+          message: "Result get successfully.",
+          result: actualResult
+        });
+
+      } else {
+        const resultParam = {
+          $and: [
+            { resultYear: resultQuery.resultPermissionData.resultYear },
+            { examType: resultQuery.resultPermissionData.examType },
+            { class: resultQuery.selectedClass }
+          ]
+        }
+        let newResultData = []
+        const allResultData = await resultModel.find(resultParam);
+        if (allResultData && allResultData.length > 0) {
+          for (const rData of allResultData) {
+
+            const userfound = await userModel.findOne({ 'userInfo.userId': rData.userId });
+            if (userfound) {
+              const subjectsValues = Object.values(rData.subjects);
+              const total = subjectsValues.reduce((sum, curr) => sum + Number(curr), 0)
+              let resultData = {
+                ...userfound.userInfo,
+                studentResult: rData,
+                total: total
+              }
+              newResultData.push(resultData)
+            }
+          }
+
+          const sortResultData = newResultData.slice().sort((a, b) => b.total - a.total);
+          const actualResult = newResultData.map(originalData => {
+            const sortDataIndex = sortResultData.findIndex((sortdata) => originalData.userId === sortdata.userId)
+            let ddd = {}
+            if (mainExams) {
+              const percentage = percentageMarks(originalData.total, fullMarks)
+              const grade = getGrade(percentage)
+              const performance = getPerformance(grade)
+              ddd = {
+                ...originalData,
+                rank: sortDataIndex + 1,
+                percentage: percentage,
+                grade: grade,
+                performance: performance,
+                fullMarks: fullMarks,
+                fullAttendance: fullAttendance
+              }
+            } else {
+              ddd = {
+                ...originalData,
+                rank: sortDataIndex + 1
+              }
+            }
+            return ddd
+          }
+          )
+          return res.status(200).json({
+            success: true,
+            message: "Result get successfully.",
+            result: actualResult
+          });
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: "Result not found.",
+          });
+        }
+      }
+
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -1771,34 +1782,34 @@ module.exports = {
 
   getDeletedUser: async (req, res) => {
     try {
-      const searchStr= req.body.searchStr
-      let searchParam={}
-       if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
-         searchParam={
-          $or:[
-            {'userInfo.roleName': new RegExp(searchStr, 'i')},
-            {'userInfo.fullName': new RegExp(searchStr, 'i')},
-            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
-            {'userInfo.motherName': new RegExp(searchStr, 'i')},
-            {'userInfo.email': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
-            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
-            {'userInfo.userId':new RegExp(searchStr, 'i')}
+      const searchStr = req.body.searchStr
+      let searchParam = {}
+      if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null) {
+        searchParam = {
+          $or: [
+            { 'userInfo.roleName': new RegExp(searchStr, 'i') },
+            { 'userInfo.fullName': new RegExp(searchStr, 'i') },
+            { 'userInfo.fatherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.motherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.email': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber1': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber2': new RegExp(searchStr, 'i') },
+            { 'userInfo.aadharNumber': new RegExp(searchStr, 'i') },
+            { 'userInfo.userId': new RegExp(searchStr, 'i') }
           ]
         }
       }
 
       const users = await userModel.find({
-        $and: [ { deleted: true },searchParam]
+        $and: [{ deleted: true }, searchParam]
       });
-      if(users && users.length){
+      if (users && users.length) {
         return res.status(200).json({
           success: true,
           message: 'Deleted user get successfully',
           users,
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: true,
           message: 'Deleted user not found',
@@ -1816,7 +1827,7 @@ module.exports = {
 
   permanentDeleteUser: async (req, res) => {
     try {
-     await userModel.deleteOne({_id:req.params.id});
+      await userModel.deleteOne({ _id: req.params.id });
       return res.status(200).json({
         success: true,
         message: "Deleted successfully."
@@ -1832,69 +1843,69 @@ module.exports = {
 
   reportData: async (req, res) => {
     try {
-      let repodata={}
-    let queryParam={}
-    if(req.body.deleteOption){
-      queryParam={
-        ...queryParam,
-        deleted:req.body.deleteOption==='true'?true:false,
-      }
-    }
-    if(req.body.activeOption){
-      queryParam={
-        ...queryParam,
-        isActive:req.body.activeOption==='true'?true:false,
-      }
-    }
-    if(req.body.gender){
-      queryParam={
-        ...queryParam,
-        'userInfo.gender':req.body.gender,
-      }
-    }
-    if(req.body.selectedClass){
-      queryParam={
-        ...queryParam,
-        'userInfo.class':req.body.selectedClass,
-      }
-    }
-    if(req.body.selectedRole){
-      queryParam={
-        ...queryParam,
-        'userInfo.roleName':req.body.selectedRole,
-      }
-    }
-    if(req.body.selectedCategory){
-      queryParam={
-        ...queryParam,
-        'userInfo.category':req.body.selectedCategory,
-      }
-    }
-    if(req.body.isBelowPoverty){
-      if (req.body.isBelowPoverty === 'true') {
+      let repodata = {}
+      let queryParam = {}
+      if (req.body.deleteOption) {
         queryParam = {
           ...queryParam,
-          'userInfo.isBelowPoverty': true,
-        };
-      } else {
+          deleted: req.body.deleteOption === 'true' ? true : false,
+        }
+      }
+      if (req.body.activeOption) {
         queryParam = {
           ...queryParam,
-          $or: [
-            { 'userInfo.isBelowPoverty': false },
-            { 'userInfo.isBelowPoverty': { $exists: false } }
-          ]
-        };
+          isActive: req.body.activeOption === 'true' ? true : false,
+        }
       }
-    }
+      if (req.body.gender) {
+        queryParam = {
+          ...queryParam,
+          'userInfo.gender': req.body.gender,
+        }
+      }
+      if (req.body.selectedClass) {
+        queryParam = {
+          ...queryParam,
+          'userInfo.class': req.body.selectedClass,
+        }
+      }
+      if (req.body.selectedRole) {
+        queryParam = {
+          ...queryParam,
+          'userInfo.roleName': req.body.selectedRole,
+        }
+      }
+      if (req.body.selectedCategory) {
+        queryParam = {
+          ...queryParam,
+          'userInfo.category': req.body.selectedCategory,
+        }
+      }
+      if (req.body.isBelowPoverty) {
+        if (req.body.isBelowPoverty === 'true') {
+          queryParam = {
+            ...queryParam,
+            'userInfo.isBelowPoverty': true,
+          };
+        } else {
+          queryParam = {
+            ...queryParam,
+            $or: [
+              { 'userInfo.isBelowPoverty': false },
+              { 'userInfo.isBelowPoverty': { $exists: false } }
+            ]
+          };
+        }
+      }
 
-   const reportCount= await userModel.find({$and:[activeParam,queryParam]}).countDocuments();
+      const reportCount = await userModel.find({ $and: [activeParam, queryParam] }).countDocuments();
 
-    return res.status(200).json({
-      success: true,
-      message: "Report Data get successfully.",
-      reportData:repodata,
-      reportCount:reportCount?reportCount:0,
-    });
+      return res.status(200).json({
+        success: true,
+        message: "Report Data get successfully.",
+        reportData: repodata,
+        reportCount: reportCount ? reportCount : 0,
+      });
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -1906,33 +1917,33 @@ module.exports = {
 
   createExam: async (req, res) => {
     try {
-     const oldExam = await examModel.findOne({$and:[{examType:req.body.examType},{examYear:req.body.examYear}]});
-     if(!oldExam){
-      const examData=new examModel({
-        examType: req.body.examType,
-        examYear: req.body.examYear,
-        fullAttendance: req.body.fullAttendance,
-        created: new Date(),
-        modified: new Date()
-      })
-      let newExamData = await examData.save();
-      if(newExamData){
-        return res.status(200).json({
-          success: true,
-          message: "exam created successfully."
-        });
-      }else{
+      const oldExam = await examModel.findOne({ $and: [{ examType: req.body.examType }, { examYear: req.body.examYear }] });
+      if (!oldExam) {
+        const examData = new examModel({
+          examType: req.body.examType,
+          examYear: req.body.examYear,
+          fullAttendance: req.body.fullAttendance,
+          created: new Date(),
+          modified: new Date()
+        })
+        let newExamData = await examData.save();
+        if (newExamData) {
+          return res.status(200).json({
+            success: true,
+            message: "exam created successfully."
+          });
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: "exam not created."
+          });
+        }
+      } else {
         return res.status(200).json({
           success: false,
-          message: "exam not created."
+          message: "exam already created."
         });
       }
-    }else{
-      return res.status(200).json({
-        success: false,
-        message: "exam already created."
-      });
-    }
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -1944,28 +1955,28 @@ module.exports = {
 
   updateExam: async (req, res) => {
     try {
-      let newUpdate=null
-      if(req.body.key==='primary'){
-        newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{primary:req.body.value, modified: new Date()});
+      let newUpdate = null
+      if (req.body.key === 'primary') {
+        newUpdate = await examModel.findOneAndUpdate({ _id: req.body.examId }, { primary: req.body.value, modified: new Date() });
       }
-      if(req.body.key==='attendence'){
-        newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{fullAttendance:req.body.fullAttendance, modified: new Date()});
+      if (req.body.key === 'attendence') {
+        newUpdate = await examModel.findOneAndUpdate({ _id: req.body.examId }, { fullAttendance: req.body.fullAttendance, modified: new Date() });
       }
-      if(req.body.key==='adminEntryAllow'){
-        newUpdate= await examModel.findOneAndUpdate({_id:req.body.examId},{adminAllowed:req.body.value, modified: new Date()});
+      if (req.body.key === 'adminEntryAllow') {
+        newUpdate = await examModel.findOneAndUpdate({ _id: req.body.examId }, { adminAllowed: req.body.value, modified: new Date() });
       }
-      if(newUpdate){
+      if (newUpdate) {
         return res.status(200).json({
           success: true,
           message: "exam updated successfully."
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "exam not updated try again."
         });
       }
-     
+
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -1977,13 +1988,13 @@ module.exports = {
 
   deleteExam: async (req, res) => {
     try {
-    const updatedExam=  await examModel.findOneAndUpdate({_id:req.params.id},{deleted:true});
-      if(updatedExam){
+      const updatedExam = await examModel.findOneAndUpdate({ _id: req.params.id }, { deleted: true });
+      if (updatedExam) {
         return res.status(200).json({
           success: true,
           message: "Deleted exam successfully."
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: true,
           message: "Exam not deleted."
@@ -1998,11 +2009,11 @@ module.exports = {
       });
     }
   },
-  getExam:async(req, res)=>{
-    try{
-      const getExamsData= await examModel.find({})
+  getExam: async (req, res) => {
+    try {
+      const getExamsData = await examModel.find({})
       const getResultEntryPerData = await resultEntryPerModel.find({});
-      const getTeacherData= await userModel.find({$and:[activeParam, {'userInfo.roleName':'TEACHER'}]})
+      const getTeacherData = await userModel.find({ $and: [activeParam, { 'userInfo.roleName': 'TEACHER' }] })
       // let filterGetResultEntryPerData=[]
       // for (const data of getResultEntryPerData) {
       //   const userFound= getTeacherData.find(it=> it.userInfo.userId===data.userId)
@@ -2015,18 +2026,18 @@ module.exports = {
       //       filterGetResultEntryPerData.push(newData)
       //   }
       // }
-      const sendData={
-        examsData:getExamsData? getExamsData:[],
-        teacherData:getTeacherData? getTeacherData:[],
-        resultEntryPerData:getResultEntryPerData? getResultEntryPerData:[]
+      const sendData = {
+        examsData: getExamsData ? getExamsData : [],
+        teacherData: getTeacherData ? getTeacherData : [],
+        resultEntryPerData: getResultEntryPerData ? getResultEntryPerData : []
       }
 
-        return res.status(200).json({
-          success: true,
-          message: "Exam data get successfully.",
-          data: sendData
-        })
-    }catch(err){
+      return res.status(200).json({
+        success: true,
+        message: "Exam data get successfully.",
+        data: sendData
+      })
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -2034,23 +2045,23 @@ module.exports = {
       })
     }
   },
-  getExamDateAndSub:async(req, res)=>{
-    try{
-      const getExamsData= await examDateAndSubModel.find({})
-      if(getExamsData){
+  getExamDateAndSub: async (req, res) => {
+    try {
+      const getExamsData = await examDateAndSubModel.find({})
+      if (getExamsData) {
         return res.status(200).json({
           success: true,
           message: "Exam data get successfully.",
           data: getExamsData
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Exam data not found.",
         })
       }
 
-    }catch(err){
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -2058,25 +2069,25 @@ module.exports = {
       })
     }
   },
-  updateExamDateAndSub:async(req, res)=>{
-    try{
-     //const examDateDetail=  await examDateAndSubModel.findOne({$and:[{ examYear : req.body.selectedSession},{examType: req.body.selectedExamType}]})
-     const examDateDetail=  await examDateAndSubModel.find({})
-      if(examDateDetail, examDateDetail.length>0){
-       await examDateAndSubModel.findOneAndUpdate(
-        {'_id':examDateDetail[0]._id},
-        // {$and:[
-        //   { examYear : req.body.selectedSession},
-        //   {examType: req.body.selectedExamType}
-        // ]},
-        {examDateAndSub:req.body.examDateAndSub, modified: new Date()});
-      }else{
-        const examData=new examDateAndSubModel({
-          examYear:req.body.selectedSession,
-          examType:req.body.selectedExamType,
+  updateExamDateAndSub: async (req, res) => {
+    try {
+      //const examDateDetail=  await examDateAndSubModel.findOne({$and:[{ examYear : req.body.selectedSession},{examType: req.body.selectedExamType}]})
+      const examDateDetail = await examDateAndSubModel.find({})
+      if (examDateDetail, examDateDetail.length > 0) {
+        await examDateAndSubModel.findOneAndUpdate(
+          { '_id': examDateDetail[0]._id },
+          // {$and:[
+          //   { examYear : req.body.selectedSession},
+          //   {examType: req.body.selectedExamType}
+          // ]},
+          { examDateAndSub: req.body.examDateAndSub, modified: new Date() });
+      } else {
+        const examData = new examDateAndSubModel({
+          examYear: req.body.selectedSession,
+          examType: req.body.selectedExamType,
           examDateAndSub: req.body.examDateAndSub,
           created: new Date(),
-          modified:new Date()
+          modified: new Date()
         })
         await examData.save();
       }
@@ -2084,7 +2095,7 @@ module.exports = {
         success: true,
         message: "Exam data created successfully.",
       })
-    }catch(err){
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -2093,61 +2104,61 @@ module.exports = {
     }
   },
 
-  getExamPermission :async(req, res)=>{
-    try{
-          const adminUser = await userModel.findOne({$and:[{'userInfo.userId':req.query.userId},{deleted:false},{'userInfo.roleName':{$in:['ADMIN','TOPADMIN']}}]})
-          const getExamsData= await examModel.findOne({$and:[{deleted:false, primary:true}]})
-            const resultEntryPermission= await resultEntryPerModel.findOne({$and:[{deleted:false, userId:req.query.userId}]}) 
-          if(adminUser && getExamsData){
-            const permission={
-              classAllowed :classList,
-              subjectsAllowed : subjectList,
-              entry:true
-            }
-            let sendExamsData={
-              permission:permission,
-              examsData:getExamsData
-            }
-            if(adminUser.userInfo.roleName==='TOPADMIN'){
-              return res.status(200).json({
-                success: true,
-                message: "Result entry permission data get successfully.",
-                data: sendExamsData 
-              })
-            }
-            if(adminUser.userInfo.roleName==='ADMIN' &&  getExamsData.adminAllowed){
-              return res.status(200).json({
-                success: true,
-                message: "Result entry permission data get successfully.",
-                data: sendExamsData 
-              })
-            }else{
-              return res.status(200).json({
-                success: false,
-                message: "Result entry permission not allowed. Please contact to admin.", 
-              })
-            }
-          }else{
-            if(resultEntryPermission && getExamsData){
-              const sendExamsData={
-                permission:resultEntryPermission,
-                examsData:getExamsData
-              }
-              return res.status(200).json({
-                success: true,
-                message: "Result entry permission data get successfully.",
-                data: sendExamsData 
-              })
-      
-            }else{
-              return res.status(200).json({
-                success: false,
-                message: "Result entry permission not allowed. Please contact to admin.", 
-              })
-            }
+  getExamPermission: async (req, res) => {
+    try {
+      const adminUser = await userModel.findOne({ $and: [{ 'userInfo.userId': req.query.userId }, { deleted: false }, { 'userInfo.roleName': { $in: ['ADMIN', 'TOPADMIN'] } }] })
+      const getExamsData = await examModel.findOne({ $and: [{ deleted: false, primary: true }] })
+      const resultEntryPermission = await resultEntryPerModel.findOne({ $and: [{ deleted: false, userId: req.query.userId }] })
+      if (adminUser && getExamsData) {
+        const permission = {
+          classAllowed: classList,
+          subjectsAllowed: subjectList,
+          entry: true
+        }
+        let sendExamsData = {
+          permission: permission,
+          examsData: getExamsData
+        }
+        if (adminUser.userInfo.roleName === 'TOPADMIN') {
+          return res.status(200).json({
+            success: true,
+            message: "Result entry permission data get successfully.",
+            data: sendExamsData
+          })
+        }
+        if (adminUser.userInfo.roleName === 'ADMIN' && getExamsData.adminAllowed) {
+          return res.status(200).json({
+            success: true,
+            message: "Result entry permission data get successfully.",
+            data: sendExamsData
+          })
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: "Result entry permission not allowed. Please contact to admin.",
+          })
+        }
+      } else {
+        if (resultEntryPermission && getExamsData) {
+          const sendExamsData = {
+            permission: resultEntryPermission,
+            examsData: getExamsData
           }
-     
-    }catch(err){
+          return res.status(200).json({
+            success: true,
+            message: "Result entry permission data get successfully.",
+            data: sendExamsData
+          })
+
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: "Result entry permission not allowed. Please contact to admin.",
+          })
+        }
+      }
+
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -2155,37 +2166,37 @@ module.exports = {
       })
     }
   },
-  createResultEntryPermission: async(req, res)=>{
-    try{
-      const checkAlreadyExist = await resultEntryPerModel.findOne({userId:req.body.teacherId});
-      if(!checkAlreadyExist){
-        const resultEntryPerData= new resultEntryPerModel({
-          userId:req.body.teacherId,
+  createResultEntryPermission: async (req, res) => {
+    try {
+      const checkAlreadyExist = await resultEntryPerModel.findOne({ userId: req.body.teacherId });
+      if (!checkAlreadyExist) {
+        const resultEntryPerData = new resultEntryPerModel({
+          userId: req.body.teacherId,
           // subjectsAllowed:req.body.subjectsAllowed,
           // classAllowed:req.body.classAllowed,
-          allowedList:req.body.allowedList
+          allowedList: req.body.allowedList
         })
         const newResultEntryPer = await resultEntryPerData.save();
-        if(newResultEntryPer){
+        if (newResultEntryPer) {
           return res.status(200).json({
             success: true,
             message: "Result entry permisssion created successfully.",
           })
-        }else{
+        } else {
           return res.status(200).json({
             success: false,
             message: "Result entry permisssion not created.",
           })
         }
-     
-      }else{
+
+      } else {
         return res.status(200).json({
           success: false,
           message: "Already Result Entry Permission created.",
         })
       }
-   
-    }catch(err){
+
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -2193,22 +2204,22 @@ module.exports = {
       })
     }
   },
-  getResultEntryPermission: async(req, res)=>{
-    try{
+  getResultEntryPermission: async (req, res) => {
+    try {
       const getResultEntryPerData = await resultEntryPerModel.find({});
-      if(getResultEntryPerData && getResultEntryPerData){
+      if (getResultEntryPerData && getResultEntryPerData) {
         return res.status(200).json({
           success: true,
           message: "Result entry permisssion get successfully.",
-          data:getResultEntryPerData
+          data: getResultEntryPerData
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Result entry permisssion not found.",
         })
       }
-    }catch(err){
+    } catch (err) {
       return res.status(400).json({
         success: false,
         message: err.message,
@@ -2217,32 +2228,32 @@ module.exports = {
   },
   updateResultEntryPermission: async (req, res) => {
     try {
-      let newUpdate=null
-      if(req.body.key==='entry'){
-        newUpdate= await resultEntryPerModel.findOneAndUpdate({_id:req.body.resultEntryPerId},{entry:req.body.value, modified: new Date()});
+      let newUpdate = null
+      if (req.body.key === 'entry') {
+        newUpdate = await resultEntryPerModel.findOneAndUpdate({ _id: req.body.resultEntryPerId }, { entry: req.body.value, modified: new Date() });
       }
-      if(req.body.key==='update'){
-       let resultEntryPerData= await resultEntryPerModel.findOne({$and:[{_id:req.body.resultEntryPerId}]})
-      //  console.log("resultEntryPerData", resultEntryPerData,)
-      //  console.log("req.body.allowedList", req.body.allowedList,)
+      if (req.body.key === 'update') {
+        let resultEntryPerData = await resultEntryPerModel.findOne({ $and: [{ _id: req.body.resultEntryPerId }] })
+        //  console.log("resultEntryPerData", resultEntryPerData,)
+        //  console.log("req.body.allowedList", req.body.allowedList,)
         resultEntryPerData.allowedList = req.body.allowedList,
-        resultEntryPerData.modified = new Date
+          resultEntryPerData.modified = new Date
 
-       newUpdate= await resultEntryPerModel.findOneAndUpdate({$and:[{_id:req.body.resultEntryPerId}]},resultEntryPerData);
+        newUpdate = await resultEntryPerModel.findOneAndUpdate({ $and: [{ _id: req.body.resultEntryPerId }] }, resultEntryPerData);
       }
-      if(newUpdate){
+      if (newUpdate) {
         return res.status(200).json({
           success: true,
           message: "Updated successfully."
         });
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: 'Not updated, try agian',
         });
       }
 
-     
+
     } catch (err) {
       console.log(err);
       return res.status(400).json({
@@ -2251,51 +2262,51 @@ module.exports = {
       });
     }
   },
-  deleteResultEntryPermission: async(req, res)=>{
-    try{
-      const deleted = await resultEntryPerModel.deleteOne({_id:req.params.id});
-      if(deleted){
+  deleteResultEntryPermission: async (req, res) => {
+    try {
+      const deleted = await resultEntryPerModel.deleteOne({ _id: req.params.id });
+      if (deleted) {
         return res.status(200).json({
           success: true,
           message: "Delated successfully.",
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Not Delated",
         })
       }
-  
-    }catch(err){
+
+    } catch (err) {
       return res.status(400).json({
         success: false,
         message: err.message,
       })
     }
   },
-  getAdminDashboardData:async(req, res)=>{
-    try{
-      let dashBoardData={}
-      let todayTransaction={
+  getAdminDashboardData: async (req, res) => {
+    try {
+      let dashBoardData = {}
+      let todayTransaction = {
         totalCredit: 0,
-        toatlDebit:0,
-        onlineCredit:0,
-        cashCredit:0,
+        toatlDebit: 0,
+        onlineCredit: 0,
+        cashCredit: 0,
         cashDebit: 0
       }
-      const totalStudent= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'}]}).countDocuments()
-      const totalTeacher= await userModel.find({$and:[activeParam, {'userInfo.roleName': 'TEACHER'}]}).countDocuments()
+      const totalStudent = await userModel.find({ $and: [activeParam, { 'userInfo.roleName': 'STUDENT' }] }).countDocuments()
+      const totalTeacher = await userModel.find({ $and: [activeParam, { 'userInfo.roleName': 'TEACHER' }] }).countDocuments()
       const indiaTimezone = 'Asia/Kolkata';
       const startOfTomorrow = moment.tz(indiaTimezone).add(1, 'day').startOf('day').toDate().toISOString();
       const startOfYesterday = moment.tz(indiaTimezone).startOf('day').toDate().toISOString();
       const TodayDate = moment.tz(new Date(), 'DD/MM/YYYY', 'Asia/Kolkata').format('DD/MM/YYYY');;
       const invoiceTodayParams = {
-              'invoiceInfo.submittedDate':{
-                '$gte':startOfYesterday,
-                '$lte':startOfTomorrow 
-              }
+        'invoiceInfo.submittedDate': {
+          '$gte': startOfYesterday,
+          '$lte': startOfTomorrow
         }
-        console.log("invoiceTodayParams", invoiceTodayParams)
+      }
+      console.log("invoiceTodayParams", invoiceTodayParams)
       const birthDayUser = await userModel.aggregate([
         {
           $addFields: {
@@ -2314,15 +2325,16 @@ module.exports = {
         },
         {
           $match: {
-            $and:[
-              {istDate: {
-                $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
+            $and: [
+              {
+                istDate: {
+                  $eq: new Date(new Date().getTime() + 19800000).toISOString().substr(5, 5)
                 }
               },
-              {deleted: false},
-              {isApproved: true},
-              {isActive: true}
-              ]
+              { deleted: false },
+              { isApproved: true },
+              { isActive: true }
+            ]
           }
         },
         // {
@@ -2352,56 +2364,56 @@ module.exports = {
       //     }
       //   }
 
-        const todayTransaction2 = await invoiceModel.aggregate([
-          {
-              $match: {
-                  $and: [
-                      { deleted: false },
-                      invoiceTodayParams // Filter for today's invoices
-                  ]
-              }
-          },
-          {
-              $match: { transactionType: 'credit' } // Only credit transactions
-          },
-          {
-              $unwind: { path: "$invoiceInfo.payment", preserveNullAndEmptyArrays: true } // Unwind payment array
-          },
-          {
-              $group: {
-                  _id: null,
-                  totalCredit: { $sum: { $toDouble: "$amount" } }, // Sum of all credit amounts
-                  cashCredit: {
-                      $sum: {
-                          $cond: [
-                              { $eq: [{ $toString: "$invoiceInfo.payment.payModeId" }, "Cash"] },
-                              { $toDouble: "$invoiceInfo.payment.amount" },
-                              0
-                          ]
-                      }
-                  },
-                  onlineCredit: {
-                      $sum: {
-                          $cond: [
-                              { $ne: [{ $toString: "$invoiceInfo.payment.payModeId" }, "Cash"] },
-                              { $toDouble: "$invoiceInfo.payment.amount" },
-                              0
-                          ]
-                      }
-                  }
-              }
-          },
-          {
-              $project: {
-                  _id: 0,
-                  totalCredit: 1,
-                  cashCredit: 1,
-                  onlineCredit: 1
-              }
+      const todayTransaction2 = await invoiceModel.aggregate([
+        {
+          $match: {
+            $and: [
+              { deleted: false },
+              invoiceTodayParams // Filter for today's invoices
+            ]
           }
+        },
+        {
+          $match: { transactionType: 'credit' } // Only credit transactions
+        },
+        {
+          $unwind: { path: "$invoiceInfo.payment", preserveNullAndEmptyArrays: true } // Unwind payment array
+        },
+        {
+          $group: {
+            _id: null,
+            totalCredit: { $sum: { $toDouble: "$amount" } }, // Sum of all credit amounts
+            cashCredit: {
+              $sum: {
+                $cond: [
+                  { $eq: [{ $toString: "$invoiceInfo.payment.payModeId" }, "Cash"] },
+                  { $toDouble: "$invoiceInfo.payment.amount" },
+                  0
+                ]
+              }
+            },
+            onlineCredit: {
+              $sum: {
+                $cond: [
+                  { $ne: [{ $toString: "$invoiceInfo.payment.payModeId" }, "Cash"] },
+                  { $toDouble: "$invoiceInfo.payment.amount" },
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            totalCredit: 1,
+            cashCredit: 1,
+            onlineCredit: 1
+          }
+        }
       ]);
-      
-      const todayTransactionResult = todayTransaction2[0] || { totalCredit: 0, cashCredit: 0, onlineCredit: 0,  toatlDebit:0, };
+
+      const todayTransactionResult = todayTransaction2[0] || { totalCredit: 0, cashCredit: 0, onlineCredit: 0, toatlDebit: 0, };
       console.log("result", todayTransactionResult)
 
       // const  filterParamsTxLedger = [
@@ -2425,24 +2437,24 @@ module.exports = {
       //     },
       //     //{$sort:{'_id':-1}}
       // ]
-       
-      
 
-      dashBoardData={
-        totalStudent:totalStudent,
-        totalTeacher:totalTeacher,
-        todayBirthday:birthDayUser,
-        todayTransaction:todayTransactionResult
+
+
+      dashBoardData = {
+        totalStudent: totalStudent,
+        totalTeacher: totalTeacher,
+        todayBirthday: birthDayUser,
+        todayTransaction: todayTransactionResult
       }
 
-      if(dashBoardData){
-        return res.status(200).json({ 
+      if (dashBoardData) {
+        return res.status(200).json({
           success: true,
           message: "Get dashboard data successfully.",
-          dashboardData:dashBoardData
+          dashboardData: dashBoardData
         });
       }
-    }catch(err){
+    } catch (err) {
       console.log(err);
       return res.status(400).json({
         success: false,
@@ -2451,110 +2463,111 @@ module.exports = {
     }
 
   },
-  studentDashboardData:async (req, res)=>{
-    try{
+  studentDashboardData: async (req, res) => {
+    try {
       const CURRENTSESSION = getCurrentSession()
-      let mainUser = await userModel.findOne({$and:[activeParam,{'userInfo.roleName': 'STUDENT'},{'userInfo.userId': req.query.mainUserId}]});
-      if(!mainUser){
+      let mainUser = await userModel.findOne({ $and: [activeParam, { 'userInfo.roleName': 'STUDENT' }, { 'userInfo.userId': req.query.mainUserId }] });
+      if (!mainUser) {
         return res.status(401).json({
           success: false,
           message: 'Token expired',
         });
       }
-      let otherUser=[]
-      if(mainUser){
-        otherUser = await userModel.find({$and:[activeParam, {'userInfo.roleName': 'STUDENT'},{ 'userInfo.userId': { $ne: mainUser.userInfo.userId }},{$or:[{ "userInfo.phoneNumber1": mainUser.userInfo.phoneNumber1},{ "userInfo.phoneNumber2": mainUser.userInfo.phoneNumber2}]}]});
+      let otherUser = []
+      if (mainUser) {
+        otherUser = await userModel.find({ $and: [activeParam, { 'userInfo.roleName': 'STUDENT' }, { 'userInfo.userId': { $ne: mainUser.userInfo.userId } }, { $or: [{ "userInfo.phoneNumber1": mainUser.userInfo.phoneNumber1 }, { "userInfo.phoneNumber2": mainUser.userInfo.phoneNumber2 }] }] });
       }
-    const allUserIds= [mainUser.userInfo.userId, ...otherUser.map(data=> data.userInfo.userId)]
-     const paymentPrevYear = await paymentModel.find({$and:[{session:previousSession()},{delected: false}, {userId:{$in:[...allUserIds]}}]})
-     const paymentCurrYear = await paymentModel.find({$and:[{session:CURRENTSESSION},{delected: false}, {userId:{$in:[...allUserIds]}}]})
-    
-     const allTransaction = await  invoiceModel.find({$and:[{delected:false},{userId:{$in:[...allUserIds]}}]})
- 
-      const userData= encryptObj(mainUser)
-      
+      const allUserIds = [mainUser.userInfo.userId, ...otherUser.map(data => data.userInfo.userId)]
+      const paymentPrevYear = await paymentModel.find({ $and: [{ session: previousSession() }, { delected: false }, { userId: { $in: [...allUserIds] } }] })
+      const paymentCurrYear = await paymentModel.find({ $and: [{ session: CURRENTSESSION }, { delected: false }, { userId: { $in: [...allUserIds] } }] })
+
+      const allTransaction = await invoiceModel.find({ $and: [{ delected: false }, { userId: { $in: [...allUserIds] } }] })
+
+      const userData = encryptObj(mainUser)
+
       const newOtherUser = otherUser.map(item => encryptObj(item));
 
-    dashBoardData={
-      user: userData, 
-      //token: tokenGen, 
-      otherUser: newOtherUser,
-      paymentPrevYear:paymentPrevYear,
-      paymentCurrYear:paymentCurrYear,
-      allTransaction:allTransaction
-    }
+      dashBoardData = {
+        user: userData,
+        //token: tokenGen, 
+        otherUser: newOtherUser,
+        paymentPrevYear: paymentPrevYear,
+        paymentCurrYear: paymentCurrYear,
+        allTransaction: allTransaction
+      }
 
-    if(dashBoardData){
-      return res.status(200).json({ 
-        success: true,
-        message: "get dashboard data successfully.",
-        dashboardData:dashBoardData
+      if (dashBoardData) {
+        return res.status(200).json({
+          success: true,
+          message: "get dashboard data successfully.",
+          dashboardData: dashBoardData
+        });
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(400).json({
+        success: false,
+        message: err.message,
       });
     }
-  }catch(err){
-    console.log(err);
-    return res.status(400).json({
-      success: false,
-      message: err.message,
-    });
-  }
   },
   upgradeClass: async (req, res) => {
     try {
       const CURRENTSESSION = getCurrentSession()
       console.log("CURRENTSESSION", CURRENTSESSION);
-      const totalStudent = await userModel.find({$and: 
-        [ 
-          activeParam,
-          {'userInfo.roleName':'STUDENT'},
-          {'userInfo.class':req.body.selectedClass},
-        ]
+      const totalStudent = await userModel.find({
+        $and:
+          [
+            activeParam,
+            { 'userInfo.roleName': 'STUDENT' },
+            { 'userInfo.class': req.body.selectedClass },
+          ]
       })
       console.log("totalStudent", totalStudent.length)
       if (totalStudent && totalStudent.length > 0) {
         for (const student of totalStudent) {
-            // Update user information
-            const updatedStudent = await userModel.findOneAndUpdate(
-                { _id: student._id },
-                { 
-                    $set: { 
-                        'userInfo.class': req.body.upgradeClass, 
-                        'userInfo.session': CURRENTSESSION,
-                        'userInfo.paymentLedgerPage': '' 
-                    } 
-                },
-                { new: true } // Returns the updated document
-            );
-            //console.log("updatedStudent", updatedStudent)
-            if (updatedStudent) { // Only proceed if user update is successful
-                // Check if a payment record exists
-                const payFound = await paymentModel.findOne({
-                    userId: student.userInfo.userId,
-                    session: CURRENTSESSION
-                });
-    
-                // If payment record does not exist, create a new one
-                if (!payFound) {
-                    const newPaymentData = new paymentModel({
-                        userId: student.userInfo.userId,
-                        session: CURRENTSESSION,
-                        class: req.body.upgradeClass,
-                        dueAmount: 0,
-                        excessAmount: 0,
-                        totalFineAmount: 0,
-                        feeFree: student.userInfo.feeFree,
-                        busService: student.userInfo.busService,
-                        busRouteId: student.userInfo.busService ? student.userInfo.busRouteId : undefined,
-                        paymentLedgerPage: student.userInfo.paymentLedgerPage 
-                    });
-    
-                    await newPaymentData.save();
-                }
+          // Update user information
+          const updatedStudent = await userModel.findOneAndUpdate(
+            { _id: student._id },
+            {
+              $set: {
+                'userInfo.class': req.body.upgradeClass,
+                'userInfo.session': CURRENTSESSION,
+                'userInfo.paymentLedgerPage': ''
+              }
+            },
+            { new: true } // Returns the updated document
+          );
+          //console.log("updatedStudent", updatedStudent)
+          if (updatedStudent) { // Only proceed if user update is successful
+            // Check if a payment record exists
+            const payFound = await paymentModel.findOne({
+              userId: student.userInfo.userId,
+              session: CURRENTSESSION
+            });
+
+            // If payment record does not exist, create a new one
+            if (!payFound) {
+              const newPaymentData = new paymentModel({
+                userId: student.userInfo.userId,
+                session: CURRENTSESSION,
+                class: req.body.upgradeClass,
+                dueAmount: 0,
+                excessAmount: 0,
+                totalFineAmount: 0,
+                feeFree: student.userInfo.feeFree,
+                busService: student.userInfo.busService,
+                busRouteId: student.userInfo.busService ? student.userInfo.busRouteId : undefined,
+                paymentLedgerPage: student.userInfo.paymentLedgerPage
+              });
+
+              await newPaymentData.save();
             }
+          }
         }
-    }
-    
-        
+      }
+
+
       return res.status(200).json({
         success: true,
         message: "class upgraded successfully",
@@ -2568,35 +2581,35 @@ module.exports = {
   },
 
   createList: async (req, res) => {
-    try{
-      let newListCreated=''
-      if(req.params.name==='vehicleList'){
-        const newInfo= new vehicleModel({
+    try {
+      let newListCreated = ''
+      if (req.params.name === 'vehicleList') {
+        const newInfo = new vehicleModel({
           ...req.body
         })
         newListCreated = await newInfo.save();
       }
-      if(req.params.name==='busRouteFareList'){
+      if (req.params.name === 'busRouteFareList') {
         const busRouteId = generateUniqueIdWithTime()
-        const newInfo= new vehicleRouteFareModel({
+        const newInfo = new vehicleRouteFareModel({
           ...req.body,
           busRouteId
         })
         newListCreated = await newInfo.save();
       }
-      if(req.params.name==='monthlyFeeList'){
-        const newInfo= new monthlyFeeListModel({
+      if (req.params.name === 'monthlyFeeList') {
+        const newInfo = new monthlyFeeListModel({
           ...req.body
         })
         newListCreated = await newInfo.save();
       }
-      if(req.params.name==='createPayOption'){
-        const newInfo= new payOptionModel({
+      if (req.params.name === 'createPayOption') {
+        const newInfo = new payOptionModel({
           ...req.body
         })
         newListCreated = await newInfo.save();
       }
-      if(newListCreated){
+      if (newListCreated) {
         const CURRENTSESSION = getCurrentSession()
         const reqSession = req.body.session || CURRENTSESSION
         const RedisListKey = `AllList_${reqSession}`
@@ -2606,13 +2619,13 @@ module.exports = {
           success: true,
           message: "created successfully.",
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Not created list, Please try again!",
         })
       }
-    }catch(err){
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -2622,40 +2635,40 @@ module.exports = {
   },
 
   updateList: async (req, res) => {
-    try{
-      let updateList=''
-      if(req.params.name==='vehicleList'){
-        updateList = await  vehicleModel.findByIdAndUpdate({_id: req.params.id},req.body)
+    try {
+      let updateList = ''
+      if (req.params.name === 'vehicleList') {
+        updateList = await vehicleModel.findByIdAndUpdate({ _id: req.params.id }, req.body)
       }
 
-      if(req.params.name==='busRouteFareList'){
-        updateList = await  vehicleRouteFareModel.findByIdAndUpdate({_id: req.params.id},req.body)
+      if (req.params.name === 'busRouteFareList') {
+        updateList = await vehicleRouteFareModel.findByIdAndUpdate({ _id: req.params.id }, req.body)
       }
 
-      if(req.params.name==='monthlyFeeList'){
-        updateList = await  monthlyFeeListModel.findByIdAndUpdate({_id: req.params.id},req.body)
+      if (req.params.name === 'monthlyFeeList') {
+        updateList = await monthlyFeeListModel.findByIdAndUpdate({ _id: req.params.id }, req.body)
       }
 
-      if(req.params.name==='updatePayOption'){
-        updateList = await  payOptionModel.findByIdAndUpdate({_id: req.params.id},req.body)
+      if (req.params.name === 'updatePayOption') {
+        updateList = await payOptionModel.findByIdAndUpdate({ _id: req.params.id }, req.body)
       }
 
-      if(updateList){
+      if (updateList) {
         const CURRENTSESSION = getCurrentSession()
         const reqSession = req.body.session || CURRENTSESSION
         const RedisListKey = `AllList_${reqSession}`
-        redisDeleteCall({key:RedisListKey})
+        redisDeleteCall({ key: RedisListKey })
         return res.status(200).json({
           success: true,
           message: "Updated successfully.",
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Not updated list, Please try again!",
         })
       }
-    }catch(err){
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -2668,15 +2681,15 @@ module.exports = {
     //const busRouteFareList111= await vehicleRouteFareModel.find()
     //const ids=[]
     //for (const element of busRouteFareList111) {
-          // element.session = '2024-25'
-          // element['busRouteId'] = generateUniqueIdWithTime()
-          // await element.save();
-          //ids.push(element.busRouteId)
+    // element.session = '2024-25'
+    // element['busRouteId'] = generateUniqueIdWithTime()
+    // await element.save();
+    //ids.push(element.busRouteId)
     //}
 
     //console.log("ids0", ids)
 
-    
+
 
     // const busRouteFareList111= await vehicleRouteFareModel.find({session:'2024-25'})
     // for (const element of busRouteFareList111) {
@@ -2718,65 +2731,65 @@ module.exports = {
     const CURRENTSESSION = getCurrentSession()
     const reqSession = req.query.session || CURRENTSESSION
     const RedisListKey = `AllList_${reqSession}`
-    try{
+    try {
       const redisClient = getRedisClient();
       // if(myCache.has("AllList")){
-      if(redisClient && await redisClient.exists(RedisListKey)){
+      if (redisClient && await redisClient.exists(RedisListKey)) {
         listCacheValue = await redisClient.get(RedisListKey)
         listCacheValue = JSON.parse(listCacheValue)
         let vehicleList = listCacheValue.vehicleList
         let busRouteFareList = listCacheValue.busRouteFareList
         let monthlyFeeList = listCacheValue.monthlyFeeList
         let payOptionList = listCacheValue.payOptionList
-        let paymentRecieverUserList =listCacheValue.paymentRecieverUserList
+        let paymentRecieverUserList = listCacheValue.paymentRecieverUserList
         let allStudentUserIdList = listCacheValue.allStudentUserIdList
         return res.status(200).json({
           success: true,
           message: "Get list successfully from cache.",
-          data:{
+          data: {
             vehicleList,
             busRouteFareList,
             monthlyFeeList,
             payOptionList,
             paymentRecieverUserList,
-            allStudentPhoneList:[], //flatPhoneNum,
-            allStudentUserIdList : allStudentUserIdList
+            allStudentPhoneList: [], //flatPhoneNum,
+            allStudentUserIdList: allStudentUserIdList
           }
         })
-      }else{
-        let vehicleList= await vehicleModel.find()
-        let busRouteFareList= await vehicleRouteFareModel.find({session:reqSession})
-        let monthlyFeeList= await monthlyFeeListModel.find({session: reqSession})
-        let payOptionList= await payOptionModel.find()
-        let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['topadmin']}}]}) // 918732 Anshu kumar id
-        let allStudentUserId = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}, {'userInfo.session':CURRENTSESSION}]},{"userInfo.userId": 1})
+      } else {
+        let vehicleList = await vehicleModel.find()
+        let busRouteFareList = await vehicleRouteFareModel.find({ session: reqSession })
+        let monthlyFeeList = await monthlyFeeListModel.find({ session: reqSession })
+        let payOptionList = await payOptionModel.find()
+        let paymentRecieverUserList = await userModel.find({ $and: [activeParam, { 'userInfo.roleName': { $in: ['ADMIN', 'ACCOUNTANT'] } }, { 'userInfo.userId': { $nin: ['topadmin'] } }] }) // 918732 Anshu kumar id
+        let allStudentUserId = await userModel.find({ $and: [activeParam, { 'userInfo.roleName': 'STUDENT' }, { 'userInfo.session': CURRENTSESSION }] }, { "userInfo.userId": 1 })
         //let allStudentPhone1 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber1": 1})
         //let allStudentPhone2 = await userModel.find({$and:[activeParam,{'userInfo.roleName':'STUDENT'}]},{"userInfo.phoneNumber2": 1})
         //allStudentPhone1 = [...allStudentPhone1].map(data=> data.userInfo.phoneNumber1)
         //allStudentPhone2 = [...allStudentPhone2].map(data=> data.userInfo.phoneNumber2)
         //const flatPhoneNum= [...new Set([...allStudentPhone1, ...allStudentPhone1])].map(phone=> {return {label: phone, value: phone}})
         //console.log("allStudentPhone1", flatmap)
-        const returnData={
+        const returnData = {
           vehicleList,
           busRouteFareList,
           monthlyFeeList,
           payOptionList,
           paymentRecieverUserList,
-          allStudentPhoneList:[], //flatPhoneNum,
-          allStudentUserIdList : allStudentUserId && allStudentUserId .length>0 ?allStudentUserId.map(data=> {return {label: data.userInfo.userId,value: data.userInfo.userId}}):[]
+          allStudentPhoneList: [], //flatPhoneNum,
+          allStudentUserIdList: allStudentUserId && allStudentUserId.length > 0 ? allStudentUserId.map(data => { return { label: data.userInfo.userId, value: data.userInfo.userId } }) : []
         }
-        if(redisClient) {
-          redisSetKeyCall({key:RedisListKey, data:JSON.stringify(returnData)})
+        if (redisClient) {
+          redisSetKeyCall({ key: RedisListKey, data: JSON.stringify(returnData) })
         }
         return res.status(200).json({
           success: true,
           message: "Get list successfully.",
-          data:returnData
+          data: returnData
         })
       }
 
-  
-    }catch(err){
+
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -2785,7 +2798,7 @@ module.exports = {
     }
   },
 
-  getAllList2 : async (req, res) => {
+  getAllList2: async (req, res) => {
     try {
       // Concurrently fetch data using Promise.all
       const [
@@ -2811,20 +2824,20 @@ module.exports = {
           $and: [activeParam, { 'userInfo.roleName': 'STUDENT' }]
         }, { 'userInfo.userId': 1, 'userInfo.phoneNumber1': 1, 'userInfo.phoneNumber2': 1 })
       ]);
-  
+
       // Extract phone numbers and remove duplicates
       const flatPhoneNum = [
         ...new Set(
           allStudents.flatMap(student => [student.userInfo.phoneNumber1, student.userInfo.phoneNumber2])
         )
       ].filter(Boolean).map(phone => ({ label: phone, value: phone })); // Remove undefined/null and map
-  
+
       // Extract student user IDs
       const allStudentUserIdList = allStudents.map(student => ({
         label: student.userInfo.userId,
         value: student.userInfo.userId
       }));
-  
+
       return res.status(200).json({
         success: true,
         message: "Get list successfully.",
@@ -2846,23 +2859,23 @@ module.exports = {
       })
     }
   },
-  
+
 
   addPayment: async (req, res) => {
-    let newInvoiceCreatedId=''
-    try{
+    let newInvoiceCreatedId = ''
+    try {
       const CURRENTSESSION = getCurrentSession()
       const reqSession = req.body.session || CURRENTSESSION
       const newInvoiceIdGen = await newInvoiceIdGenrate()
-      const submitType= req.body.submitType
-      if(!submitType){
+      const submitType = req.body.submitType
+      if (!submitType) {
         return res.status(200).json({
           success: false,
           message: "Submit type not found, Please try again!",
         })
       }
-      const userData = await userModel.findOne({$and:[{'userInfo.userId':req.body.userId},{'userInfo.roleName':'STUDENT'}]})
-      if(!userData){
+      const userData = await userModel.findOne({ $and: [{ 'userInfo.userId': req.body.userId }, { 'userInfo.roleName': 'STUDENT' }] })
+      if (!userData) {
         return res.status(200).json({
           success: false,
           message: "User data not found, Contact to admin!",
@@ -2881,269 +2894,269 @@ module.exports = {
       // newInvoiceInfo['insertedId'] = req.body.insertedId
       // newInvoiceInfo['session']= reqSession
       // const newInvoiceCreate = await newInvoiceInfo.save();
-          
-      let newInvoiceCreate = await invoiceModel.create({ 
-          invoiceId: newInvoiceIdGen,
-          invoiceInfo: {...req.body},
-          invoiceType: submitType,
-          transactionType:'credit',
-          paidStatus: true,
-          userId: req.body.userId,
-          class: req.body.class,
-          amount: req.body.paidAmount,
-          insertedId: req.body.insertedId,
-          session: reqSession,
-        });
-      if(newInvoiceCreate){
+
+      let newInvoiceCreate = await invoiceModel.create({
+        invoiceId: newInvoiceIdGen,
+        invoiceInfo: { ...req.body },
+        invoiceType: submitType,
+        transactionType: 'credit',
+        paidStatus: true,
+        userId: req.body.userId,
+        class: req.body.class,
+        amount: req.body.paidAmount,
+        insertedId: req.body.insertedId,
+        session: reqSession,
+      });
+      if (newInvoiceCreate) {
         newInvoiceCreatedId = newInvoiceCreate._id
-        let paymentFound =  await paymentModel.findOne({$and:[{userId: req.body.userId},{session: reqSession}]})
-          if(paymentFound){
-              if(submitType==='MONTHLY'){
-                for(const data of req.body.feeList){
-                  if(paymentFound[data.month.toLowerCase()] && paymentFound[data.month.toLowerCase()].paidStatus===true){
-                      await invoiceModel.deleteOne({_id:newInvoiceCreatedId}) 
-                      return res.status(200).json({
-                        success: false,
-                        message: `Payment is already done of this "${data.month}" month.`,
-                      })
-                    }
-                    else{
-                      //console.log("hhhhhhhhhhh")
-                      paymentFound[data.month.toLowerCase()]={
-                        monthlyFee: data.monthlyFee,
-                        busFee:  data.busFee? data.busFee:0,
-                        busRouteId : data.busRouteId? data.busRouteId:0,
-                        paymentRecieverId: req.body.paymentRecieverId,
-                        paidStatus: true,
-                        submittedDate : req.body.submittedDate,
-                        invoiceId: newInvoiceCreate.invoiceId,
-                        receiptNumber: req.body.receiptNumber 
-                      }
-                    }
-                }
-                if(req.body.otherFeeList && req.body.otherFeeList.length>0){
-                  let othertPay=[]
-                  for(const data of req.body.otherFeeList){
-                    othertPay.push({
-                        name: data.name,
-                        amount: Number(data.amount),
-                        paymentRecieverId: req.body.paymentRecieverId,
-                        paidStatus: true,
-                        submittedDate : req.body.submittedDate,
-                        invoiceId: newInvoiceCreate.invoiceId,
-                        receiptNumber: req.body.receiptNumber 
-                      })
-                  }
-                  paymentFound.other=[...(paymentFound.other ?? []), ...othertPay]
-                }
-       
-                // remove + parseInt(req.body.overDueAmount || 0) in due amount 
-                paymentFound['dueAmount'] = parseInt(req.body.paidAmount) >= parseInt(req.body.totalAmount)? 0 : parseInt(req.body.dueAmount|| 0) 
-                paymentFound['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
-                paymentFound['totalConcession']  = parseInt(paymentFound.totalConcession)+ parseInt(req.body.concession ? req.body.concession:0)
-                paymentFound['totalFineAmount']  = parseInt(paymentFound.totalFineAmount)+ parseInt(req.body.fineAmount? req.body.fineAmount:0)
-                paymentFound['paymentLedgerPage'] = req.body.paymentLedgerPage? req.body.paymentLedgerPage: paymentFound['paymentLedgerPage']
-              }
-              if(submitType==='EXAM_FEE'){
-                if(paymentFound.other &&paymentFound.other.length>0 ){
-                  let othertPay=[]
-                  for(const data of req.body.otherFeeList){
-                    othertPay=[
-                      ...othertPay,
-                      {
-                        name: data.name,
-                        amount: Number(data.amount),
-                        paymentRecieverId: req.body.paymentRecieverId,
-                        paidStatus: true,
-                        submittedDate : req.body.submittedDate,
-                        invoiceId: newInvoiceCreate.invoiceId,
-                        receiptNumber: req.body.receiptNumber 
-                      }
-                    ]
-                  }
-                  paymentFound.other=[...paymentFound.other, ...othertPay]
-                  
-                }else{
-                  for(const data of req.body.otherFeeList){
-                    paymentFound.other=[{
-                      name: data.name,
-                      amount: Number(data.amount),
-                      paymentRecieverId: req.body.paymentRecieverId,
-                      paidStatus: true,
-                      submittedDate : req.body.submittedDate,
-                      invoiceId: newInvoiceCreate.invoiceId,
-                      receiptNumber: req.body.receiptNumber 
-                    }
-                  ]
-                }
-                }
-             
-              }
-              if(submitType==='OTHER_PAYMENT'){
-                if(paymentFound.other && paymentFound.other.length>0 ){
-                  let othertPay=[]
-                  let oldOtherDue = paymentFound.otherDue ? JSON.parse(JSON.stringify(paymentFound.otherDue)):{}
-                  for(const data of req.body.otherFeeList){
-                    const othertPayList={
-                        name: data.name,
-                        amount: Number(data.amount),
-                        paymentRecieverId: req.body.paymentRecieverId,
-                        paidStatus: true,
-                        submittedDate : req.body.submittedDate,
-                        invoiceId: newInvoiceCreate.invoiceId,
-                        receiptNumber: req.body.receiptNumber,
-                      }
-                      othertPay.push(othertPayList)
-                    if(data && data.name && data.name.includes('due') && Object.keys(oldOtherDue).length>0){
-                      oldOtherDue={
-                        ...oldOtherDue,
-                        [data.name]: Number(oldOtherDue[data.name]) - Number(data.amount)
-                      }
-                    }
-                    if (data.name === 'dueMarch_Month_Bus') {
-                        paymentFound['dueAmount'] = Number(paymentFound['dueAmount']) - Number(data.amount)
-                        delete oldOtherDue[data.name];
-                    }
-                  }
-                  paymentFound.otherDue= oldOtherDue
-                  if(req.body.dueFor){
-                    paymentFound.otherDue={
-                      ...paymentFound.otherDue,
-                      [req.body.dueFor]: req.body.dueAmount?Number(req.body.dueAmount):0
-                    }
-                  }
-                  paymentFound.other=[...paymentFound.other, ...othertPay]
-                  
-                }else{
-                  let othertPay=[]
-                  for(const data of req.body.otherFeeList){
-                    const othertPayList={
-                      name: data.name,
-                      amount: Number(data.amount),
-                      paymentRecieverId: req.body.paymentRecieverId,
-                      paidStatus: true,
-                      submittedDate : req.body.submittedDate,
-                      invoiceId: newInvoiceCreate.invoiceId,
-                      receiptNumber: req.body.receiptNumber 
-                    }
-                    othertPay.push(othertPayList)
-                  }
-                  paymentFound.other=[...othertPay]
-                }
-                if(req.body.dueFor){
-                  const oldOtherDue= paymentFound.otherDue
-                  paymentFound.otherDue={
-                    ...oldOtherDue,
-                    [req.body.dueFor]: req.body.dueAmount?Number(req.body.dueAmount):0
-                  }
-                }
-              }
-              // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
-              // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
-              paymentFound.modified = new Date()
-              const paymentAdded = await paymentModel.findByIdAndUpdate({_id: paymentFound._id},paymentFound)
-              if(paymentAdded){
-                if(reqSession === CURRENTSESSION && req.body.paymentLedgerPage){
-                  await userModel.findOneAndUpdate({'userInfo.userId': req.body.userId},{
-                    $set:{
-                      'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
-                    }
-                  })
-                }
-                const RedisPaymentKey =`payment-${req.body.class}-${reqSession}`
-                redisDeleteCall({key:RedisPaymentKey})
-                return res.status(200).json({
-                  success: true,
-                  message: "Payment Added successfully.",
-                  invoiceId: newInvoiceCreate.invoiceId
-                })
-              }else{
-                await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
+        let paymentFound = await paymentModel.findOne({ $and: [{ userId: req.body.userId }, { session: reqSession }] })
+        if (paymentFound) {
+          if (submitType === 'MONTHLY') {
+            for (const data of req.body.feeList) {
+              if (paymentFound[data.month.toLowerCase()] && paymentFound[data.month.toLowerCase()].paidStatus === true) {
+                await invoiceModel.deleteOne({ _id: newInvoiceCreatedId })
                 return res.status(200).json({
                   success: false,
-                  message: "Payment not added, Please try again!",
+                  message: `Payment is already done of this "${data.month}" month.`,
                 })
               }
-          }else{
-            let newPaymentInfo= new paymentModel({})
-            if(submitType==='MONTHLY'){
-                req.body.feeList.forEach(data=>
-                  newPaymentInfo[data.month.toLowerCase()]={
-                        monthlyFee: data.monthlyFee,
-                        busFee:  data.busFee? data.busFee:0,
-                        busRouteId : data.busRouteId? data.busRouteId:0,
-                        paymentRecieverId: req.body.paymentRecieverId,
-                        submittedDate : req.body.submittedDate,
-                        paidStatus: true,
-                        invoiceId: newInvoiceCreate.invoiceId,
-                        receiptNumber: req.body.receiptNumber 
-                  }
-                )
-                newPaymentInfo['dueAmount'] = req.body.dueAmount? req.body.dueAmount:0
-                newPaymentInfo['excessAmount'] = req.body.excessAmount? req.body.excessAmount:0
-                newPaymentInfo['totalConcession'] = req.body.concession? req.body.concession:0
-                newPaymentInfo['totalFineAmount']= req.body.fineAmount? req.body.fineAmount:0
-                newPaymentInfo['userId'] = req.body.userId
-                newPaymentInfo['session'] = req.body.session
-                newPaymentInfo['class'] = req.body.class
-                newPaymentInfo['paymentLedgerPage'] = req.body.paymentLedgerPage? req.body.paymentLedgerPage : undefined
-                // newPaymentInfo['busService'] = userData.userInfo.busService,
-                // newPaymentInfo['busRouteId'] = userData.userInfo.busService ? userData.userInfo.busRouteId : undefined
-                // newPaymentInfo['totalPaidAmount'] = req.body.paidAmount
-                // newPaymentInfo['totalAmount'] = req.body.totalAmount
-            }
-            if(submitType==='EXAM_FEE'){
-                for(const data of req.body.otherFeeList){
-                  newPaymentInfo.other=[{
-                      name: data.name,
-                      amount: Number(data.amount),
-                      paymentRecieverId: req.body.paymentRecieverId,
-                      paidStatus: true,
-                      submittedDate : req.body.submittedDate,
-                      invoiceId: newInvoiceCreate.invoiceId,
-                      receiptNumber: req.body.receiptNumber 
-                    },
-                  ]
+              else {
+                //console.log("hhhhhhhhhhh")
+                paymentFound[data.month.toLowerCase()] = {
+                  monthlyFee: data.monthlyFee,
+                  busFee: data.busFee ? data.busFee : 0,
+                  busRouteId: data.busRouteId ? data.busRouteId : 0,
+                  paymentRecieverId: req.body.paymentRecieverId,
+                  paidStatus: true,
+                  submittedDate: req.body.submittedDate,
+                  invoiceId: newInvoiceCreate.invoiceId,
+                  receiptNumber: req.body.receiptNumber
                 }
-                newPaymentInfo['dueAmount'] = 0
-                newPaymentInfo['excessAmount'] = 0
-                newPaymentInfo['totalConcession'] = 0
-                newPaymentInfo['totalFineAmount']= 0
-                newPaymentInfo['userId'] = req.body.userId
-                newPaymentInfo['session'] = req.body.session
-                newPaymentInfo['class'] = req.body.class
+              }
             }
-            // other payement found 
-            const paymentAdded = await newPaymentInfo.save();
-            if(paymentAdded){
-              if(reqSession === CURRENTSESSION && req.body.paymentLedgerPage){
-                await userModel.findOneAndUpdate({'userInfo.userId': req.body.userId},{
-                  $set:{
-                    'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
-                  }
+            if (req.body.otherFeeList && req.body.otherFeeList.length > 0) {
+              let othertPay = []
+              for (const data of req.body.otherFeeList) {
+                othertPay.push({
+                  name: data.name,
+                  amount: Number(data.amount),
+                  paymentRecieverId: req.body.paymentRecieverId,
+                  paidStatus: true,
+                  submittedDate: req.body.submittedDate,
+                  invoiceId: newInvoiceCreate.invoiceId,
+                  receiptNumber: req.body.receiptNumber
                 })
               }
-              const RedisPaymentKey =`payment-${req.body.class}-${reqSession}`
-              redisDeleteCall({key:RedisPaymentKey})
-              return res.status(200).json({
-                success: true,
-                message: "Payment Added successfully.",
-                invoiceId: newInvoiceCreate.invoiceId
-              })
-            }else{
-              await invoiceModel.deleteOne({_id:newInvoiceCreate._id}) 
-              return res.status(200).json({
-                success: false,
-                message: "Payment not added, Please try again!",
-              })
+              paymentFound.other = [...(paymentFound.other ?? []), ...othertPay]
+            }
+
+            // remove + parseInt(req.body.overDueAmount || 0) in due amount 
+            paymentFound['dueAmount'] = parseInt(req.body.paidAmount) >= parseInt(req.body.totalAmount) ? 0 : parseInt(req.body.dueAmount || 0)
+            paymentFound['excessAmount'] = req.body.excessAmount ? req.body.excessAmount : 0
+            paymentFound['totalConcession'] = parseInt(paymentFound.totalConcession) + parseInt(req.body.concession ? req.body.concession : 0)
+            paymentFound['totalFineAmount'] = parseInt(paymentFound.totalFineAmount) + parseInt(req.body.fineAmount ? req.body.fineAmount : 0)
+            paymentFound['paymentLedgerPage'] = req.body.paymentLedgerPage ? req.body.paymentLedgerPage : paymentFound['paymentLedgerPage']
+          }
+          if (submitType === 'EXAM_FEE') {
+            if (paymentFound.other && paymentFound.other.length > 0) {
+              let othertPay = []
+              for (const data of req.body.otherFeeList) {
+                othertPay = [
+                  ...othertPay,
+                  {
+                    name: data.name,
+                    amount: Number(data.amount),
+                    paymentRecieverId: req.body.paymentRecieverId,
+                    paidStatus: true,
+                    submittedDate: req.body.submittedDate,
+                    invoiceId: newInvoiceCreate.invoiceId,
+                    receiptNumber: req.body.receiptNumber
+                  }
+                ]
+              }
+              paymentFound.other = [...paymentFound.other, ...othertPay]
+
+            } else {
+              for (const data of req.body.otherFeeList) {
+                paymentFound.other = [{
+                  name: data.name,
+                  amount: Number(data.amount),
+                  paymentRecieverId: req.body.paymentRecieverId,
+                  paidStatus: true,
+                  submittedDate: req.body.submittedDate,
+                  invoiceId: newInvoiceCreate.invoiceId,
+                  receiptNumber: req.body.receiptNumber
+                }
+                ]
+              }
+            }
+
+          }
+          if (submitType === 'OTHER_PAYMENT') {
+            if (paymentFound.other && paymentFound.other.length > 0) {
+              let othertPay = []
+              let oldOtherDue = paymentFound.otherDue ? JSON.parse(JSON.stringify(paymentFound.otherDue)) : {}
+              for (const data of req.body.otherFeeList) {
+                const othertPayList = {
+                  name: data.name,
+                  amount: Number(data.amount),
+                  paymentRecieverId: req.body.paymentRecieverId,
+                  paidStatus: true,
+                  submittedDate: req.body.submittedDate,
+                  invoiceId: newInvoiceCreate.invoiceId,
+                  receiptNumber: req.body.receiptNumber,
+                }
+                othertPay.push(othertPayList)
+                if (data && data.name && data.name.includes('due') && Object.keys(oldOtherDue).length > 0) {
+                  oldOtherDue = {
+                    ...oldOtherDue,
+                    [data.name]: Number(oldOtherDue[data.name]) - Number(data.amount)
+                  }
+                }
+                if (data.name === 'dueMarch_Month_Bus') {
+                  paymentFound['dueAmount'] = Number(paymentFound['dueAmount']) - Number(data.amount)
+                  delete oldOtherDue[data.name];
+                }
+              }
+              paymentFound.otherDue = oldOtherDue
+              if (req.body.dueFor) {
+                paymentFound.otherDue = {
+                  ...paymentFound.otherDue,
+                  [req.body.dueFor]: req.body.dueAmount ? Number(req.body.dueAmount) : 0
+                }
+              }
+              paymentFound.other = [...paymentFound.other, ...othertPay]
+
+            } else {
+              let othertPay = []
+              for (const data of req.body.otherFeeList) {
+                const othertPayList = {
+                  name: data.name,
+                  amount: Number(data.amount),
+                  paymentRecieverId: req.body.paymentRecieverId,
+                  paidStatus: true,
+                  submittedDate: req.body.submittedDate,
+                  invoiceId: newInvoiceCreate.invoiceId,
+                  receiptNumber: req.body.receiptNumber
+                }
+                othertPay.push(othertPayList)
+              }
+              paymentFound.other = [...othertPay]
+            }
+            if (req.body.dueFor) {
+              const oldOtherDue = paymentFound.otherDue
+              paymentFound.otherDue = {
+                ...oldOtherDue,
+                [req.body.dueFor]: req.body.dueAmount ? Number(req.body.dueAmount) : 0
+              }
             }
           }
+          // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
+          // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
+          paymentFound.modified = new Date()
+          const paymentAdded = await paymentModel.findByIdAndUpdate({ _id: paymentFound._id }, paymentFound)
+          if (paymentAdded) {
+            if (reqSession === CURRENTSESSION && req.body.paymentLedgerPage) {
+              await userModel.findOneAndUpdate({ 'userInfo.userId': req.body.userId }, {
+                $set: {
+                  'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
+                }
+              })
+            }
+            const RedisPaymentKey = `payment-${req.body.class}-${reqSession}`
+            redisDeleteCall({ key: RedisPaymentKey })
+            return res.status(200).json({
+              success: true,
+              message: "Payment Added successfully.",
+              invoiceId: newInvoiceCreate.invoiceId
+            })
+          } else {
+            await invoiceModel.deleteOne({ _id: newInvoiceCreate._id })
+            return res.status(200).json({
+              success: false,
+              message: "Payment not added, Please try again!",
+            })
+          }
+        } else {
+          let newPaymentInfo = new paymentModel({})
+          if (submitType === 'MONTHLY') {
+            req.body.feeList.forEach(data =>
+              newPaymentInfo[data.month.toLowerCase()] = {
+                monthlyFee: data.monthlyFee,
+                busFee: data.busFee ? data.busFee : 0,
+                busRouteId: data.busRouteId ? data.busRouteId : 0,
+                paymentRecieverId: req.body.paymentRecieverId,
+                submittedDate: req.body.submittedDate,
+                paidStatus: true,
+                invoiceId: newInvoiceCreate.invoiceId,
+                receiptNumber: req.body.receiptNumber
+              }
+            )
+            newPaymentInfo['dueAmount'] = req.body.dueAmount ? req.body.dueAmount : 0
+            newPaymentInfo['excessAmount'] = req.body.excessAmount ? req.body.excessAmount : 0
+            newPaymentInfo['totalConcession'] = req.body.concession ? req.body.concession : 0
+            newPaymentInfo['totalFineAmount'] = req.body.fineAmount ? req.body.fineAmount : 0
+            newPaymentInfo['userId'] = req.body.userId
+            newPaymentInfo['session'] = req.body.session
+            newPaymentInfo['class'] = req.body.class
+            newPaymentInfo['paymentLedgerPage'] = req.body.paymentLedgerPage ? req.body.paymentLedgerPage : undefined
+            // newPaymentInfo['busService'] = userData.userInfo.busService,
+            // newPaymentInfo['busRouteId'] = userData.userInfo.busService ? userData.userInfo.busRouteId : undefined
+            // newPaymentInfo['totalPaidAmount'] = req.body.paidAmount
+            // newPaymentInfo['totalAmount'] = req.body.totalAmount
+          }
+          if (submitType === 'EXAM_FEE') {
+            for (const data of req.body.otherFeeList) {
+              newPaymentInfo.other = [{
+                name: data.name,
+                amount: Number(data.amount),
+                paymentRecieverId: req.body.paymentRecieverId,
+                paidStatus: true,
+                submittedDate: req.body.submittedDate,
+                invoiceId: newInvoiceCreate.invoiceId,
+                receiptNumber: req.body.receiptNumber
+              },
+              ]
+            }
+            newPaymentInfo['dueAmount'] = 0
+            newPaymentInfo['excessAmount'] = 0
+            newPaymentInfo['totalConcession'] = 0
+            newPaymentInfo['totalFineAmount'] = 0
+            newPaymentInfo['userId'] = req.body.userId
+            newPaymentInfo['session'] = req.body.session
+            newPaymentInfo['class'] = req.body.class
+          }
+          // other payement found 
+          const paymentAdded = await newPaymentInfo.save();
+          if (paymentAdded) {
+            if (reqSession === CURRENTSESSION && req.body.paymentLedgerPage) {
+              await userModel.findOneAndUpdate({ 'userInfo.userId': req.body.userId }, {
+                $set: {
+                  'userInfo.paymentLedgerPage': req.body.paymentLedgerPage
+                }
+              })
+            }
+            const RedisPaymentKey = `payment-${req.body.class}-${reqSession}`
+            redisDeleteCall({ key: RedisPaymentKey })
+            return res.status(200).json({
+              success: true,
+              message: "Payment Added successfully.",
+              invoiceId: newInvoiceCreate.invoiceId
+            })
+          } else {
+            await invoiceModel.deleteOne({ _id: newInvoiceCreate._id })
+            return res.status(200).json({
+              success: false,
+              message: "Payment not added, Please try again!",
+            })
+          }
+        }
 
       }
 
-    }catch(err){
-      if(newInvoiceCreatedId){
-        await invoiceModel.findOneAndUpdate({_id:newInvoiceCreatedId},{deleted:true}) 
+    } catch (err) {
+      if (newInvoiceCreatedId) {
+        await invoiceModel.findOneAndUpdate({ _id: newInvoiceCreatedId }, { deleted: true })
       }
       console.log(err)
       return res.status(400).json({
@@ -3154,74 +3167,74 @@ module.exports = {
   },
 
   getPaymentDetail: async (req, res) => {
-    try{
+    try {
       const CURRENTSESSION = getCurrentSession()
-      let list =[]
-      let selectedClass=''
-      let reqSession= req.query.session || CURRENTSESSION
-      let searchStr = req.query.searchStr? (req.query.searchStr).trim():''
-      let searchParam={}
-      let userIdParam={}
-      let deletedParam = {'deleted':false}
-      let classParam={'userInfo.class':'1 A'}
-      let sessionParam= {'session':req.query.session}
-      const roleParam={'userInfo.roleName':'STUDENT'}
-      if(req.query.selectedClass){
+      let list = []
+      let selectedClass = ''
+      let reqSession = req.query.session || CURRENTSESSION
+      let searchStr = req.query.searchStr ? (req.query.searchStr).trim() : ''
+      let searchParam = {}
+      let userIdParam = {}
+      let deletedParam = { 'deleted': false }
+      let classParam = { 'userInfo.class': '1 A' }
+      let sessionParam = { 'session': req.query.session }
+      const roleParam = { 'userInfo.roleName': 'STUDENT' }
+      if (req.query.selectedClass) {
         selectedClass = req.query.selectedClass
         //classParam={'userInfo.class':req.query.selectedClass}
-        classParam={'class':req.query.selectedClass}
+        classParam = { 'class': req.query.selectedClass }
       }
       const redisClient = getRedisClient()
       // await redisClient.flushDb()
-      const RedisPaymentKey =`payment-${selectedClass}-${reqSession}`
-      if(selectedClass && !req.query.userId  && redisClient && await redisClient.exists(RedisPaymentKey)){
-          let cacheList = await redisClient.get(RedisPaymentKey)
-          list = JSON.parse(cacheList)
-          return res.status(200).json({
-            success: true,
-            message: "Payment detail get successfully(Cache).",
-            data: list
-          })
+      const RedisPaymentKey = `payment-${selectedClass}-${reqSession}`
+      if (selectedClass && !req.query.userId && redisClient && await redisClient.exists(RedisPaymentKey)) {
+        let cacheList = await redisClient.get(RedisPaymentKey)
+        list = JSON.parse(cacheList)
+        return res.status(200).json({
+          success: true,
+          message: "Payment detail get successfully(Cache).",
+          data: list
+        })
       }
-      if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null){
-        searchParam={
-          $or:[
-            {'userInfo.fullName': new RegExp(searchStr, 'i')},
-            {'userInfo.fatherName': new RegExp(searchStr, 'i')},
-            {'userInfo.motherName': new RegExp(searchStr, 'i')},
-            {'userInfo.email': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber1': new RegExp(searchStr, 'i')},
-            {'userInfo.phoneNumber2': new RegExp(searchStr, 'i')},
-            {'userInfo.aadharNumber':new RegExp(searchStr, 'i')},
-            {'userInfo.userId':new RegExp(searchStr, 'i')}
+      if (searchStr && searchStr !== "" && searchStr !== undefined && searchStr !== null) {
+        searchParam = {
+          $or: [
+            { 'userInfo.fullName': new RegExp(searchStr, 'i') },
+            { 'userInfo.fatherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.motherName': new RegExp(searchStr, 'i') },
+            { 'userInfo.email': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber1': new RegExp(searchStr, 'i') },
+            { 'userInfo.phoneNumber2': new RegExp(searchStr, 'i') },
+            { 'userInfo.aadharNumber': new RegExp(searchStr, 'i') },
+            { 'userInfo.userId': new RegExp(searchStr, 'i') }
           ]
         }
       }
-      if(req.query.userId){
-          classParam={}
-          searchParam={}
-          //userIdParam={'userInfo.userId': req.query.userId}
-          userIdParam={'userId': req.query.userId}
-      }
-      if(req.query.selectedPhone){
-        const phoneNoUserIds = await userModel.find({$and:[activeParam,{$or:[{'userInfo.phoneNumber1':req.query.selectedPhone},{'userInfo.phoneNumber2':req.query.selectedPhone}]}]}) 
-        classParam={}
-        searchParam={}
+      if (req.query.userId) {
+        classParam = {}
+        searchParam = {}
         //userIdParam={'userInfo.userId': req.query.userId}
-        userIdParam={'userId':{$in:[...phoneNoUserIds.map(data=> data.userInfo.userId)]}}
+        userIdParam = { 'userId': req.query.userId }
       }
-      
+      if (req.query.selectedPhone) {
+        const phoneNoUserIds = await userModel.find({ $and: [activeParam, { $or: [{ 'userInfo.phoneNumber1': req.query.selectedPhone }, { 'userInfo.phoneNumber2': req.query.selectedPhone }] }] })
+        classParam = {}
+        searchParam = {}
+        //userIdParam={'userInfo.userId': req.query.userId}
+        userIdParam = { 'userId': { $in: [...phoneNoUserIds.map(data => data.userInfo.userId)] } }
+      }
+
       //let students= await userModel.find({$and:[ activeParam, classParam, roleParam, searchParam, userIdParam]})
-      const busRouteFareList = await vehicleRouteFareModel.find({session:reqSession})
-      const monthlyFeeList = await monthlyFeeListModel.find({session: reqSession})
+      const busRouteFareList = await vehicleRouteFareModel.find({ session: reqSession })
+      const monthlyFeeList = await monthlyFeeListModel.find({ session: reqSession })
       //let payOptionList= await payOptionModel.find()
-   
+
       //let paymentRecieverUserList = await userModel.find({$and:[activeParam,{'userInfo.roleName':{$in:['ADMIN','ACCOUNTANT']}},{'userInfo.userId':{$nin:['918732']}}]}) 
       // if(students && students.length){
       //   const userIds= students.map(data=> data.userInfo.userId)
       //   let payDetail= await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, sessionParam]})
-      
+
       //   const newList=  await Promise.all(students.map(async(sData)=> {
       //     let condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
       //     const invoiceData = await invoiceModel.find(condInvParam)
@@ -3248,31 +3261,31 @@ module.exports = {
       //     message: "Payment detail not found"
       //   })
       // }
-     
-      const allPayDetail= await paymentModel.find({$and:[sessionParam, classParam, userIdParam, deletedParam]})
-     
-      if(allPayDetail && allPayDetail.length>0){
-        const userIds= allPayDetail.map(data=> data.userId)
-        const allStudents = await userModel.find({'userInfo.userId': {$in:[...userIds]}})
+
+      const allPayDetail = await paymentModel.find({ $and: [sessionParam, classParam, userIdParam, deletedParam] })
+
+      if (allPayDetail && allPayDetail.length > 0) {
+        const userIds = allPayDetail.map(data => data.userId)
+        const allStudents = await userModel.find({ 'userInfo.userId': { $in: [...userIds] } })
         const PREV_SESSSION = previousSession()
-        const allPreviousPayDetail = reqSession===CURRENTSESSION? await paymentModel.find({$and:[{userId:{$in:[...userIds]}}, {session:PREV_SESSSION},deletedParam]}):undefined
-        const prev_busRouteFareList = await vehicleRouteFareModel.find({session:PREV_SESSSION})
-        const prev_monthlyFeeList = await monthlyFeeListModel.find({session: PREV_SESSSION})
+        const allPreviousPayDetail = reqSession === CURRENTSESSION ? await paymentModel.find({ $and: [{ userId: { $in: [...userIds] } }, { session: PREV_SESSSION }, deletedParam] }) : undefined
+        const prev_busRouteFareList = await vehicleRouteFareModel.find({ session: PREV_SESSSION })
+        const prev_monthlyFeeList = await monthlyFeeListModel.find({ session: PREV_SESSSION })
         for (const it of allPayDetail) {
-          let prevAmtDue=0
-          const sData= allStudents.find(data=> data.userInfo.userId=== it.userId)
-          if(!sData){
+          let prevAmtDue = 0
+          const sData = allStudents.find(data => data.userInfo.userId === it.userId)
+          if (!sData) {
             continue;
           }
-         
-          const previousPayDetail = reqSession===CURRENTSESSION? allPreviousPayDetail.find(data=> data.userId=== it.userId) || undefined : undefined
-          const condInvParam ={$and:[{'userId': sData.userInfo.userId},{'session': req.query.session},{deleted: false},{paidStatus: true}]}
+
+          const previousPayDetail = reqSession === CURRENTSESSION ? allPreviousPayDetail.find(data => data.userId === it.userId) || undefined : undefined
+          const condInvParam = { $and: [{ 'userId': sData.userInfo.userId }, { 'session': req.query.session }, { deleted: false }, { paidStatus: true }] }
           const invoiceData = await invoiceModel.find(condInvParam)
           const userPayDetail = it
-                                             //(sData, userPayDetail, monthlyFeeList, busRouteFareList, session)
-          const monthPayDetail= getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList, reqSession)
+          //(sData, userPayDetail, monthlyFeeList, busRouteFareList, session)
+          const monthPayDetail = getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList, reqSession)
 
-          if(previousPayDetail){
+          if (previousPayDetail) {
 
             // Main logic
             const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, prev_monthlyFeeList, prev_busRouteFareList, previousSession());
@@ -3289,80 +3302,80 @@ module.exports = {
               totalDues: 0
             };
             const feeData = prev_monthlyFeeList.find(data => data.className === previousPayDetail.class);
-            const isPrevOtherPay= previousPayDetail && previousPayDetail.other && previousPayDetail.other.length > 0? true:false
-            const isAnnualExamFeeNotPaid = isPrevOtherPay? !previousPayDetail.other.some(data => data.name === 'ANNUAL EXAM') : true
-            const isHalfExamFeeNotPaid = isPrevOtherPay? !previousPayDetail.other.some(data => data.name === 'HALF YEARLY EXAM') : true
+            const isPrevOtherPay = previousPayDetail && previousPayDetail.other && previousPayDetail.other.length > 0 ? true : false
+            const isAnnualExamFeeNotPaid = isPrevOtherPay ? !previousPayDetail.other.some(data => data.name === 'ANNUAL EXAM') : true
+            const isHalfExamFeeNotPaid = isPrevOtherPay ? !previousPayDetail.other.some(data => data.name === 'HALF YEARLY EXAM') : true
             if (sData.userInfo.admissionDate) {
-                const admissionDate = new Date(sData.userInfo.admissionDate);
-                const admissionMonthIndex = admissionDate.getFinancialMonthIndex();
-                const admissionSession = getAdmissionSession(sData.userInfo.admissionDate);
-                const isCurrentSession = isAdmissionInCurrentSession(admissionSession, previousSession());
-                if(isCurrentSession){
-                  if(admissionMonthIndex<HalfYearlyMonthIndex && isHalfExamFeeNotPaid){
-                    userPrevDues.halfExamFee = addExamFees(feeData, false, true)
-                  }
-                  if(admissionMonthIndex<AnualExamMonthIndex && isAnnualExamFeeNotPaid){
-                    userPrevDues.annualExamFee = addExamFees(feeData, true, false)
-                  }
-                }else{
-                  if(isHalfExamFeeNotPaid){
-                    userPrevDues.halfExamFee = addExamFees(feeData, false, true)
-                  }
-                  if(isAnnualExamFeeNotPaid){
-                   userPrevDues.annualExamFee = addExamFees(feeData, true, false)
-                  }
+              const admissionDate = new Date(sData.userInfo.admissionDate);
+              const admissionMonthIndex = admissionDate.getFinancialMonthIndex();
+              const admissionSession = getAdmissionSession(sData.userInfo.admissionDate);
+              const isCurrentSession = isAdmissionInCurrentSession(admissionSession, previousSession());
+              if (isCurrentSession) {
+                if (admissionMonthIndex < HalfYearlyMonthIndex && isHalfExamFeeNotPaid) {
+                  userPrevDues.halfExamFee = addExamFees(feeData, false, true)
                 }
+                if (admissionMonthIndex < AnualExamMonthIndex && isAnnualExamFeeNotPaid) {
+                  userPrevDues.annualExamFee = addExamFees(feeData, true, false)
+                }
+              } else {
+                if (isHalfExamFeeNotPaid) {
+                  userPrevDues.halfExamFee = addExamFees(feeData, false, true)
+                }
+                if (isAnnualExamFeeNotPaid) {
+                  userPrevDues.annualExamFee = addExamFees(feeData, true, false)
+                }
+              }
             } else {
-              if(isHalfExamFeeNotPaid){
+              if (isHalfExamFeeNotPaid) {
                 userPrevDues.halfExamFee = addExamFees(feeData, false, true)
               }
-              if(isAnnualExamFeeNotPaid){
+              if (isAnnualExamFeeNotPaid) {
                 userPrevDues.annualExamFee = addExamFees(feeData, true, false)
               }
-            }  
+            }
 
-            if(previousPayDetail && previousPayDetail.otherDue){
-              for(const key in previousPayDetail.otherDue) {
-                userPrevDues.otherDue = previousPayDetail.otherDue[key]? Number(previousPayDetail.otherDue[key]):0;
+            if (previousPayDetail && previousPayDetail.otherDue) {
+              for (const key in previousPayDetail.otherDue) {
+                userPrevDues.otherDue = previousPayDetail.otherDue[key] ? Number(previousPayDetail.otherDue[key]) : 0;
               }
             }
             //console.log("prevMonthPayDetail", prevMonthPayDetail)
             for (const mData of monthList) {
-                  if(prevMonthPayDetail[mData].payEnable){
-                if(prevMonthPayDetail[mData].paidDone){
-                 // paidAmt+=prevMonthPayDetail[mData].amt?Number(prevMonthPayDetail[mData].amt):0
-                }else{
-                  userPrevDues.monthlyFee+= Number(prevMonthPayDetail[mData].monthlyFee)
-                  userPrevDues.busFee+= Number(prevMonthPayDetail[mData].busFee)
+              if (prevMonthPayDetail[mData].payEnable) {
+                if (prevMonthPayDetail[mData].paidDone) {
+                  // paidAmt+=prevMonthPayDetail[mData].amt?Number(prevMonthPayDetail[mData].amt):0
+                } else {
+                  userPrevDues.monthlyFee += Number(prevMonthPayDetail[mData].monthlyFee)
+                  userPrevDues.busFee += Number(prevMonthPayDetail[mData].busFee)
                 }
               }
             }
 
             for (let [key, value] of Object.entries(userPrevDues)) {
               //console.log(key, value);
-              dueAmt+= value
+              dueAmt += value
             }
             userPrevDues.preExcessAmount = Number(previousPayDetail.excessAmount)
-            userPrevDues.totalDues = dueAmt - Number(previousPayDetail.excessAmount) 
-          
+            userPrevDues.totalDues = dueAmt - Number(previousPayDetail.excessAmount)
+
             // console.log("preExcessAmount -- minus",userPrevDues.preExcessAmount )
             // console.log("totalDues",userPrevDues.totalDues )
-          
-            prevAmtDue = userPrevDues.totalDues                                 
+
+            prevAmtDue = userPrevDues.totalDues
           }
-          const newData= {
+          const newData = {
             sData,
-            userPayDetail:it,
+            userPayDetail: it,
             ...monthPayDetail,
             preDueAmount: it.dueAmount,
-            preExcessAmount: it.excessAmount,   
+            preExcessAmount: it.excessAmount,
             userInvoiceDetail: invoiceData,
-            prevYearAmtDue: reqSession===CURRENTSESSION? prevAmtDue : undefined
+            prevYearAmtDue: reqSession === CURRENTSESSION ? prevAmtDue : undefined
           }
           list.push(newData)
         }
-        if(selectedClass && !req.query.userId){
-          redisSetKeyCall({key:RedisPaymentKey, data:JSON.stringify(list)})
+        if (selectedClass && !req.query.userId) {
+          redisSetKeyCall({ key: RedisPaymentKey, data: JSON.stringify(list) })
         }
 
         return res.status(200).json({
@@ -3370,13 +3383,13 @@ module.exports = {
           message: "Payment detail get successfully.",
           data: list
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Payment detail not found"
         })
       }
-    }catch(err){
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -3386,20 +3399,20 @@ module.exports = {
   },
 
   deletePayment: async (req, res) => {
-    try{
-      if(req.query.paymentId){
+    try {
+      if (req.query.paymentId) {
         //let payDetail= await paymentModel.findOneAndUpdate({_id:req.query.paymentId },{deleted: true})
         return res.status(200).json({
           success: true,
           message: "Payment detail deleted.",
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Payment detail not found"
         })
       }
-    }catch(err){
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -3408,50 +3421,49 @@ module.exports = {
     }
   },
 
-  getAllInvoice: async(req, res)=>{
-    try{
+  getAllInvoice: async (req, res) => {
+    try {
       let invoiceData;
-      let limit = (req.query.limit && parseInt(req.query.limit) > 0 ) ? parseInt(req.query.limit) : 10;
-      let pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber) : 0 ;
+      let limit = (req.query.limit && parseInt(req.query.limit) > 0) ? parseInt(req.query.limit) : 10;
+      let pageNumber = req.query.pageNumber ? parseInt(req.query.pageNumber) : 0;
       let totalCount = 0
-      let totalPaidAmount =0 ;
-      let isDesc = req.query.isDesc? req.query.isDesc === 'true' ? 'desc' : 'asc' : 'desc';
+      let totalPaidAmount = 0;
+      let isDesc = req.query.isDesc ? req.query.isDesc === 'true' ? 'desc' : 'asc' : 'desc';
       let sortOrder = { 'created': isDesc }
       let startOfDateRange;
       let endOfDateRange;
       let dateFilter = {};
+      let filter = {};
       let dayCount;
       let dayCountForDownload;
       let downloadAllow = false;
       const topAdminRole = req.user.userInfo.roleName === 'TOPADMIN' ? true : false
       const timeZone = 'Asia/Kolkata'
       const TodayDate = moment.tz(timeZone).endOf('day').toDate()
-      if(req.query.fromDate&&req.query.toDate){
-           startOfDateRange = moment.tz(req.query.fromDate, timeZone).startOf('day').toDate().toISOString();
-           endOfDateRange = moment.tz(req.query.toDate, timeZone).endOf('day').toDate().toISOString();
-           dayCount = moment(TodayDate).diff(startOfDateRange, 'days')+1;
-           dayCountForDownload = moment(endOfDateRange).diff(moment(startOfDateRange), "days") + 1;
-      }else if(req.query.fromDate && !req.query.toDate){
-          startOfDateRange = moment.tz(req.query.fromDate, timeZone).startOf('day').toDate().toISOString();
-         
-          dayCount = moment(TodayDate).diff(startOfDateRange, 'days')+1;
-          dayCountForDownload = moment(TodayDate).diff(moment(startOfDateRange), "days") + 1;
+      if (req.query.fromDate && req.query.toDate) {
+        startOfDateRange = moment.tz(req.query.fromDate, timeZone).startOf('day').toDate().toISOString();
+        endOfDateRange = moment.tz(req.query.toDate, timeZone).endOf('day').toDate().toISOString();
+        dayCount = moment(TodayDate).diff(startOfDateRange, 'days') + 1;
+        dayCountForDownload = moment(endOfDateRange).diff(moment(startOfDateRange), "days") + 1;
+      } else if (req.query.fromDate && !req.query.toDate) {
+        startOfDateRange = moment.tz(req.query.fromDate, timeZone).startOf('day').toDate().toISOString();
+        dayCount = moment(TodayDate).diff(startOfDateRange, 'days') + 1;
+        dayCountForDownload = moment(TodayDate).diff(moment(startOfDateRange), "days") + 1;
       }
 
-   
-      console.log("dayCount", dayCount)
-      console.log("download", req.query.download)
-      console.log("dayCountForDownload", dayCountForDownload)
-     
+      // console.log("dayCount", dayCount)
+      // console.log("download", req.query.download)
+      // console.log("dayCountForDownload", dayCountForDownload)
+
       if (req.query.download) {
         if (topAdminRole) {
           downloadAllow = true;
           limit = 500;
         } else {
-          if(req.query.userId){
+          if (req.query.userId) {
             downloadAllow = true;
             limit = 500;
-          }else if (dayCountForDownload === undefined || dayCountForDownload === null || dayCountForDownload < 0) {
+          } else if (dayCountForDownload === undefined || dayCountForDownload === null || dayCountForDownload < 0) {
             return res.status(200).json({
               success: false,
               message: "Please select proper date to download."
@@ -3468,33 +3480,33 @@ module.exports = {
         }
       }
 
-     
-      if(req.query.fromDate && !req.query.toDate){
-        if(req.query.dateFilterType && req.query.dateFilterType==='sub_date'){
+
+      if (req.query.fromDate && !req.query.toDate) {
+        if (req.query.dateFilterType && req.query.dateFilterType === 'sub_date') {
           dateFilter = {
-            'invoiceInfo.submittedDate':{
-                '$gte':startOfDateRange
+            'invoiceInfo.submittedDate': {
+              '$gte': startOfDateRange
             }
           }
-        }else{
+        } else {
           dateFilter = {
-            'created':{
-                '$gte':startOfDateRange
+            'created': {
+              '$gte': startOfDateRange
             }
           }
         }
       }
-       if(req.query.fromDate && req.query.toDate){
-        if(req.query.dateFilterType && req.query.dateFilterType==='sub_date'){
+      if (req.query.fromDate && req.query.toDate) {
+        if (req.query.dateFilterType && req.query.dateFilterType === 'sub_date') {
           dateFilter = {
-            'invoiceInfo.submittedDate':{
+            'invoiceInfo.submittedDate': {
               "$gte": startOfDateRange,
               "$lte": endOfDateRange
             }
           }
-        }else{
+        } else {
           dateFilter = {
-            'created':{
+            'created': {
               "$gte": startOfDateRange,
               "$lte": endOfDateRange
             }
@@ -3502,81 +3514,124 @@ module.exports = {
         }
       }
 
-      console.log("dateFilter", dateFilter)
-      if(req.query.invoiceId){
-        invoiceData= await invoiceModel.find({invoiceId:req.query.invoiceId })
-        dateFilter={}
-        dayCount= undefined
-      }else if(req.query.userId){
-        invoiceData= await invoiceModel.find({userId:req.query.userId })
-        dateFilter={}
-        dayCount= undefined
-      }else{
-        if(req.query.sortOrder && req.query.sortOrder==='sub_date'){
-          sortOrder = {'invoiceInfo.submittedDate': isDesc}
-        }
-        if(req.query.sortOrder && req.query.sortOrder==='entry_date'){
-          sortOrder = {'created': isDesc}
-        }
-   
-       const sumData = await invoiceModel.aggregate([
-                {
-                    "$match": {
-                        ...dateFilter,
-                        "deleted": false
-                    }
-                },
-                {
-                    "$group": {
-                        "_id": null,
-                        "totalAmount": { "$sum": "$amount" }
-                    }
-                },
-                {
-                  $project: {
-                    _id: 0,
-                    totalAmount: 1
-                  }
+      if (req.query.filter) {
+        console.log("filter", req.query.filter)
+        if (req.query.filter === 'Cash') {
+          filter = {
+            "invoiceInfo.payment": {
+              $elemMatch: { payModeId: "Cash" }
+            },
+            "invoiceInfo.payment": {
+              $not: {
+                $elemMatch: { payModeId: { $ne: "Cash" } }
               }
-        ])
-        // console.log("sumData", sumData[0]? sumData[0].totalAmount:0)
-        totalPaidAmount= sumData[0]? sumData[0].totalAmount:0
-        totalCount= await invoiceModel.find(dateFilter).countDocuments()
-        if (downloadAllow){
-          invoiceData= await invoiceModel.find(dateFilter).sort(sortOrder).limit(limit)
-        }else{
-          invoiceData= await invoiceModel.find(dateFilter).sort(sortOrder).skip(limit * pageNumber).limit(limit)
+            }
+          }
+        } else if (req.query.filter === 'Online') {
+          filter = {
+            "invoiceInfo.payment": {
+              $elemMatch: { payModeId: { $ne: "Cash" } }
+            },
+            "invoiceInfo.payment": {
+              $not: {
+                $elemMatch: { payModeId: "Cash" }
+              }
+            }
+          };
+        } else if (req.query.filter === 'Both') {
+          filter = {
+            "invoiceInfo.payment":
+            {
+              $all: [
+                { $elemMatch: { payModeId: "Cash" } },
+                { $elemMatch: { payModeId: { $ne: "Cash" } } }
+              ]
+            }
+          }
+        } else {
+          filter = {}
         }
       }
-      if(invoiceData && invoiceData.length>0){
-        let allInvoice=[]
-          for (let it of invoiceData) {
-            if(it.invoiceInfo.userId){
-              const userData =  await userModel.findOne({'userInfo.userId': it.invoiceInfo.userId})
-              it.invoiceInfo['userData']= userData
+      //console.log("filter query", filter)
+
+      //console.log("dateFilter", dateFilter)
+      if (req.query.invoiceId) {
+        invoiceData = await invoiceModel.find({ invoiceId: req.query.invoiceId })
+        dateFilter = {}
+        filter = {}
+        dayCount = undefined
+      } else if (req.query.userId) {
+        invoiceData = await invoiceModel.find({ userId: req.query.userId })
+        dateFilter = {}
+        filter = {}
+        dayCount = undefined
+      } else {
+        if (req.query.sortOrder && req.query.sortOrder === 'sub_date') {
+          sortOrder = { 'invoiceInfo.submittedDate': isDesc }
+        }
+        if (req.query.sortOrder && req.query.sortOrder === 'entry_date') {
+          sortOrder = { 'created': isDesc }
+        }
+
+        const sumData = await invoiceModel.aggregate([
+          {
+            "$match": {
+              ...dateFilter,
+              ...filter,
+              "deleted": false
             }
-              if(it.invoiceInfo.paymentRecieverId){
-              const recieverData = await userModel.findOne({'_id': it.invoiceInfo.paymentRecieverId})
-                //console.log("recieverDatarecieverDatarecieverData", recieverData)
-                it.invoiceInfo['recieverName'] = recieverData && recieverData.userInfo &&recieverData.userInfo.fullName? recieverData.userInfo.fullName:'N/A'
-              }
-             allInvoice.push(it)
+          },
+          {
+            "$group": {
+              "_id": null,
+              "totalAmount": { "$sum": "$amount" }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              totalAmount: 1
+            }
           }
+        ])
+        // console.log("sumData", sumData[0]? sumData[0].totalAmount:0)
+        totalPaidAmount = sumData[0] ? sumData[0].totalAmount : 0
+        totalCount = await invoiceModel.find({ ...dateFilter, ...filter }).countDocuments()
+        if (downloadAllow) {
+          invoiceData = await invoiceModel.find({ ...dateFilter, ...filter }).sort(sortOrder).limit(limit)
+        } else {
+          invoiceData = await invoiceModel.find({ ...dateFilter, ...filter }).sort(sortOrder).skip(limit * pageNumber).limit(limit)
+        }
+      }
+      if (invoiceData && invoiceData.length > 0) {
+        let allInvoice = []
+        for (let it of invoiceData) {
+          if (it.invoiceInfo.userId) {
+            const userData = await userModel.findOne({ 'userInfo.userId': it.invoiceInfo.userId })
+            it.invoiceInfo['userData'] = userData
+          }
+          if (it.invoiceInfo.paymentRecieverId) {
+            const recieverData = await userModel.findOne({ '_id': it.invoiceInfo.paymentRecieverId })
+            //console.log("recieverDatarecieverDatarecieverData", recieverData)
+            it.invoiceInfo['recieverName'] = recieverData && recieverData.userInfo && recieverData.userInfo.fullName ? recieverData.userInfo.fullName : 'N/A'
+          }
+          allInvoice.push(it)
+        }
         return res.status(200).json({
           success: true,
           message: "Invoice detail get successfully.",
           data: allInvoice,
-          pageSize:totalCount>0? Math.floor(totalCount/limit)+1:0,
-          totalCount:totalCount,
-          totalPaidAmount: topAdminRole? totalPaidAmount : (dayCount && dayCount<=32) ?totalPaidAmount:0
+          pageSize: totalCount > 0 ? Math.floor(totalCount / limit) + 1 : 0,
+          totalCount: totalCount,
+          totalPaidAmount: topAdminRole ? totalPaidAmount : (dayCount && dayCount <= 32) ? totalPaidAmount : 0
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: "Invoice detail not found"
         })
       }
-    }catch(err){
+    } catch (err) {
       console.log(err)
       return res.status(400).json({
         success: false,
@@ -3584,11 +3639,11 @@ module.exports = {
       })
     }
   },
-  getInvoicesByUserId: async(req, res)=>{
-    try{
+  getInvoicesByUserId: async (req, res) => {
+    try {
 
       //const invoiceAll= await invoiceModel.find({})
-     
+
       // let invIds=[]
       // for (const it of invoiceAll) {
       //     if(it.invoiceInfo.paidAmount!==it.invoiceInfo.totalGrandAmount){
@@ -3596,98 +3651,98 @@ module.exports = {
       //     }
       // }
       //console.log("invIdsinvIdsinvIds", new Set( invIds))
-        let condParam ={$and:[{'userId': req.query.userId},{'session': req.query.session}]}
-        //let condParam ={$and:[{'userId': req.query.userId}]}
+      let condParam = { $and: [{ 'userId': req.query.userId }, { 'session': req.query.session }] }
+      //let condParam ={$and:[{'userId': req.query.userId}]}
 
-        const invoiceData = await invoiceModel.find(condParam)
-          return res.status(200).json({
-            success: true,
-            message: "Invoice detail get successfully.",
-            data: invoiceData
-          })
-      }catch(err){
-        console.log(err)
-        return res.status(400).json({
-          success: false,
-          message: err.message,
-        })
-      }
+      const invoiceData = await invoiceModel.find(condParam)
+      return res.status(200).json({
+        success: true,
+        message: "Invoice detail get successfully.",
+        data: invoiceData
+      })
+    } catch (err) {
+      console.log(err)
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    }
   },
 
-  deleteTransaction:async(req, res)=>{
-        try {
-          const CURRENTSESSION = getCurrentSession()
-          
-          const invoiceData= await invoiceModel.findOne({invoiceId: req.body.invoiceId})
-          if(invoiceData && req.body.session && (invoiceData.invoiceType==='MONTHLY'|| invoiceData.invoiceType==='EXAM_FEE' || invoiceData.invoiceType==='OTHER_PAYMENT') ){
-            const paymentData= await paymentModel.findOne({$and:[{'userId': invoiceData.userId},{session: req.body.session}]})
-            if(paymentData){
-              const user = await userModel.findOne({"userInfo.userId": paymentData.userId})
-              let unsetMonthName={}
-              if(invoiceData.invoiceInfo.feeList){
-                for (const it of invoiceData.invoiceInfo.feeList) {
-                  unsetMonthName={
-                   ...unsetMonthName,
-                   [it.month]: ""
-                  }
-                }
-              }
-              if(invoiceData.invoiceInfo.otherFeeList){
-                for (const it of invoiceData.invoiceInfo.otherFeeList) {
-                  paymentData.other= paymentData.other.filter(data=> data.name!==it.name )
-                }
-              }
-              const dueAmount =  Number(paymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount)
-              const excessAmount = Number(paymentData.excessAmount) - Number(invoiceData.invoiceInfo.excessAmount)
-              const totalFineAmount = Number(paymentData.totalFineAmount) - Number(invoiceData.invoiceInfo.fineAmount)
-              const updatePaymentData= {
-                'dueAmount' :  dueAmount>0? dueAmount: 0,
-                'excessAmount' : excessAmount>0? excessAmount: 0,
-                'totalFineAmount' : totalFineAmount>0?totalFineAmount:0,
-                'other':paymentData.other,
-                '$unset': unsetMonthName
-              }
-              const updatedPayement = await paymentModel.findOneAndUpdate({'_id': paymentData._id},updatePaymentData,{new: true})
-              // delete payemet data if no month available
-              // const allKeys = Object.keys(JSON.parse(JSON.stringify(updatedPayement)))
-              // if(allKeys.some( key => monthList.includes(key))===false){
-              //   await paymentModel.deleteOne({'_id': paymentData._id})
-              // }
-              if(updatedPayement){
-                  const RedisPaymentKey =`payment-${user.userInfo.class}-${req.body.session}`
-                  if(CURRENTSESSION === req.body.session) redisDeleteCall({key:RedisPaymentKey})
-            
-                  await invoiceModel.findOneAndUpdate({'_id': invoiceData._id},{deleted: true})
-                  return res.status(200).json({
-                    success: true,
-                    message: "payment updated successfully"
-                  })
-              }else{
-                  return res.status(200).json({
-                    success: false,
-                    message: "payment not updated."
-                  })
-              }
-            }else{
-              return res.status(200).json({
-                success: false,
-                message: "payment data not found."
-              })
-            }
+  deleteTransaction: async (req, res) => {
+    try {
+      const CURRENTSESSION = getCurrentSession()
 
-          }else{
+      const invoiceData = await invoiceModel.findOne({ invoiceId: req.body.invoiceId })
+      if (invoiceData && req.body.session && (invoiceData.invoiceType === 'MONTHLY' || invoiceData.invoiceType === 'EXAM_FEE' || invoiceData.invoiceType === 'OTHER_PAYMENT')) {
+        const paymentData = await paymentModel.findOne({ $and: [{ 'userId': invoiceData.userId }, { session: req.body.session }] })
+        if (paymentData) {
+          const user = await userModel.findOne({ "userInfo.userId": paymentData.userId })
+          let unsetMonthName = {}
+          if (invoiceData.invoiceInfo.feeList) {
+            for (const it of invoiceData.invoiceInfo.feeList) {
+              unsetMonthName = {
+                ...unsetMonthName,
+                [it.month]: ""
+              }
+            }
+          }
+          if (invoiceData.invoiceInfo.otherFeeList) {
+            for (const it of invoiceData.invoiceInfo.otherFeeList) {
+              paymentData.other = paymentData.other.filter(data => data.name !== it.name)
+            }
+          }
+          const dueAmount = Number(paymentData.dueAmount) - Number(invoiceData.invoiceInfo.dueAmount)
+          const excessAmount = Number(paymentData.excessAmount) - Number(invoiceData.invoiceInfo.excessAmount)
+          const totalFineAmount = Number(paymentData.totalFineAmount) - Number(invoiceData.invoiceInfo.fineAmount)
+          const updatePaymentData = {
+            'dueAmount': dueAmount > 0 ? dueAmount : 0,
+            'excessAmount': excessAmount > 0 ? excessAmount : 0,
+            'totalFineAmount': totalFineAmount > 0 ? totalFineAmount : 0,
+            'other': paymentData.other,
+            '$unset': unsetMonthName
+          }
+          const updatedPayement = await paymentModel.findOneAndUpdate({ '_id': paymentData._id }, updatePaymentData, { new: true })
+          // delete payemet data if no month available
+          // const allKeys = Object.keys(JSON.parse(JSON.stringify(updatedPayement)))
+          // if(allKeys.some( key => monthList.includes(key))===false){
+          //   await paymentModel.deleteOne({'_id': paymentData._id})
+          // }
+          if (updatedPayement) {
+            const RedisPaymentKey = `payment-${user.userInfo.class}-${req.body.session}`
+            if (CURRENTSESSION === req.body.session) redisDeleteCall({ key: RedisPaymentKey })
+
+            await invoiceModel.findOneAndUpdate({ '_id': invoiceData._id }, { deleted: true })
+            return res.status(200).json({
+              success: true,
+              message: "payment updated successfully"
+            })
+          } else {
             return res.status(200).json({
               success: false,
-              message: "Invoice detail not found."
+              message: "payment not updated."
             })
           }
-        } catch (err) {
-          console.log(err)
-          return res.status(400).json({
+        } else {
+          return res.status(200).json({
             success: false,
-            message: err.message,
+            message: "payment data not found."
           })
         }
+
+      } else {
+        return res.status(200).json({
+          success: false,
+          message: "Invoice detail not found."
+        })
+      }
+    } catch (err) {
+      console.log(err)
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
+    }
   },
 
   // initiatePayment: async (req, res) => {
@@ -3699,7 +3754,7 @@ module.exports = {
   //   let userId = "MUID123";
   //   let merchantTransactionId = uniqid();
   //   const { amount, orderId, customerId } = req.body;
-    
+
   //   const normalPayLoad = {
   //     "merchantId": MERCHANT_ID,
   //     "merchantTransactionId": merchantTransactionId,
@@ -3715,7 +3770,7 @@ module.exports = {
   //       "type": "PAY_PAGE"
   //     }
   //   };
-  
+
   //   //const payloadString = JSON.stringify(payload);
   //   //const xVerify = generateHash(payloadString +'/pg/v1/pay'+ PHONEPE_MERCHANT_SALT) + '###' + PHONEPE_MERCHANT_KEY;
   //    // Make a base64-encoded payload
@@ -3752,7 +3807,7 @@ module.exports = {
   //         console.log("errrrr", error)
   //         //res.send(error);
   //       });
-  
+
   //   // try {
   //   //   const response = await axios.post('https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay', payload, {
   //   //     headers: {
@@ -3766,137 +3821,137 @@ module.exports = {
   //   //   res.status(500).send(error.response ? error.response.data : error.message);
   //   // }
   // },
-  
-paymentCallback: async (req, res) => {
-  try {
-    console.log("📩 PhonePe Callback Data:", req.body);
 
-    // Extract transactionId, status, etc.
-    const { merchantTransactionId, code, message } = req.body;
-    
-    // TODO: update your database payment status here
-    // e.g. PaymentModel.updateOne({ merchantTransactionId }, { status: code })
+  paymentCallback: async (req, res) => {
+    try {
+      console.log("📩 PhonePe Callback Data:", req.body);
 
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("Payment callback error:", err);
-    return res.status(500).json({ success: false });
-  }
-},
+      // Extract transactionId, status, etc.
+      const { merchantTransactionId, code, message } = req.body;
 
-initiatePayment: async (req, res) => {
-  try {
-    const { amount, userId } = req.body;
-    
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: 'Invalid amount' });
+      // TODO: update your database payment status here
+      // e.g. PaymentModel.updateOne({ merchantTransactionId }, { status: code })
+
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      console.error("Payment callback error:", err);
+      return res.status(500).json({ success: false });
     }
+  },
 
-    const merchantOrderId = `ORDER_${crypto.randomUUID()}`;
-    const redirectUrl = `${process.env.MERCHANT_REDIRECT_URL}?orderId=${merchantOrderId}`;
+  initiatePayment: async (req, res) => {
+    try {
+      const { amount, userId } = req.body;
 
-    const request = StandardCheckoutPayRequest.builder()
-      .merchantOrderId(merchantOrderId)
-      .amount(amount * 100) // PhonePe expects amount in paise
-      .redirectUrl(redirectUrl)
-      .build();
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid amount' });
+      }
 
-    const response = await phonePeClient.getClient().pay(request);
-    
-    // In a real application, you would save the order details to your database here
-    // await saveOrderToDatabase(merchantOrderId, amount, userId, 'PENDING');
+      const merchantOrderId = `ORDER_${crypto.randomUUID()}`;
+      const redirectUrl = `${process.env.MERCHANT_REDIRECT_URL}?orderId=${merchantOrderId}`;
 
-    res.json({
-      success: true,
-      checkoutUrl: `https://mercury-uat.phonepe.com/transact/simulator?token=9E7mYEWviFlagB06K1QIQg79RadeSuv6Js0eOYIDuc`,
-      //response.redirectUrl,
-      orderId: merchantOrderId
-    });
-  } catch (error) {
-    console.error('Payment initiation error:', error);
-    //for testing
-    return res.status(200).json({
-      success: true,
-      checkoutUrl: `https://mercury-uat.phonepe.com/transact/simulator?token=9E7mYEWviFlagB06K1QIQg79RadeSuv6Js0eOYIDuc`,
-      //response.redirectUrl,
-      orderId: "47647647665"
-    });
-    //res.status(500).json({ error: 'Payment initiation failed', details: error.message });
-  }
-},
+      const request = StandardCheckoutPayRequest.builder()
+        .merchantOrderId(merchantOrderId)
+        .amount(amount * 100) // PhonePe expects amount in paise
+        .redirectUrl(redirectUrl)
+        .build();
 
+      const response = await phonePeClient.getClient().pay(request);
 
+      // In a real application, you would save the order details to your database here
+      // await saveOrderToDatabase(merchantOrderId, amount, userId, 'PENDING');
 
-//   initiatePayment: async (req, res) => {
-//   const MERCHANT_ID = "PGTESTPAYUAT86";
-//   const PHONE_PE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
-//   const SALT_INDEX = 1;
-//   const SALT_KEY = "996434309-7796-489d-8924-ab56988a6076";
-//   const APP_BE_URL = "http://localhost:3010/api/";
-//   const FRONTEND_URL = "http://localhost:3000";
-  
-//   const { amount, orderId, customerId } = req.body;
-//   const merchantTransactionId = uniqid();
-//   const merchantUserId = "MUID123";
-
-//   if (!amount || isNaN(amount)) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Invalid or missing amount value",
-//     });
-//     }
-
-//   const normalPayLoad = {
-//   merchantId: "PGTESTPAYUAT86",
-//   merchantTransactionId: merchantTransactionId,
-//   merchantUserId: "MUID123",
-//   amount: 50000,
-//   redirectUrl: "https://webhook.site/7e76633b-5ecd-4c5a-ac18-2cc5e647034f?transactionId=5d7g5b58cmhqljve2",
-//   redirectMode: "POST",
-//   callbackUrl: "https://webhook.site/7e76633b-5ecd-4c5a-ac18-2cc5e647034f",
-//   mobileNumber: "9999999999",
-//   paymentInstrument: { type: "PAY_PAGE" }
-// };
+      res.json({
+        success: true,
+        checkoutUrl: `https://mercury-uat.phonepe.com/transact/simulator?token=9E7mYEWviFlagB06K1QIQg79RadeSuv6Js0eOYIDuc`,
+        //response.redirectUrl,
+        orderId: merchantOrderId
+      });
+    } catch (error) {
+      console.error('Payment initiation error:', error);
+      //for testing
+      return res.status(200).json({
+        success: true,
+        checkoutUrl: `https://mercury-uat.phonepe.com/transact/simulator?token=9E7mYEWviFlagB06K1QIQg79RadeSuv6Js0eOYIDuc`,
+        //response.redirectUrl,
+        orderId: "47647647665"
+      });
+      //res.status(500).json({ error: 'Payment initiation failed', details: error.message });
+    }
+  },
 
 
-//   try {
-//     const base64EncodedPayload = Buffer.from(JSON.stringify(normalPayLoad), "utf8").toString("base64");
-//     const stringToHash = base64EncodedPayload + "/pg/v1/pay" + SALT_KEY;
-//     const sha256_val = sha256(stringToHash);
-//     const xVerify = sha256_val + "###" + SALT_INDEX;
 
-//     console.log("Base64:", base64EncodedPayload);
-//     console.log("X-VERIFY:", xVerify);
-//     console.log("Payload:", normalPayLoad);
+  //   initiatePayment: async (req, res) => {
+  //   const MERCHANT_ID = "PGTESTPAYUAT86";
+  //   const PHONE_PE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+  //   const SALT_INDEX = 1;
+  //   const SALT_KEY = "996434309-7796-489d-8924-ab56988a6076";
+  //   const APP_BE_URL = "http://localhost:3010/api/";
+  //   const FRONTEND_URL = "http://localhost:3000";
 
-//     const phonePeRes = await axios.post(
-//       `${PHONE_PE_HOST_URL}/pg/v1/pay`,
-//       { request: base64EncodedPayload },
-//       {
-//         headers: {
-//           "Content-Type": "application/json",
-//           "X-VERIFY": xVerify,
-//           accept: "application/json",
-//         },
-//       }
-//     );
+  //   const { amount, orderId, customerId } = req.body;
+  //   const merchantTransactionId = uniqid();
+  //   const merchantUserId = "MUID123";
 
-//     console.log("PhonePe response:", phonePeRes.data);
+  //   if (!amount || isNaN(amount)) {
+  //     return res.status(400).json({
+  //       success: false,
+  //       message: "Invalid or missing amount value",
+  //     });
+  //     }
 
-//     return res.status(200).json({
-//       success: true,
-//       data: phonePeRes.data,
-//     });
+  //   const normalPayLoad = {
+  //   merchantId: "PGTESTPAYUAT86",
+  //   merchantTransactionId: merchantTransactionId,
+  //   merchantUserId: "MUID123",
+  //   amount: 50000,
+  //   redirectUrl: "https://webhook.site/7e76633b-5ecd-4c5a-ac18-2cc5e647034f?transactionId=5d7g5b58cmhqljve2",
+  //   redirectMode: "POST",
+  //   callbackUrl: "https://webhook.site/7e76633b-5ecd-4c5a-ac18-2cc5e647034f",
+  //   mobileNumber: "9999999999",
+  //   paymentInstrument: { type: "PAY_PAGE" }
+  // };
 
-//   } catch (err) {
-//     //console.log("err========>", err)
-//     console.error("PhonePe initiation error:", err.response?.data || err);
-//     return res.status(500).json({ success: false, message: "Payment initiation failed" });
-//   }
-// },
+
+  //   try {
+  //     const base64EncodedPayload = Buffer.from(JSON.stringify(normalPayLoad), "utf8").toString("base64");
+  //     const stringToHash = base64EncodedPayload + "/pg/v1/pay" + SALT_KEY;
+  //     const sha256_val = sha256(stringToHash);
+  //     const xVerify = sha256_val + "###" + SALT_INDEX;
+
+  //     console.log("Base64:", base64EncodedPayload);
+  //     console.log("X-VERIFY:", xVerify);
+  //     console.log("Payload:", normalPayLoad);
+
+  //     const phonePeRes = await axios.post(
+  //       `${PHONE_PE_HOST_URL}/pg/v1/pay`,
+  //       { request: base64EncodedPayload },
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           "X-VERIFY": xVerify,
+  //           accept: "application/json",
+  //         },
+  //       }
+  //     );
+
+  //     console.log("PhonePe response:", phonePeRes.data);
+
+  //     return res.status(200).json({
+  //       success: true,
+  //       data: phonePeRes.data,
+  //     });
+
+  //   } catch (err) {
+  //     //console.log("err========>", err)
+  //     console.error("PhonePe initiation error:", err.response?.data || err);
+  //     return res.status(500).json({ success: false, message: "Payment initiation failed" });
+  //   }
+  // },
 
   sendMessage: async (req, res) => {
-    let { userId, toNumber, message , templateType, otherDetail} = req.body;
+    let { userId, toNumber, message, templateType, otherDetail } = req.body;
 
     console.log("req.bodyreq.body", req.body)
     const user = await userModel.findOne({ 'userInfo.userId': userId });
@@ -3909,17 +3964,17 @@ initiatePayment: async (req, res) => {
             message: 'Message not sent. User not found'
           });
         }
-    
+
         const password = passwordDecryptAES(user.userInfo.password);
         const WSData = {
           userId: userId,
           password: password,
           name: user.userInfo.fullName,
-          sendMessageFor:'Password Share'
+          sendMessageFor: 'Password Share'
         };
         await mesageApi(toNumber, message, templateType, WSData);
       }
-    
+
       // General template
       if (templateType && templateType === 'general') {
         if (!user) {
@@ -3928,24 +3983,24 @@ initiatePayment: async (req, res) => {
             message: 'Message not sent. User not found'
           });
         }
-        if (!otherDetail || !otherDetail.amount || (otherDetail.amount && !Number(otherDetail.amount)>0)) {
+        if (!otherDetail || !otherDetail.amount || (otherDetail.amount && !Number(otherDetail.amount) > 0)) {
           return res.status(404).json({
             success: false,
             message: 'Message not sent. amount not found'
           });
         }
-    
+
         const WSData = {
           title: "फीस संबंधित सूचना",
           message: `प्रिय अभिवावक, आपको सूचित किया जाता है कि ${user.userInfo.fullName} Class-${user.userInfo.class} का महीना/अन्य फीस  ${otherDetail.amount}/- बाकी है। लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`,
           userId: userId,
-          sendMessageFor:'Due Messaage',
+          sendMessageFor: 'Due Messaage',
           englishMessage: `Dear Parent, You are informed that the monthly/other fees of ${user.userInfo.fullName} Class- ${user.userInfo.class} is Rs. ${otherDetail.amount}/- pending. Please submit before the due date to avoid late fine. If it has already been deposited then please inform.`
           //message: `प्रिय अभिभावक, ${user.userInfo.fullName} कक्षा का महीना शुल्क ${otherDetail.amount}/- जमा कर दें । लेट फाइन से बचने के लिए कृपया देय तिथि से पहले जमा कर दें। यदि पहले ही जमा कर दिया गया है तो सूचित कर दें।`
-         };
-          await mesageApi(toNumber, message, templateType, WSData);
+        };
+        await mesageApi(toNumber, message, templateType, WSData);
       }
-    
+
       // Test template
       if (templateType && templateType === 'test') {
         const WSData = {
@@ -3955,10 +4010,10 @@ initiatePayment: async (req, res) => {
         };
         await mesageApi(toNumber, message, templateType, WSData);
       }
-    
+
       async function mesageApi(number, msg, tempType, data) {
         const response = await whatsAppMessage(number, msg, tempType, data);
-    
+
         if (response) {
           return res.status(200).json({
             success: true,
@@ -3980,18 +4035,18 @@ initiatePayment: async (req, res) => {
     }
   },
 
-  getAllMessage:async(req, res)=>{
+  getAllMessage: async (req, res) => {
     try {
       const messageData = await messageModel.find({})
-      if(messageData && messageData.length>0){
+      if (messageData && messageData.length > 0) {
         return res.status(200).json({
           success: true,
           message: 'Message get successfully',
-          data:{
+          data: {
             list: messageData
           }
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: 'Message not found.'
@@ -4003,15 +4058,15 @@ initiatePayment: async (req, res) => {
         success: false,
         message: err.message,
       })
-    } 
+    }
   },
-  getAllNotes:async(req, res)=>{
+  getAllNotes: async (req, res) => {
     try {
-      let searchStr=null
-      if(req.query.searchStr){
-        searchStr= req.query.searchStr
+      let searchStr = null
+      if (req.query.searchStr) {
+        searchStr = req.query.searchStr
       }
-    const notesData=  await userModel.aggregate([
+      const notesData = await userModel.aggregate([
         {
           $match: {
             // Match by userId if provided
@@ -4036,7 +4091,7 @@ initiatePayment: async (req, res) => {
             task: "$userInfo.notes.task", // Include task from notes
             isCompleted: "$userInfo.notes.isCompleted", // Include isCompleted
             created: "$userInfo.notes.created", // Include date for sorting
-            delete: "$userInfo.notes.delete" ,// Include delete field
+            delete: "$userInfo.notes.delete",// Include delete field
             insertedName: "$userInfo.notes.insertedName" // Include delete field
           }
         },
@@ -4045,13 +4100,13 @@ initiatePayment: async (req, res) => {
         }
       ])
       console.log("notesData")
-      if(notesData && notesData.length>0){
+      if (notesData && notesData.length > 0) {
         return res.status(200).json({
           success: true,
           message: 'Notes get successfully',
           data: notesData
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: 'Notes not found.'
@@ -4063,14 +4118,14 @@ initiatePayment: async (req, res) => {
         success: false,
         message: err.message,
       })
-    } 
+    }
   },
-  
-  getAllImages:async(req, res)=>{
+
+  getAllImages: async (req, res) => {
     const bucket = admin.storage().bucket();
     try {
       const selectedClass = req.query.selectedClass || undefined
-      const allStudentPhoto = await userModel.find({$and:[activeParam, {'userInfo.roleName':'STUDENT'},{'document.stPhoto':{$exists:true}},{'userInfo.class': selectedClass}]},{'document.stPhoto':1})
+      const allStudentPhoto = await userModel.find({ $and: [activeParam, { 'userInfo.roleName': 'STUDENT' }, { 'document.stPhoto': { $exists: true } }, { 'userInfo.class': selectedClass }] }, { 'document.stPhoto': 1 })
       //console.log("allStudentPhoto", allStudentPhoto)
       const studentPhotoSet = new Set(allStudentPhoto.map((item) => item.document.stPhoto));
       const expirationTime = new Date();
@@ -4103,16 +4158,16 @@ initiatePayment: async (req, res) => {
       })
     }
   },
-  resetRedisCashe:async (req,res)=> {
+  resetRedisCashe: async (req, res) => {
     try {
       const redisClient = getRedisClient()
-      if(redisClient){
+      if (redisClient) {
         await redisClient.flushAll()
         return res.status(200).json({
           success: true,
           message: 'Redis cache flushed successfully.',
         })
-      }else{
+      } else {
         return res.status(200).json({
           success: false,
           message: 'Redis connection not available',
@@ -4127,35 +4182,35 @@ initiatePayment: async (req, res) => {
     }
   },
 
-  userPaymentSetting:async(req, res)=>{
+  userPaymentSetting: async (req, res) => {
     try {
-      const {busOptionEnable, busRouteId, userId, paymentId, session}= req.body
-      const userDetail = await userModel.findOne({$and:[activeParam,{'userInfo.userId': userId}]})
-      const paymentDetail = await paymentModel.findOne({_id: paymentId})
-      if(userId && paymentId && userDetail && paymentDetail){
+      const { busOptionEnable, busRouteId, userId, paymentId, session } = req.body
+      const userDetail = await userModel.findOne({ $and: [activeParam, { 'userInfo.userId': userId }] })
+      const paymentDetail = await paymentModel.findOne({ _id: paymentId })
+      if (userId && paymentId && userDetail && paymentDetail) {
         const payData = {
-          busService: busOptionEnable ? true: false,
-          busRouteId: busRouteId 
-        } 
-        if(userDetail.userInfo.session === paymentDetail.session){
-          await userModel.findOneAndUpdate({_id: userDetail._id},{'userInfo.busService': payData.busService, 'userInfo.busRouteId': payData.busRouteId})
-        } 
-        const payDetailUpdated = await paymentModel.findOneAndUpdate({_id: paymentDetail._id},{...payData},{$new :true})
-        if(payDetailUpdated){
-          const  RedisPaymentKey =`payment-${payDetailUpdated.class}-${payDetailUpdated.session}`
-          redisDeleteCall({key:RedisPaymentKey})
+          busService: busOptionEnable ? true : false,
+          busRouteId: busRouteId
+        }
+        if (userDetail.userInfo.session === paymentDetail.session) {
+          await userModel.findOneAndUpdate({ _id: userDetail._id }, { 'userInfo.busService': payData.busService, 'userInfo.busRouteId': payData.busRouteId })
+        }
+        const payDetailUpdated = await paymentModel.findOneAndUpdate({ _id: paymentDetail._id }, { ...payData }, { $new: true })
+        if (payDetailUpdated) {
+          const RedisPaymentKey = `payment-${payDetailUpdated.class}-${payDetailUpdated.session}`
+          redisDeleteCall({ key: RedisPaymentKey })
 
           return res.status(200).json({
             success: true,
             message: 'Pay detail updated successfully'
           })
-        }else{
+        } else {
           return res.status(200).json({
             success: true,
             message: 'Pay detail not updated. Please contact to admin.'
           })
         }
-      }else{
+      } else {
         return res.status(400).json({
           success: false,
           message: 'User not found.'
@@ -4167,44 +4222,44 @@ initiatePayment: async (req, res) => {
         success: false,
         message: err.message,
       })
-    } 
+    }
   },
 
 
 
-// ✅ Get QR code (admin scans)
-getQRCode: async (req, res) => {
-  const {qr, pairCode} = await getQRorPairCode();
-  if (!qr && ! pairCode) return res.status(400).json({ success: false, message: "QR not available or disabled." });
-  res.json({ success: true, qr:{qr, pairCode}});
-},
+  // ✅ Get QR code (admin scans)
+  getQRCode: async (req, res) => {
+    const { qr, pairCode } = await getQRorPairCode();
+    if (!qr && !pairCode) return res.status(400).json({ success: false, message: "QR not available or disabled." });
+    res.json({ success: true, qr: { qr, pairCode } });
+  },
 
-// ✅ Sync WhatsApp groups and save to DB
-syncGroupsController: async (req, res) => {
-  try {
-    const groups = await syncGroups();
-    res.json({ success: true, groups });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-},
+  // ✅ Sync WhatsApp groups and save to DB
+  syncGroupsController: async (req, res) => {
+    try {
+      const groups = await syncGroups();
+      res.json({ success: true, groups });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  },
 
-// ✅ Get saved groups from DB
-getGroups: async (req, res) => {
-  const groups = await syncGroups()
-  if(groups.success === false ) return res.status(400).json({ success: false, message: groups.error});
-  res.json({ success: true, data: groups.data });
-},
+  // ✅ Get saved groups from DB
+  getGroups: async (req, res) => {
+    const groups = await syncGroups()
+    if (groups.success === false) return res.status(400).json({ success: false, message: groups.error });
+    res.json({ success: true, data: groups.data });
+  },
 
-// ✅ Send message to specific group
-sendGroupMessage: async (req, res) => {
-  const { groupId, message } = req.body;
-  if (!groupId || !message)
-    return res.status(400).json({ success: false, message: "groupId and message required" });
+  // ✅ Send message to specific group
+  sendGroupMessage: async (req, res) => {
+    const { groupId, message } = req.body;
+    if (!groupId || !message)
+      return res.status(400).json({ success: false, message: "groupId and message required" });
 
-  const result = await sendMessageToGroup(groupId, message);
-  res.json(result);
-},
+    const result = await sendMessageToGroup(groupId, message);
+    res.json(result);
+  },
 
 
 
@@ -4219,14 +4274,14 @@ sendGroupMessage: async (req, res) => {
     //   { useNewUrlParser: true, useUnifiedTopology: true },
     //   (err, client) => {
     //     if (err) throw err;
-    
+
     //     client
     //       .db("bmms")
     //       .collection("users")
     //       .find({})
     //       .toArray((err, data) => {
     //         if (err) throw err;
-            
+
     //         console.log(data);
     //         const ws = fs.createWriteStream("users.csv");
     //         // TODO: write data to CSV file
@@ -4289,70 +4344,70 @@ sendGroupMessage: async (req, res) => {
     //   });
     // }
 
-  //   // try {
-  //   //   let curr_date1 = moment.tz(Date.now(), "Asia/Kolkata");
-  //   //   let dd = curr_date1.date() - 1;
-  //   //   let mm = curr_date1.month() + 1;
-  //   //   let yyyy = curr_date1.year();
-  //   //   let collectionName = `users${dd}_${mm}_${yyyy}`;
-  //   //   userModel.aggregate([{ $out: collectionName }], (err, response) => {
-  //   //     if (err) {
-  //   //       console.log("err", err);
-  //   //       return res.status(200).json({
-  //   //         success: false,
-  //   //         message: "Backup not created.",
-  //   //       });
-  //   //     } else {
-  //   //       const conn = mongoose.createConnection(URL, {
-  //   //         useNewUrlParser: true,
-  //   //         useUnifiedTopology: true,
-  //   //       });
-  //   //       conn.on("open", function () {
-  //   //         conn.db
-  //   //           .listCollections()
-  //   //           .toArray(function (err, allCollectionNames) {
-  //   //             if (err) {
-  //   //               console.log(err);
-  //   //               return res.status(200).json({
-  //   //                 success: false,
-  //   //                 message: "Backup not created.",
-  //   //               });
-  //   //             }
-  //   //             // let collections = allCollectionNames
-  //   //             //   .map((data) => data.name)
-  //   //             //   .filter((fdata) => fdata.includes("FundingSource_"));
-  //   //             conn.close();
-  //   //             // let todayCollection = collections.find(
-  //   //             //   (data) => data == collectionName
-  //   //             // );
-  //   //             // console.log("todayCollection", todayCollection);
-  //   //             if (allCollectionNames) {
-  //   //               return res.status(200).json({
-  //   //                 success: true,
-  //   //                 message: "Backup Successfully",
-  //   //                 allCollectionNames,
-  //   //               });
-  //   //             } else {
-  //   //               return res.status(200).json({
-  //   //                 success: false,
-  //   //                 message: "Backup not created.",
-  //   //               });
-  //   //             }
-  //   //           });
-  //   //       });
-  //   //     }
-  //   //   });
-  //   // } catch (err) {
-  //   //   console.log(err);
-  //   //   return res.status(400).json({
-  //   //     success: false,
-  //   //     message: "Something went wrong",
-  //   //     error: err.response,
-  //   //   });
-  //   // }
+    //   // try {
+    //   //   let curr_date1 = moment.tz(Date.now(), "Asia/Kolkata");
+    //   //   let dd = curr_date1.date() - 1;
+    //   //   let mm = curr_date1.month() + 1;
+    //   //   let yyyy = curr_date1.year();
+    //   //   let collectionName = `users${dd}_${mm}_${yyyy}`;
+    //   //   userModel.aggregate([{ $out: collectionName }], (err, response) => {
+    //   //     if (err) {
+    //   //       console.log("err", err);
+    //   //       return res.status(200).json({
+    //   //         success: false,
+    //   //         message: "Backup not created.",
+    //   //       });
+    //   //     } else {
+    //   //       const conn = mongoose.createConnection(URL, {
+    //   //         useNewUrlParser: true,
+    //   //         useUnifiedTopology: true,
+    //   //       });
+    //   //       conn.on("open", function () {
+    //   //         conn.db
+    //   //           .listCollections()
+    //   //           .toArray(function (err, allCollectionNames) {
+    //   //             if (err) {
+    //   //               console.log(err);
+    //   //               return res.status(200).json({
+    //   //                 success: false,
+    //   //                 message: "Backup not created.",
+    //   //               });
+    //   //             }
+    //   //             // let collections = allCollectionNames
+    //   //             //   .map((data) => data.name)
+    //   //             //   .filter((fdata) => fdata.includes("FundingSource_"));
+    //   //             conn.close();
+    //   //             // let todayCollection = collections.find(
+    //   //             //   (data) => data == collectionName
+    //   //             // );
+    //   //             // console.log("todayCollection", todayCollection);
+    //   //             if (allCollectionNames) {
+    //   //               return res.status(200).json({
+    //   //                 success: true,
+    //   //                 message: "Backup Successfully",
+    //   //                 allCollectionNames,
+    //   //               });
+    //   //             } else {
+    //   //               return res.status(200).json({
+    //   //                 success: false,
+    //   //                 message: "Backup not created.",
+    //   //               });
+    //   //             }
+    //   //           });
+    //   //       });
+    //   //     }
+    //   //   });
+    //   // } catch (err) {
+    //   //   console.log(err);
+    //   //   return res.status(400).json({
+    //   //     success: false,
+    //   //     message: "Something went wrong",
+    //   //     error: err.response,
+    //   //   });
+    //   // }
   },
 
-  
+
 
 
   /// blog website
@@ -4371,14 +4426,14 @@ sendGroupMessage: async (req, res) => {
       //     .replace(/-+/g, '-'); // remove consecutive hyphens
       // }
       let title = blogReqBody.title
-      let slugTitle= ''
-      if(!title){
+      let slugTitle = ''
+      if (!title) {
         return res.status(400).json({
           success: false,
           message: "Title required.",
         });
       }
-      if(title){
+      if (title) {
         slugTitle = slugify(title, {
           replacement: '-',  // replace spaces with replacement character, defaults to `-`
           remove: undefined, // remove characters that match regex, defaults to `undefined`
@@ -4386,25 +4441,25 @@ sendGroupMessage: async (req, res) => {
           strict: false,     // strip special characters except replacement, defaults to `false`
           locale: 'en',      // language code of the locale to use
           trim: true,        // trim leading and trailing replacement chars, defaults to `true`
-          remove: /[*+~.()'"!:@]/g       
+          remove: /[*+~.()'"!:@]/g
         })
-        if(slugTitle){
-          const foundSlug= await blogModel.find({slugTitle:slugTitle})
-          if(foundSlug && foundSlug.length>0){
+        if (slugTitle) {
+          const foundSlug = await blogModel.find({ slugTitle: slugTitle })
+          if (foundSlug && foundSlug.length > 0) {
             return res.status(400).json({
               success: false,
               message: "Title already exist.",
             });
           }
-        }else{
+        } else {
           return res.status(400).json({
             success: false,
             message: "Title not proper string.",
           });
         }
       }
- 
-      blogReqBody['slugTitle']= slugTitle
+
+      blogReqBody['slugTitle'] = slugTitle
 
       let newBlogPost = new blogModel(blogReqBody)
       //   {
@@ -4430,7 +4485,7 @@ sendGroupMessage: async (req, res) => {
   },
   deleteBlogPost: async (req, res) => {
     try {
-      const data= await blogModel.findOneAndDelete({_id:req.body.id})
+      const data = await blogModel.findOneAndDelete({ _id: req.body.id })
       return res.status(200).json({
         success: true,
         message: "Delete Blog Post successfuly",
@@ -4445,7 +4500,7 @@ sendGroupMessage: async (req, res) => {
 
   updateBlogPost: async (req, res) => {
     try {
-      const updateData= blogModel.findOneAndUpdate({_id:req.body.blogPostNumber},req.body)
+      const updateData = blogModel.findOneAndUpdate({ _id: req.body.blogPostNumber }, req.body)
       return res.status(200).json({
         success: true,
         message: "Blog Post updated",
@@ -4458,61 +4513,61 @@ sendGroupMessage: async (req, res) => {
     }
   },
 
-  uploadImage: async(req, res, next)=>{
+  uploadImage: async (req, res, next) => {
     console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.fileName)
     console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.files.file)
-    const file =  req.files.file
-    try{
+    const file = req.files.file
+    try {
       cloudinary.uploader.upload(file.tempFilePath, {
         public_id: req.body.fileName,
         resource_type: 'image'
-        },(error, result) => {
-          if (!error) {
-            // The image has been successfully uploaded.
-            console.log('Upload Result:', result);
-            return res.status(200).json({
-              success: true,
-              message:'Image uploaded success',
-              data: result,
-            });
-          } else {
-            // Handle the error.
-            console.error('Upload Error:', error);
-            return res.status(400).json({
-              success: false,
-              message:'Image not uploaded',
-              data: error,
-            });
-          }
+      }, (error, result) => {
+        if (!error) {
+          // The image has been successfully uploaded.
+          console.log('Upload Result:', result);
+          return res.status(200).json({
+            success: true,
+            message: 'Image uploaded success',
+            data: result,
+          });
+        } else {
+          // Handle the error.
+          console.error('Upload Error:', error);
+          return res.status(400).json({
+            success: false,
+            message: 'Image not uploaded',
+            data: error,
+          });
+        }
       });
-    }catch(err){
+    } catch (err) {
       console.log("errrrrrrrrrrrr", err)
       return res.status(400).json({
         success: false,
-        message:'Error while upload image',
+        message: 'Error while upload image',
         error: err.message,
       });
     }
   },
-  uploadDocFireBase: async(req, res, next)=>{
+  uploadDocFireBase: async (req, res, next) => {
     //console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.fileName)
     //console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.files.image)
-   
-    try{
+
+    try {
       const { userId, docType, fileName } = req.body;
-      let userData= await userModel.findOne({'userInfo.userId': userId})
+      let userData = await userModel.findOne({ 'userInfo.userId': userId })
 
       const ocrPromise = new Promise(async (resolve, reject) => {
-        if (docType==='stAadharFside') {
+        if (docType === 'stAadharFside') {
           //console.log("1111111111111")
           try {
-            const base64data = 'data:image/jpeg;base64,'+Buffer.from(req.files.image.data, 'binary').toString('base64');
+            const base64data = 'data:image/jpeg;base64,' + Buffer.from(req.files.image.data, 'binary').toString('base64');
             const result = await ocrSpace(base64data, {
               apiKey: OCR_API_KEY,
               language: 'eng',
             });
             //console.log("222222222222222", result)
-            const extractedText =result?.ParsedResults?.[0]?.ParsedText || '';
+            const extractedText = result?.ParsedResults?.[0]?.ParsedText || '';
             //console.log("333333333333", extractedText)
 
             const uidaiRegex = /\b\d{4}\s\d{4}\s\d{4}\b/;
@@ -4528,143 +4583,143 @@ sendGroupMessage: async (req, res) => {
       })
 
       const timeoutPromise = new Promise((resolve, reject) => {
-        if (docType==='stAadharFside') {
-          setTimeout(() => 
+        if (docType === 'stAadharFside') {
+          setTimeout(() =>
             resolve('TIME_OUT')
-          //reject(new Error('OCR processing timed out'))
-          , 3000);
-        }else{
+            //reject(new Error('OCR processing timed out'))
+            , 3000);
+        } else {
           resolve(null)
         }
       });
-  
-      const uploadPromise= await uploadImageFireBase(req, userId, docType, fileName)
-  
+
+      const uploadPromise = await uploadImageFireBase(req, userId, docType, fileName)
+
       const [ocrResult, imageData] = await Promise.all([
-        docType==='stAadharFSide'? Promise.race([ocrPromise, timeoutPromise]) : ocrPromise,
+        docType === 'stAadharFSide' ? Promise.race([ocrPromise, timeoutPromise]) : ocrPromise,
         uploadPromise,
       ]);
       //console.log("4444444444", ocrResult)
-      
-      if(imageData && imageData.status===true){
+
+      if (imageData && imageData.status === true) {
         //console.log('docType', docType, "check",docType==='stAadharFside' )
-        if(docType==='stAadharFside'){
-          const aadharNumber = (ocrResult && ocrResult!=='TIME_OUT')? ocrResult.replace(/\s+/g, '') : '';
+        if (docType === 'stAadharFside') {
+          const aadharNumber = (ocrResult && ocrResult !== 'TIME_OUT') ? ocrResult.replace(/\s+/g, '') : '';
           //console.log('Extracted Aadhaar Number:', aadharNumber);
           userData.userInfo['aadharNumber'] = aadharNumber || userData.userInfo.aadharNumber
         }
-        userData.document={
+        userData.document = {
           ...userData.document,
-            [docType]: fileName
+          [docType]: fileName
         }
-        await userModel.findOneAndUpdate({'_id': userData._id},userData)
+        await userModel.findOneAndUpdate({ '_id': userData._id }, userData)
         return res.status(200).json({
           success: true,
           message: imageData.message,
-          data:{
+          data: {
             url: imageData.url,
             aadharNumber: userData.userInfo.aadharNumber
           }
         });
-      }else{
+      } else {
         return res.status(400).json({
           success: false,
-          message:imageData.message,
+          message: imageData.message,
         });
       }
-    }catch(err){
+    } catch (err) {
       console.log("errrrrrrrrrrrr", err)
       return res.status(400).json({
         success: false,
-        message:'Error while upload image',
+        message: 'Error while upload image',
         error: err.message,
       });
     }
   },
-  imageUplaodFireBase: async(req, res, next)=>{
+  imageUplaodFireBase: async (req, res, next) => {
     console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.fileName)
     console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.files.image)
-   
-    try{
-      const userId= req.body.userId || '543543534'
-      const docType= req.body.docType || 'stPhoto'
-     const imageData= await uploadImageFireBase(req, userId, docType)
-     if(imageData && imageData.status===true){
-      return res.status(200).json({
-        success: true,
-        message: imageData.message,
-        data:{
-          url: imageData.url
-        }
-      });
-     }else{
-      return res.status(400).json({
-        success: false,
-        message:imageData.message,
-      });
-     }
-    }catch(err){
+
+    try {
+      const userId = req.body.userId || '543543534'
+      const docType = req.body.docType || 'stPhoto'
+      const imageData = await uploadImageFireBase(req, userId, docType)
+      if (imageData && imageData.status === true) {
+        return res.status(200).json({
+          success: true,
+          message: imageData.message,
+          data: {
+            url: imageData.url
+          }
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: imageData.message,
+        });
+      }
+    } catch (err) {
       console.log("errrrrrrrrrrrr", err)
       return res.status(400).json({
         success: false,
-        message:'Error while upload image',
+        message: 'Error while upload image',
         error: err.message,
       });
     }
   },
 
-  removeDocFireBase: async(req, res, next)=>{
+  removeDocFireBase: async (req, res, next) => {
     //console.log("reqqqqqqqqqqqqqqqqqqqqqqqqBody", req.body.docType)
     //console.log("reqqqqqqqqqqqqqqqqqqqqqqqqfile", req.body.userId)
-   
-    try{
-      const {userId, docType}= req.body
-      let userData= await userModel.findOne({$and:[{'userInfo.userId': userId},{"userInfo.roleName": "STUDENT"}]})
-      if(!userData){
+
+    try {
+      const { userId, docType } = req.body
+      let userData = await userModel.findOne({ $and: [{ 'userInfo.userId': userId }, { "userInfo.roleName": "STUDENT" }] })
+      if (!userData) {
         return res.status(400).json({
           success: false,
-          message:'User not found',
+          message: 'User not found',
         });
       }
-      if(!userData.document){
+      if (!userData.document) {
         return res.status(400).json({
           success: false,
-          message:'Any Doc/Photo not found.',
+          message: 'Any Doc/Photo not found.',
         });
       }
       console.log("userData.document[docType]", userData)
-      if(!userData.document[docType]){
+      if (!userData.document[docType]) {
         return res.status(400).json({
           success: false,
-          message:'Doc/Photo not found.',
+          message: 'Doc/Photo not found.',
         });
       }
-      const fileName=  userData.document[docType] //`${docType}_${userId}.jpeg`
-      const isRemoved= await removeDocFireBase(fileName)
-      if(isRemoved){
-          userData.document={
-            ...userData.document,
-            [docType]: ''
-          }
-          if(docType==='stAadharFside'){
-            userData.userInfo['aadharNumber']=''
-          }
-          await userModel.findOneAndUpdate({'_id': userData.id}, userData)
-          return res.status(200).json({
-            success: true,
-            message: 'Doc/Photo deleted successfully',
-          });
-      }else{
+      const fileName = userData.document[docType] //`${docType}_${userId}.jpeg`
+      const isRemoved = await removeDocFireBase(fileName)
+      if (isRemoved) {
+        userData.document = {
+          ...userData.document,
+          [docType]: ''
+        }
+        if (docType === 'stAadharFside') {
+          userData.userInfo['aadharNumber'] = ''
+        }
+        await userModel.findOneAndUpdate({ '_id': userData.id }, userData)
+        return res.status(200).json({
+          success: true,
+          message: 'Doc/Photo deleted successfully',
+        });
+      } else {
         return res.status(400).json({
           success: false,
-          message:'Doc/Photo not deleted, Try again!',
+          message: 'Doc/Photo not deleted, Try again!',
         });
       }
-    }catch(err){
+    } catch (err) {
       console.log("errrrrrrrrrrrr", err)
       return res.status(400).json({
         success: false,
-        message:'Error while removing Doc/Photo',
+        message: 'Error while removing Doc/Photo',
         error: err.message,
       });
     }
