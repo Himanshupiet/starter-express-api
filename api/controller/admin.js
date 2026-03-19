@@ -2990,6 +2990,7 @@ module.exports = {
                 ]
               }
             }
+            paymentFound['paymentLedgerPage'] = req.body.paymentLedgerPage ? req.body.paymentLedgerPage : paymentFound['paymentLedgerPage']
 
           }
           if (submitType === 'OTHER_PAYMENT') {
@@ -3050,6 +3051,7 @@ module.exports = {
                 [req.body.dueFor]: req.body.dueAmount ? Number(req.body.dueAmount) : 0
               }
             }
+            paymentFound['paymentLedgerPage'] = req.body.paymentLedgerPage ? req.body.paymentLedgerPage : paymentFound['paymentLedgerPage']
           }
           // paymentFound['totalPaidAmount'] =  parseInt(paymentFound.totalPaidAmount)+ parseInt(req.body.paidAmount)
           // paymentFound['totalAmount'] =  parseInt(paymentFound.totalAmount) + parseInt(req.body.totalAmount)
@@ -3125,6 +3127,7 @@ module.exports = {
             newPaymentInfo['userId'] = req.body.userId
             newPaymentInfo['session'] = req.body.session
             newPaymentInfo['class'] = req.body.class
+            newPaymentInfo['paymentLedgerPage'] = req.body.paymentLedgerPage ? req.body.paymentLedgerPage : undefined
           }
           // other payement found 
           const paymentAdded = await newPaymentInfo.save();
