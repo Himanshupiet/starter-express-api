@@ -1,4 +1,4 @@
-const {createClient} = require('redis');
+const { createClient } = require('redis');
 const { invoiceModel } = require('../models/invoice ');
 const { counterModel } = require('../models/counter');
 
@@ -7,16 +7,25 @@ let redisClient;
 
 const connectRedis = async () => {
 
-///migrateCounters();
+    ///migrateCounters();
 
 
     if (!redisClient) {
-         redisClient = createClient({
+        const isTls = process.env.REDIS_DB_CLOUD_HOST && (
+            process.env.REDIS_DB_CLOUD_HOST.startsWith('rediss://') ||
+            process.env.REDIS_DB_PORT === '6380' ||
+            process.env.REDIS_DB_PORT === '16380' ||
+            process.env.REDIS_TLS === 'true'
+        );
+
+        redisClient = createClient({
             username: 'default',
             password: process.env.REDIS_DB_PASSWORD,
             socket: {
                 host: process.env.REDIS_DB_CLOUD_HOST,
-                port: process.env.REDIS_DB_PORT 
+                port: parseInt(process.env.REDIS_DB_PORT),
+                tls: isTls ? {} : undefined,
+                connectTimeout: 10000
             }
         });
         redisClient.on('error', (err) => {

@@ -1,0 +1,5 @@
+# Antigravity ignore patterns
+# Prevents the AI coding assistant from reading or modifying these files
+.env
+*.env
+.env.*
