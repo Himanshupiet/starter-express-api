@@ -2691,13 +2691,15 @@ module.exports = {
 
 
 
-    // const busRouteFareList111= await vehicleRouteFareModel.find({session:'2024-25'})
+    // const busRouteFareList111= await vehicleRouteFareModel.find({session:'2025-26'})
     // for (const element of busRouteFareList111) {
-    //       let newEle= JSON.parse(JSON.stringify(element))
-    //       delete newEle._id
-    //       newEle.session = '2025-26'
-    //       const newInfo = new vehicleRouteFareModel(newEle)
-    //       await newInfo.save();
+    //     let newEle= JSON.parse(JSON.stringify(element))
+    //     delete newEle._id
+    //     newEle.session = '2026-27'
+    //     newEle.created = new Date()
+    //     newEle.modified = new Date()
+    //     const newInfo = new vehicleRouteFareModel(newEle)
+    //     await newInfo.save();
     // }
 
 
@@ -2719,11 +2721,13 @@ module.exports = {
     // }
 
 
-    // const monthlyFeeList111= await monthlyFeeListModel.find({session:'2024-25'})
+    // const monthlyFeeList111= await monthlyFeeListModel.find({session:'2025-26'})
     // for (const element of monthlyFeeList111) {
     //       let newEle = JSON.parse(JSON.stringify(element))
     //       delete newEle._id
-    //       newEle.session = '2025-26'
+    //       newEle.session = '2026-27'
+    //       newEle.created = new Date()
+    //       newEle.modified = new Date()
     //       const newInfo = new monthlyFeeListModel(newEle)
     //       await newInfo.save();
     // }

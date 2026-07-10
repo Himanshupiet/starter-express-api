@@ -119,14 +119,14 @@ const connectToMongo = async () => {
       if (process.env.REDIS_START && process.env.REDIS_START === 'true') {
         await connectRedis()
       }
-      if (process.env.WP_GROUP_MESSAGE_START && process.env.WP_GROUP_MESSAGE_START === 'true') {
-        try {
-          if (!sockInstance) sockInstance = await wpInitClient('bmms_office');
-          console.log('init started');
-        } catch (e) {
-          console.error('start error', e);
-        }
-      }
+      // if (process.env.WP_GROUP_MESSAGE_START && process.env.WP_GROUP_MESSAGE_START === 'true') {
+      //   try {
+      //     if (!sockInstance) sockInstance = await wpInitClient('bmms_office');
+      //     console.log('init started');
+      //   } catch (e) {
+      //     console.error('start error', e);
+      //   }
+      // }
 
       //*** Backup restore  */
       //const zipFilePath = "/home/anshu/Downloads/BMMS_Daily_Backup_01_08_2025.zip";
