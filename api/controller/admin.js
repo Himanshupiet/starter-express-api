@@ -20,11 +20,6 @@ const { AuthToken } = require("../../models/authtoken");
 const cloudinary = require("cloudinary").v2;
 const { ocrSpace } = require('ocr-space-api-wrapper');
 const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime, getRankedResult } = require('../../util/helper')
-const {
-  getAllActiveRoi,
-  withDrawalBalance,
-
-} = require("../../util/income");
 const { getRedisClient } = require('../../util/redisDB')
 const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
@@ -358,6 +353,18 @@ module.exports = {
         }
         if (req.body.filterOption === 'No Aadhar') {
           filterOptionParam = { 'userInfo.aadharNumber': '' }
+        }
+        if(req.body.filterOption === 'No Pen Number') {
+          filterOptionParam = { 'userInfo.penNumber': '' }
+        }
+        if(req.body.filterOption === 'No Apaar Id') {
+          filterOptionParam = { 'userInfo.apaarId': '' }
+        }
+        if(req.body.filterOption === 'Pen Number Available') {
+          filterOptionParam = { 'userInfo.penNumber': { $ne: '' } }
+        }
+        if(req.body.filterOption === 'Apaar Id Available') {
+          filterOptionParam = { 'userInfo.apaarId': { $ne: '' } }
         }
         if (req.body.filterOption === 'Deactive') {
           studentAprroveParam = { $and: [{ deleted: false }, { isApproved: true }, { isActive: false }] }
@@ -1231,9 +1238,8 @@ module.exports = {
 
   getResult: async (req, res) => {
     try {
-      //console.log("req", req.body)
       const resultQuery = req.body
-      const userData = await userModel.find({ $and: [{ 'userInfo.class': resultQuery.selectedClass }, { 'userInfo.roleName': 'STUDENT' }, activeParam] });
+      const userData = await userModel.find({ $and: [{ 'userInfo.class': resultQuery.selectedClass }, { 'userInfo.roleName': 'STUDENT' }, { 'userInfo.session': resultQuery.resultPermissionData.resultYear }, activeParam] });
       if (resultQuery.resultPermissionData.action === 'ENTRY') {
         let subjectName = resultQuery.selectedSubject && resultQuery.selectedSubject.toLowerCase().trim()
         subjectName = subjectName.includes(' ') ? subjectName.split(' ').join('_') : subjectName
@@ -5039,118 +5045,5 @@ module.exports = {
         error: err.response,
       });
     }
-  },
-  genrateRoiIncome: async (req, res) => {
-    try {
-      let allRoids = await getAllActiveRoi();
-      //console.log("allRoids", allRoids);
-      // const roiIncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate roi start ", it);
-      //     investIncome(it);
-      //   }
-      // };
-      // const level1IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 1 start", it);
-
-      //     level1Income(it);
-      //   }
-      // };
-      // const level2IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 2 start", it);
-
-      //     level2Income(it);
-      //   }
-      // };
-      // const level3IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 3 start", it);
-
-      //     level3Income(it);
-      //   }
-      // };
-      // const level4IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 4 start", it);
-
-      //     level4Income(it);
-      //   }
-      // };
-      // const level5IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 5 start", it);
-
-      //     level5Income(it);
-      //   }
-      // };
-      // const level6IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 6 start", it);
-
-      //     level6Income(it);
-      //   }
-      // };
-      // const level7IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 7 start", it);
-
-      //     level7Income(it);
-      //   }
-      // };
-      // const level8IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 8 start", it);
-
-      //     level8Income(it);
-      //   }
-      // };
-      // const level9IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 9 start", it);
-
-      //     level9Income(it);
-      //   }
-      // };
-      // const level10IncomeGenrate = async () => {
-      //   for (it of allRoids) {
-      //     console.log(" incomeGenrate level 10 start", it);
-
-      //     level10Income(it);
-      //   }
-      // };
-    } catch (err) {
-      console.log(err);
-      return res.status(400).json({
-        success: false,
-        message: "Something went wrong",
-        error: err.response,
-      });
-    }
-  },
-  genrateRoiWithdrawal: async (req, res) => {
-    try {
-      let allRoids = await getAllActiveRoi();
-
-      try {
-        for (it of allRoids) {
-          console.log(" Withdrawal cron jobs start", it);
-          withDrawalBalance(it);
-        }
-      } finally {
-        return res.status(200).json({
-          success: true,
-          message: "Withdrawal generated",
-        });
-      }
-    } catch (err) {
-      console.log(err);
-      return res.status(400).json({
-        success: false,
-        message: "Something went wrong",
-        error: err.response,
-      });
-    }
-  },
+  }, 
 };

@@ -70,6 +70,14 @@ const userSchema = new mongoose.Schema({
       type: String,
       //required: true,
     },
+    fatherAadharNumber: {
+      type: String,
+      //required: true,
+    },
+    motherAadharNumber: {
+      type: String,
+      //required: true,
+    },
     roleId:{
       type: String,
       required: true
@@ -102,6 +110,10 @@ const userSchema = new mongoose.Schema({
     },
     qualificationMother:{
       type:String
+    },
+    penNumber:{
+      type:String,
+      //required: true,
     },
     apaarId:{
       type:String
