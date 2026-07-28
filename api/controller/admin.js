@@ -354,17 +354,17 @@ module.exports = {
         if (req.body.filterOption === 'No Aadhar') {
           filterOptionParam = { 'userInfo.aadharNumber': '' }
         }
-        if(req.body.filterOption === 'No Pen Number') {
-          filterOptionParam = { 'userInfo.penNumber': '' }
+        if(req.body.filterOption === 'No PEN Number') {
+          filterOptionParam = { $or: [{ 'userInfo.penNumber': { $exists: false } }, { 'userInfo.penNumber': null }, { 'userInfo.penNumber': '' }] }
         }
-        if(req.body.filterOption === 'No Apaar Id') {
-          filterOptionParam = { 'userInfo.apaarId': '' }
+        if(req.body.filterOption === 'No APAAR Id') {
+          filterOptionParam = { $or: [{ 'userInfo.apaarId': { $exists: false } }, { 'userInfo.apaarId': null }, { 'userInfo.apaarId': '' }] }
         }
-        if(req.body.filterOption === 'Pen Number Available') {
-          filterOptionParam = { 'userInfo.penNumber': { $ne: '' } }
+        if(req.body.filterOption === 'PEN Number Available') {
+          filterOptionParam = { 'userInfo.penNumber': { $exists: true, $ne: null, $gt: '' } }
         }
-        if(req.body.filterOption === 'Apaar Id Available') {
-          filterOptionParam = { 'userInfo.apaarId': { $ne: '' } }
+        if(req.body.filterOption === 'APAAR Id Available') {
+          filterOptionParam = { 'userInfo.apaarId': { $exists: true, $ne: null, $gt: '' } }
         }
         if (req.body.filterOption === 'Deactive') {
           studentAprroveParam = { $and: [{ deleted: false }, { isApproved: true }, { isActive: false }] }
