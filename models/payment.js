@@ -88,6 +88,12 @@ const paymentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  deductionInfo: {
+    amt: Number,
+    reason: String,
+    userId: String,
+    date: Date,
+  }
 });
 
 paymentSchema.virtual("id").get(function () {

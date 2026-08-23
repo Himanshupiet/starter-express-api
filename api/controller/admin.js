@@ -19,7 +19,7 @@ const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
 const cloudinary = require("cloudinary").v2;
 const { ocrSpace } = require('ocr-space-api-wrapper');
-const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime, getRankedResult } = require('../../util/helper')
+const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime, getRankedResult, decryptAES } = require('../../util/helper')
 const { getRedisClient } = require('../../util/redisDB')
 const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
@@ -3302,6 +3302,7 @@ module.exports = {
 
             // Main logic
             const prevMonthPayDetail = getMonthPayData(sData, previousPayDetail, prev_monthlyFeeList, prev_busRouteFareList, previousSession());
+            const prevConcessionAmt = previousPayDetail?.deductionInfo?.amt ? Number(previousPayDetail?.deductionInfo?.amt) : 0
             let dueAmt = 0;
             let userPrevDues = {
               monthlyFee: 0,
@@ -3358,7 +3359,7 @@ module.exports = {
                 if (prevMonthPayDetail[mData].paidDone) {
                   // paidAmt+=prevMonthPayDetail[mData].amt?Number(prevMonthPayDetail[mData].amt):0
                 } else {
-                  userPrevDues.monthlyFee += Number(prevMonthPayDetail[mData].monthlyFee)
+                  userPrevDues.monthlyFee += (Number(prevMonthPayDetail[mData].monthlyFee) - prevConcessionAmt)
                   userPrevDues.busFee += Number(prevMonthPayDetail[mData].busFee)
                 }
               }
@@ -4197,13 +4198,33 @@ module.exports = {
 
   userPaymentSetting: async (req, res) => {
     try {
-      const { busOptionEnable, busRouteId, userId, paymentId, session } = req.body
+      const { busOptionEnable, busRouteId, userId, paymentId, deductionAmt, password, reason} = req.body
       const userDetail = await userModel.findOne({ $and: [activeParam, { 'userInfo.userId': userId }] })
       const paymentDetail = await paymentModel.findOne({ _id: paymentId })
+      if(deductionAmt && Number(deductionAmt) > 0 && password) {
+        const validPassword = passwordDecryptAES(req.user.userInfo.password) === decryptAES(req.body.password)
+        if(!validPassword){
+          return res.status(400).json({
+            success: false,
+            message: "Incorrect Password",
+          })
+        }
+      }
       if (userId && paymentId && userDetail && paymentDetail) {
         const payData = {
           busService: busOptionEnable ? true : false,
-          busRouteId: busRouteId
+          busRouteId: busRouteId,
+        }
+        if(deductionAmt && Number(deductionAmt) >= 0 && reason){
+          const isUpdated = (paymentDetail?.deductionInfo?.amt && (Number(deductionAmt) !== Number(paymentDetail?.deductionInfo?.amt))) ? true : false 
+          payData.deductionInfo = {
+            amt: Number(deductionAmt || 0),
+            reason: reason || 'Reason not provided.',
+            userId: req.user.userInfo.userId,
+            insertedBy: req.user.userInfo.fullName,
+            insertedDate: !isUpdated ? new Date() : paymentDetail?.deductionInfo?.insertedDate,
+            updatedDate: isUpdated ? new Date() : undefined,
+          }
         }
         if (userDetail.userInfo.session === paymentDetail.session) {
           await userModel.findOneAndUpdate({ _id: userDetail._id }, { 'userInfo.busService': payData.busService, 'userInfo.busRouteId': payData.busRouteId })
