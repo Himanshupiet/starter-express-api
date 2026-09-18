@@ -11,7 +11,7 @@ router.get("/createBackup", admin.createBuckup)
 // router with aunthenticate
 router.use(isAunthaticatedAdmin)
 router.post("/getAllUser",  admin.getAllUsers);
-router.post("/getAllstudent",  admin.getAllStudents);
+router.post("/getAllStudent",  admin.getAllStudents);
 router.get("/deleteUser/:id", admin.deleteUser)
 router.post("/updateUser/:id", admin.updateUserById)
 router.post("/updateStatus",  admin.updateStatus);
