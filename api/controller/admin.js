@@ -3277,25 +3277,55 @@ module.exports = {
       //   })
       // }
 
-      const allPayDetail = await paymentModel.find({ $and: [sessionParam, classParam, userIdParam, deletedParam] })
+      const allPayDetail = await paymentModel.find({ $and: [sessionParam, classParam, userIdParam, deletedParam] }).lean()
 
       if (allPayDetail && allPayDetail.length > 0) {
         const userIds = allPayDetail.map(data => data.userId)
-        const allStudents = await userModel.find({ 'userInfo.userId': { $in: [...userIds] } })
+        const allStudents = await userModel.find({ 'userInfo.userId': { $in: [...userIds] } }).lean()
         const PREV_SESSSION = previousSession()
-        const allPreviousPayDetail = reqSession === CURRENTSESSION ? await paymentModel.find({ $and: [{ userId: { $in: [...userIds] } }, { session: PREV_SESSSION }, deletedParam] }) : undefined
-        const prev_busRouteFareList = await vehicleRouteFareModel.find({ session: PREV_SESSSION })
-        const prev_monthlyFeeList = await monthlyFeeListModel.find({ session: PREV_SESSSION })
+        const allPreviousPayDetail = reqSession === CURRENTSESSION ? await paymentModel.find({ $and: [{ userId: { $in: [...userIds] } }, { session: PREV_SESSSION }, deletedParam] }).lean() : undefined
+        const prev_busRouteFareList = await vehicleRouteFareModel.find({ session: PREV_SESSSION }).lean()
+        const prev_monthlyFeeList = await monthlyFeeListModel.find({ session: PREV_SESSSION }).lean()
+
+        // Batch fetch all invoices for all target students in one query to eliminate N+1 loop calls
+        const allInvoices = await invoiceModel.find({
+          userId: { $in: userIds },
+          session: req.query.session,
+          deleted: false,
+          paidStatus: true
+        }).lean()
+
+        const invoicesByUserId = new Map()
+        for (const inv of allInvoices) {
+          if (!invoicesByUserId.has(inv.userId)) {
+            invoicesByUserId.set(inv.userId, [])
+          }
+          invoicesByUserId.get(inv.userId).push(inv)
+        }
+
+        const studentMap = new Map()
+        for (const s of allStudents) {
+          if (s.userInfo && s.userInfo.userId) {
+            studentMap.set(s.userInfo.userId, s)
+          }
+        }
+
+        const prevPayMap = new Map()
+        if (allPreviousPayDetail && allPreviousPayDetail.length > 0) {
+          for (const p of allPreviousPayDetail) {
+            prevPayMap.set(p.userId, p)
+          }
+        }
+
         for (const it of allPayDetail) {
           let prevAmtDue = 0
-          const sData = allStudents.find(data => data.userInfo.userId === it.userId)
+          const sData = studentMap.get(it.userId)
           if (!sData) {
             continue;
           }
 
-          const previousPayDetail = reqSession === CURRENTSESSION ? allPreviousPayDetail.find(data => data.userId === it.userId) || undefined : undefined
-          const condInvParam = { $and: [{ 'userId': sData.userInfo.userId }, { 'session': req.query.session }, { deleted: false }, { paidStatus: true }] }
-          const invoiceData = await invoiceModel.find(condInvParam)
+          const previousPayDetail = reqSession === CURRENTSESSION && allPreviousPayDetail ? prevPayMap.get(it.userId) : undefined
+          const invoiceData = invoicesByUserId.get(sData.userInfo.userId) || []
           const userPayDetail = it
           //(sData, userPayDetail, monthlyFeeList, busRouteFareList, session)
           const monthPayDetail = getMonthPayData(sData, userPayDetail, monthlyFeeList, busRouteFareList, reqSession)
