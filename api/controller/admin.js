@@ -401,7 +401,7 @@ module.exports = {
       }
       //console.log("condParammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm", JSON.stringify(condParam))
       const isDownload   = !!(req.body.isDownload || req.body.isCsv) // isDownload:true or isCsv:true → fetch all records
-      const isPagination = !isDownload && req.body.isPagination !== false
+      const isPagination = req.body.isPagination === true
       const page  = parseInt(req.body.page)  || 1
       const limit = parseInt(req.body.limit) || 10
       const skip  = (page - 1) * limit
