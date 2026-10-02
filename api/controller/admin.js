@@ -17,9 +17,7 @@ const { roleModel } = require("../../models/role")
 const { cronjobModel } = require("../../models/cronjob");
 const { FundingSource } = require("../../models/fundingSource");
 const { AuthToken } = require("../../models/authtoken");
-const cloudinary = require("cloudinary").v2;
-const { ocrSpace } = require('ocr-space-api-wrapper');
-const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime, getRankedResult, decryptAES } = require('../../util/helper')
+const { passwordEncryptAES, newUserIdGen, newInvoiceIdGenrate, sendDailyBackupEmail, encryptAES, getAdmissionSession, passwordDecryptAES, whatsAppMessage, previousSession, uploadImageFireBase, getAadharNumber, removeDocFireBase, getCurrentSession, redisFlusCall, redisDeleteCall, redisSetKeyCall, generateUniqueIdWithTime, payOptionModeIdGen, getRankedResult, decryptAES } = require('../../util/helper')
 const { getRedisClient } = require('../../util/redisDB')
 const { resultModel } = require("../../models/result");
 const { resultEntryPerModel } = require("../../models/resutlEntryPer");
@@ -2649,8 +2647,10 @@ module.exports = {
         newListCreated = await newInfo.save();
       }
       if (req.params.name === 'createPayOption') {
+        const payModeId = await payOptionModeIdGen(req.body.payMethod || 'UPI');
         const newInfo = new payOptionModel({
-          ...req.body
+          ...req.body,
+          payModeId
         })
         newListCreated = await newInfo.save();
       }
@@ -3564,53 +3564,71 @@ module.exports = {
         console.log("filter", req.query.filter)
         if (req.query.filter === 'Cash') {
           filter = {
-            "invoiceInfo.payment": {
-              $elemMatch: { payModeId: "Cash" }
-            },
-            "invoiceInfo.payment": {
-              $not: {
-                $elemMatch: { payModeId: { $ne: "Cash" } }
-              }
-            }
-          }
+            $and: [
+              { "invoiceInfo.payment": { $elemMatch: { payModeId: "Cash" } } },
+              { "invoiceInfo.payment": { $not: { $elemMatch: { payModeId: { $ne: "Cash" } } } } }
+            ]
+          };
         } else if (req.query.filter === 'Online') {
           filter = {
-            "invoiceInfo.payment": {
-              $elemMatch: { payModeId: { $ne: "Cash" } }
-            },
-            "invoiceInfo.payment": {
-              $not: {
-                $elemMatch: { payModeId: "Cash" }
-              }
-            }
+            $and: [
+              { "invoiceInfo.payment": { $elemMatch: { payModeId: { $ne: "Cash" } } } },
+              { "invoiceInfo.payment": { $not: { $elemMatch: { payModeId: "Cash" } } } }
+            ]
           };
         } else if (req.query.filter === 'Both') {
           filter = {
-            "invoiceInfo.payment":
-            {
+            "invoiceInfo.payment": {
               $all: [
                 { $elemMatch: { payModeId: "Cash" } },
                 { $elemMatch: { payModeId: { $ne: "Cash" } } }
               ]
             }
+          };
+        } else if (req.query.filter && req.query.filter !== 'All') {
+          const filterVal = req.query.filter;
+          let matchIds = [filterVal];
+          try {
+            const isObjId = mongoose.Types.ObjectId.isValid(filterVal);
+            const opt = await payOptionModel.findOne({
+              $or: [
+                { payModeId: filterVal },
+                ...(isObjId ? [{ _id: filterVal }] : [])
+              ]
+            }).lean();
+            if (opt) {
+              if (opt.payModeId && !matchIds.includes(opt.payModeId)) matchIds.push(opt.payModeId);
+              if (opt._id && !matchIds.includes(opt._id.toString())) matchIds.push(opt._id.toString());
+            }
+          } catch (e) {
+            console.log("Error finding payOption for filter:", e);
           }
+          filter = {
+            "invoiceInfo.payment": {
+              $elemMatch: { payModeId: { $in: matchIds } }
+            }
+          };
         } else {
-          filter = {}
+          filter = {};
         }
       }
       //console.log("filter query", filter)
 
       //console.log("dateFilter", dateFilter)
       if (req.query.invoiceId) {
-        invoiceData = await invoiceModel.find({ invoiceId: req.query.invoiceId })
-        dateFilter = {}
-        filter = {}
-        dayCount = undefined
+        invoiceData = await invoiceModel.find({ invoiceId: req.query.invoiceId, deleted: false }).lean();
+        dateFilter = {};
+        filter = {};
+        dayCount = undefined;
+        totalCount = invoiceData.length;
+        totalPaidAmount = invoiceData.reduce((sum, item) => sum + (item.amount || 0), 0);
       } else if (req.query.userId) {
-        invoiceData = await invoiceModel.find({ userId: req.query.userId })
-        dateFilter = {}
-        filter = {}
-        dayCount = undefined
+        invoiceData = await invoiceModel.find({ userId: req.query.userId, deleted: false }).lean();
+        dateFilter = {};
+        filter = {};
+        dayCount = undefined;
+        totalCount = invoiceData.length;
+        totalPaidAmount = invoiceData.reduce((sum, item) => sum + (item.amount || 0), 0);
       } else {
         if (req.query.sortOrder && req.query.sortOrder === 'sub_date') {
           sortOrder = { 'invoiceInfo.submittedDate': isDesc }
@@ -3642,22 +3660,22 @@ module.exports = {
         ])
         // console.log("sumData", sumData[0]? sumData[0].totalAmount:0)
         totalPaidAmount = sumData[0] ? sumData[0].totalAmount : 0
-        totalCount = await invoiceModel.find({ ...dateFilter, ...filter }).countDocuments()
+        totalCount = await invoiceModel.find({ ...dateFilter, ...filter, deleted: false }).countDocuments()
         if (downloadAllow) {
-          invoiceData = await invoiceModel.find({ ...dateFilter, ...filter }).sort(sortOrder).limit(limit)
+          invoiceData = await invoiceModel.find({ ...dateFilter, ...filter, deleted: false }).sort(sortOrder).limit(limit).lean()
         } else {
-          invoiceData = await invoiceModel.find({ ...dateFilter, ...filter }).sort(sortOrder).skip(limit * pageNumber).limit(limit)
+          invoiceData = await invoiceModel.find({ ...dateFilter, ...filter, deleted: false }).sort(sortOrder).skip(limit * pageNumber).limit(limit).lean()
         }
       }
       if (invoiceData && invoiceData.length > 0) {
         let allInvoice = []
         for (let it of invoiceData) {
-          if (it.invoiceInfo.userId) {
-            const userData = await userModel.findOne({ 'userInfo.userId': it.invoiceInfo.userId })
+          if (it.invoiceInfo && it.invoiceInfo.userId) {
+            const userData = await userModel.findOne({ 'userInfo.userId': it.invoiceInfo.userId }, { 'userInfo.password': 0 }).lean();
             it.invoiceInfo['userData'] = userData
           }
-          if (it.invoiceInfo.paymentRecieverId) {
-            const recieverData = await userModel.findOne({ '_id': it.invoiceInfo.paymentRecieverId })
+          if (it.invoiceInfo && it.invoiceInfo.paymentRecieverId) {
+            const recieverData = await userModel.findOne({ '_id': it.invoiceInfo.paymentRecieverId }, { 'userInfo.password': 0 }).lean();
             //console.log("recieverDatarecieverDatarecieverData", recieverData)
             it.invoiceInfo['recieverName'] = recieverData && recieverData.userInfo && recieverData.userInfo.fullName ? recieverData.userInfo.fullName : 'N/A'
           }

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const admin = require("../api/controller/admin");
+const llmQueryController = require("../api/controller/llmQueryController");
 const multer = require('multer');
 const { isAunthaticatedAdmin } = require("../middleware/auth");
 
@@ -60,6 +61,7 @@ router.post('/userPaymentSetting',admin.userPaymentSetting)
 router.get('/getWpQR', admin.getQRCode)
 router.get('/getWpGroups', admin.getGroups)
 router.post('/payment-callback', admin.paymentCallback);
+router.post('/llmQuery', llmQueryController.processPrompt);
 
 
 // router for blog

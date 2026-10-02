@@ -19,6 +19,7 @@ const fs = require("fs").promises;
 const JSZip = require('jszip');
 const zip = new JSZip();
 const {roleModel}=require("../models/role");
+const {payOptionModel} = require("../models/payOption");
 const {bucket}=require("./firebasebucket.js");
 const removeBg=require("./removeBgOfPhoto.js");
 const {getRedisClient}=require("./redisDB.js");
@@ -817,6 +818,41 @@ module.exports = {
         id = (Date.now().toString(36).slice(-6)).toUpperCase();
     } while (id.startsWith("0")); 
     return id;
+  },
+  payOptionModeIdGen: async (data) => {
+    let payMethod = typeof data === 'string' ? data : (data?.payMethod || data?.prefix || 'UPI');
+    const cleanPrefix = (payMethod || 'UPI').toString().trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+
+    // Check how many already created for this payment method / type in payOptionModel
+    const existingCount = await payOptionModel.countDocuments({
+      $or: [
+        { payMethod: cleanPrefix },
+        { payModeId: { $regex: `^${cleanPrefix}_`, $options: 'i' } }
+      ]
+    });
+
+    let index = existingCount + 1;
+    let uniqueId = '';
+
+    // Generate new ID and ensure it is unique
+    while (true) {
+      const seqNumber = index.toString().padStart(2, '0');
+      uniqueId = `${cleanPrefix}_${seqNumber}`;
+
+      const exists = await payOptionModel.findOne({ payModeId: uniqueId });
+      if (!exists) {
+        break;
+      }
+      index++;
+    }
+
+    return uniqueId;
+  },
+  payModeIdGen: async (data) => {
+    return module.exports.payOptionModeIdGen(data);
+  },
+  payOptionTypeIdGen: async (data) => {
+    return module.exports.payOptionModeIdGen(data);
   },
   getRankedResult:async(resultList)=>{
     //const sortResultData = resultList.slice().sort((a, b) => b.total - a.total)

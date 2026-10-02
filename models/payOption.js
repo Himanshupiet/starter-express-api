@@ -13,6 +13,10 @@ const payOptionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  payModeId: {
+    type: String,
+    required: true,
+  },
   created: {
     type: Date,
   },

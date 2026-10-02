@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const cron = require('node-cron');
 const app = express();
 const http = require('http');
@@ -34,6 +35,13 @@ let sockInstance = null
 
 app.use(cors());
 app.options("*", cors());
+
+// Serve generated exports as forced file downloads (Content-Disposition: attachment)
+app.use("/exports", express.static(path.join(__dirname, "public/exports"), {
+  setHeaders: (res) => {
+    res.setHeader("Content-Disposition", "attachment");
+  }
+}));
 
 //middleware
 app.use(express.json());
