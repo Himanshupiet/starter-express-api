@@ -391,9 +391,12 @@ INVOICES QUERY RULES:
   { "$or": [{ "invoiceInfo.feeList.month": { "$regex": "^september$", "$options": "i" } }, { "invoiceInfo.month": { "$regex": "^september$", "$options": "i" } }] }
 - For cash only payments:   { "$or": [{ "invoiceInfo.paymentMode": { "$regex": "^cash$", "$options": "i" } }, { "invoiceInfo.payment.payModeId": { "$regex": "^cash$", "$options": "i" } }] }
 - For online only payments: { "$or": [{ "invoiceInfo.paymentMode": "ONLINE" }, { "invoiceInfo.payment.payModeId": { "$ne": "Cash" } }] }
-- For both Cash & Online or breakdowns: DO NOT filter payment mode (retrieve all records for the period so breakdown is complete)
 - For today's collection: filter invoiceInfo.submittedDate >= start of today AND <= end of today
 - For yesterday's collection: filter invoiceInfo.submittedDate >= start of yesterday AND <= end of yesterday
+- For last 1 week / 7 days collection: filter invoiceInfo.submittedDate >= 7 days ago AND <= end of today
+- For this week's collection: filter invoiceInfo.submittedDate >= start of current week AND <= end of today
+- For last N days collection: filter invoiceInfo.submittedDate >= N days ago AND <= end of today
+- For last N months collection: filter invoiceInfo.submittedDate >= N months ago AND <= end of today
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECURITY RULES (MANDATORY)
@@ -472,12 +475,14 @@ USER PROMPT: "${prompt}"`;
     // Detects when user only wants a number/total, not a full list
     // IMPORTANT: "total" alone is ambiguous — exclude financial sum contexts
     const isFinancialTotalContext =
-      /\btotal\s+(online|cash|amount|due|fine|fee|collection|revenue|payment|sum|rupee|rs\.?|inr|income|balance|canara|phonepe|upi|bank|deduction|concession|deposit|credit|debit)\b/i.test(lowerPrompt) ||
+      /\btotal\s+(online|cash|amount|due|fine|fee|collection|revenue|payment|sum|rupee|rs\.?|inr|income|balance|canara|canra|phonepe|upi|bank|deduction|concession|deposit|credit|debit)\b/i.test(lowerPrompt) ||
       /\b(online|cash|amount|revenue|collection|income)\s+total\b/i.test(lowerPrompt) ||
       /\bdivide\b/i.test(lowerPrompt) ||  // "divide by Canara bank" = breakdown, not count
       /\bbreakdown\b/i.test(lowerPrompt) ||
       /\bsplit\b/i.test(lowerPrompt) ||
+      /can[a|r]*ra(\s*ban[k]?)?|canra\s*ban/i.test(lowerPrompt) ||
       lowerPrompt.includes("canara") ||
+      lowerPrompt.includes("canra") ||
       lowerPrompt.includes("phonepe") ||
       lowerPrompt.includes("phone pay") ||
       lowerPrompt.includes("gpay") ||
@@ -746,7 +751,9 @@ USER PROMPT: "${prompt}"`;
         lowerPrompt.includes("transaction") ||
         lowerPrompt.includes("total online") ||
         lowerPrompt.includes("total cash") ||
+        /can[a|r]*ra|canra\s*ban|canra/i.test(lowerPrompt) ||
         lowerPrompt.includes("canara") ||
+        lowerPrompt.includes("canra") ||
         lowerPrompt.includes("phonepe") ||
         lowerPrompt.includes("phone pay") ||
         lowerPrompt.includes("gpay") ||
@@ -759,6 +766,7 @@ USER PROMPT: "${prompt}"`;
           (lowerPrompt.includes("yesterday") ||
             lowerPrompt.includes("today") ||
             lowerPrompt.includes("daily") ||
+            lowerPrompt.includes("week") ||
             lowerPrompt.includes("history") ||
             lowerPrompt.includes("received") ||
             lowerPrompt.includes("collected") ||
@@ -904,7 +912,7 @@ USER PROMPT: "${prompt}"`;
         }
       }
 
-      // Date Range Filters (Yesterday vs Today vs This Month)
+      // Date Range Filters (Yesterday vs Today vs This Week vs Last N Weeks vs This Month vs Last N Months vs Last N Days)
       if (lowerPrompt.includes("yesterday")) {
         const startOfYesterday = moment.tz(timeZone).subtract(1, "days").startOf("day").toDate();
         const endOfYesterday = moment.tz(timeZone).subtract(1, "days").endOf("day").toDate();
@@ -935,6 +943,58 @@ USER PROMPT: "${prompt}"`;
           { "invoiceInfo.submittedDate": { $gte: startOfTodayISO, $lte: endOfTodayISO } },
           { created: { $gte: startOfTodayDate, $lte: endOfTodayDate } },
           { created: { $gte: startOfTodayISO, $lte: endOfTodayISO } }
+        ];
+        if (filter.$or) {
+          filter.$and = filter.$and || [];
+          filter.$and.push({ $or: filter.$or }, { $or: dateOr });
+          delete filter.$or;
+        } else {
+          filter.$or = dateOr;
+        }
+      } else if (lowerPrompt.includes("this week") || lowerPrompt.includes("current week")) {
+        const startOfWeek = moment.tz(timeZone).startOf("isoWeek").startOf("day").toDate();
+        const endOfWeek = moment.tz(timeZone).endOf("day").toDate();
+        const startOfWeekISO = startOfWeek.toISOString();
+        const endOfWeekISO = endOfWeek.toISOString();
+
+        const dateOr = [
+          { "invoiceInfo.submittedDate": { $gte: startOfWeek, $lte: endOfWeek } },
+          { "invoiceInfo.submittedDate": { $gte: startOfWeekISO, $lte: endOfWeekISO } },
+          { created: { $gte: startOfWeek, $lte: endOfWeek } },
+          { created: { $gte: startOfWeekISO, $lte: endOfWeekISO } }
+        ];
+        if (filter.$or) {
+          filter.$and = filter.$and || [];
+          filter.$and.push({ $or: filter.$or }, { $or: dateOr });
+          delete filter.$or;
+        } else {
+          filter.$or = dateOr;
+        }
+      } else if (
+        /(?:last|past|in|for)?\s*(\d{1,2}|one|two|three|four)\s*weeks?/i.test(lowerPrompt) ||
+        lowerPrompt.includes("last week") ||
+        lowerPrompt.includes("past week") ||
+        lowerPrompt.includes("1week") ||
+        /\b1\s*week\b/i.test(lowerPrompt)
+      ) {
+        let nWeeks = 1;
+        const weekNumMatch = lowerPrompt.match(/(?:last|past|in|for)?\s*(\d{1,2}|one|two|three|four)\s*weeks?/i) ||
+                             lowerPrompt.match(/(\d{1,2})\s*weeks?/i);
+        if (weekNumMatch && weekNumMatch[1]) {
+          const numWordMap = { one: 1, two: 2, three: 3, four: 4 };
+          nWeeks = numWordMap[weekNumMatch[1].toLowerCase()] || parseInt(weekNumMatch[1], 10) || 1;
+        }
+        const nDays = nWeeks * 7;
+        const startOfRange = moment.tz(timeZone).subtract(nDays, "days").startOf("day").toDate();
+        const endOfRange = moment.tz(timeZone).endOf("day").toDate();
+        const startOfRangeISO = startOfRange.toISOString();
+        const endOfRangeISO = endOfRange.toISOString();
+
+        const dateOr = [
+          { "invoiceInfo.submittedDate": { $gte: startOfRange, $lte: endOfRange } },
+          { "invoiceInfo.submittedDate": { $gte: startOfRangeISO, $lte: endOfRangeISO } },
+          { created: { $gte: startOfRange, $lte: endOfRange } },
+          { created: { $gte: startOfRangeISO, $lte: endOfRangeISO } }
         ];
         if (filter.$or) {
           filter.$and = filter.$and || [];
@@ -982,8 +1042,11 @@ USER PROMPT: "${prompt}"`;
         } else {
           filter.$or = dateOr;
         }
-      } else if (/(?:last|past)\s*(\d{1,3})\s*days?/i.test(lowerPrompt)) {
-        const nDays = parseInt(lowerPrompt.match(/(?:last|past)\s*(\d{1,3})\s*days?/i)[1], 10);
+      } else if (/(?:last|past|in|for)?\s*(\d{1,3})\s*days?/i.test(lowerPrompt) || /\b(\d{1,3})\s*days?\b/i.test(lowerPrompt) || /\b(\d{1,3})days\b/i.test(lowerPrompt)) {
+        const dayMatch = lowerPrompt.match(/(?:last|past|in|for)?\s*(\d{1,3})\s*days?/i) ||
+                         lowerPrompt.match(/(\d{1,3})\s*days?/i) ||
+                         lowerPrompt.match(/(\d{1,3})days/i);
+        const nDays = dayMatch ? parseInt(dayMatch[1], 10) : 1;
         const startOfRange = moment.tz(timeZone).subtract(nDays, "days").startOf("day").toDate();
         const endOfRange = moment.tz(timeZone).endOf("day").toDate();
         const startOfRangeISO = startOfRange.toISOString();
@@ -1006,7 +1069,7 @@ USER PROMPT: "${prompt}"`;
 
       // Payment Mode Filters (strictly filter only if user asked for JUST cash or JUST online)
       const hasCash = lowerPrompt.includes("cash");
-      const hasOnline = lowerPrompt.includes("online") || lowerPrompt.includes("upi") || lowerPrompt.includes("bank") || lowerPrompt.includes("cheque") || lowerPrompt.includes("canara") || lowerPrompt.includes("phonepe") || lowerPrompt.includes("phone pay") || lowerPrompt.includes("gpay") || lowerPrompt.includes("paytm");
+      const hasOnline = lowerPrompt.includes("online") || lowerPrompt.includes("upi") || lowerPrompt.includes("bank") || lowerPrompt.includes("cheque") || lowerPrompt.includes("canara") || lowerPrompt.includes("canra") || /can[a|r]*ra|canra\s*ban/i.test(lowerPrompt) || lowerPrompt.includes("phonepe") || lowerPrompt.includes("phone pay") || lowerPrompt.includes("gpay") || lowerPrompt.includes("paytm");
 
       let modeOrFilter = null;
       if (hasCash && !hasOnline) {
@@ -1037,9 +1100,8 @@ USER PROMPT: "${prompt}"`;
     } else {
       // Check if prompt contains recognized student/user search criteria
       const isUserIntent =
-        extractedUserId ||
-        extractedClass ||
-        nameQuery ||
+        !!rollMatch ||
+        !!extractedClass ||
         isFollowUpPrompt ||
         lowerPrompt.includes("student") ||
         lowerPrompt.includes("user") ||
@@ -1097,7 +1159,7 @@ USER PROMPT: "${prompt}"`;
       if (!isUserIntent) {
         return {
           isRestrictedModule: true,
-          restrictionMessage: "I didn't understand your request. I am running in offline rule mode with minimal support. Please try asking clearly (e.g. search a student roll/name, class fee dues, or payment collection summaries).",
+          restrictionMessage: "I didn't understand your request. I am a specialized School Management Database Assistant (BMMS). Please ask questions related to student profiles, class fee dues, invoice receipts, or payment collections (e.g. 'Class 5 students', 'today online collection', 'unpaid dues in April').",
           usedLLM: false,
           usedModelName: "offline-rule"
         };
@@ -1288,7 +1350,7 @@ USER PROMPT: "${prompt}"`;
 
         // 2. Check if specific bank / UPI gateways were explicitly mentioned in the user prompt
         const explicitGateways = [
-          { regex: /can[a|r]*ra/i, name: "Canara Bank", icon: "🏛️" },
+          { regex: /can[a|r]*ra|canra\s*ban|canra/i, name: "Canara Bank", icon: "🏛️" },
           { regex: /phone[\s-]?pe|phone[\s-]?pay/i, name: "PhonePe", icon: "📱" },
           { regex: /gpay|google[\s-]?pay/i, name: "Google Pay (GPay)", icon: "📱" },
           { regex: /paytm|pay[\s-]?tm/i, name: "Paytm", icon: "📱" },

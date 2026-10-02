@@ -79,10 +79,17 @@ class MongoMCPConnector {
           const payOptions = await payOptionModel.find({ deleted: false }).lean();
           payOptions.forEach(po => {
             const poId = po._id ? po._id.toString() : "";
+            const modeId = po.payModeId ? po.payModeId.toString() : "";
             const bankName = po.payOptionInfo?.bankName;
             const upiType = po.payOptionInfo?.upiType;
-            const label = bankName || upiType || po.payMethod || "Online";
+            const upiId = po.payOptionInfo?.upiId;
+            const accountNumber = po.payOptionInfo?.accountNumber;
+            const label = bankName
+              ? `${bankName}${accountNumber ? ` (${accountNumber})` : ''}`
+              : (upiType ? `${upiType}${upiId ? ` (${upiId})` : ''}` : po.payMethod || "Online");
+
             if (poId) payOptionMap[poId] = label;
+            if (modeId) payOptionMap[modeId] = label;
             if (label && !configuredOptionLabels.includes(label)) {
               configuredOptionLabels.push(label);
             }
