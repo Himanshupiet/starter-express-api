@@ -36,13 +36,6 @@ let sockInstance = null
 app.use(cors());
 app.options("*", cors());
 
-// Serve generated exports as forced file downloads (Content-Disposition: attachment)
-app.use("/exports", express.static(path.join(__dirname, "public/exports"), {
-  setHeaders: (res) => {
-    res.setHeader("Content-Disposition", "attachment");
-  }
-}));
-
 //middleware
 app.use(express.json());
 app.use(morgan("tiny"));
