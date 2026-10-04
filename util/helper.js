@@ -2,7 +2,6 @@ const fast2sms = require("fast-two-sms");
 const { ocrSpace } = require('ocr-space-api-wrapper');
 const axios = require('axios')
 const uniqid = require("uniqid")
-var CronJob = require('cron').CronJob;
 const moment = require("moment-timezone");
 const todayIndiaDate = moment.tz(Date.now(), "Asia/Kolkata");
 todayIndiaDate.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
@@ -21,7 +20,6 @@ const zip = new JSZip();
 const {roleModel}=require("../models/role");
 const {payOptionModel} = require("../models/payOption");
 const {bucket}=require("./firebasebucket.js");
-const removeBg=require("./removeBgOfPhoto.js");
 const {getRedisClient}=require("./redisDB.js");
 const { counterModel } = require("../models/counter.js");
 const transporter = nodemailer.createTransport({
@@ -632,8 +630,6 @@ module.exports = {
     //const fileName = req.files.image.name
     const file = bucket.file(newFileName);
     try {
-      // if st photo the remove background
-      //const imageData = docType ==='stPhoto' ? await removeBg(req) : req.files.image.data
       const imageData = req.files.image.data
       // Upload file to Firebase Storage
       await file.save(imageData, {
@@ -671,98 +667,6 @@ module.exports = {
     }
   },
 
-
-  // notificationSend : async () => {
- 
-  //     try {
-  //      const client = new OneSignal.Client('1ad13ded-ebe0-4bdc-b8c3-23a02796e880', 'M2YxNDExOGMtNDFhNS00M2MzLTg5NTgtMWM2OTgzNjRmODU5');
-  //      //const response = await client.viewDevices({ limit: 200, offset: 0 });
-  //      //console.log(response.body);
-  //         const notification = {
-  //           contents: {
-  //             'tr': 'Yeni bildirim',
-  //             'en': 'New notification',
-  //           },
-  //           //included_segments: ['Subscribed Users'],
-  //           include_player_ids:[],
-  //           // filters: [
-  //           //   { field: 'tag', key: 'level', relation: '>', value: 10 }
-  //           // ]
-  //         };
-         
-  //         try {
-  //           const response = await client.createNotification(notification);
-  //           console.log("response notify",response);
-  //         } catch (e) {
-  //           if (e instanceof OneSignal.HTTPError) {
-  //             // When status code of HTTP response is not 2xx, HTTPError is thrown.
-  //             console.log(e.statusCode);
-  //             console.log(e.body);
-  //           }
-  //         }
-  //       } catch (e) {
-  //         console.log(e)
-  //           return e;
-  //       }
-    
-  // },
-
-
-  sendDailyBackupEmailCron:async()=>{ 
-    console.log('Before job instantiation');
-    const job = new CronJob('0 */1 * * * *', async function() {
-      // const d = new Date();
-      // console.log('Every Tenth Minute:', d);
-      // let today = new Date(todayIndiaDate);
-      // let dd = String(today.getDate()).padStart(2, '0');
-      // let mm = String(today.getMonth() + 1).padStart(2, '0'); 
-      // let yyyy = today.getFullYear();
-      // today = dd + '/' + mm + '/' + yyyy;
-      const today = moment.tz(new Date(), 'DD/MM/YYYY', 'Asia/Kolkata').format('DD/MM/YYYY');;
-      console.log("todaytoday", today)
-      const userData = await roleModel.find()
-      const userData2 = await roleModel.find()
-      const text= JSON.stringify(userData)
-      const text2= JSON.stringify(userData2)
-  
-      zip.file("user.json", text);
-      zip.file("user2.json", text2);
-      const buffer = await zip.generateAsync({ type: `nodebuffer` })
-  
-      async function main() {
-        const info = await transporter.sendMail({
-          from: `"Daily Backup ${today}"   <info@bmmschool.in>`, // sender address
-          to: "hkc.kumar@gmail.com, bmmsbkg@gmail.com",//"bmmsbkg@gmail.com", // list of receivers
-          subject: `Daily Backup ${today}`, // Subject line
-          text: "Find atachment", // plain text body
-          html: "<b>BM Memorial School</b>", // html body
-          attachments: [
-            {   
-              filename: `Daily_${today}.zip`,
-              content:  buffer
-            },
-          ],
-        });
-        //console.log("hhhhhhhhhhhhhhhhhh",JSON.stringify(info, null, 2))
-        if(info.accepted){
-          console.log("Daily Backup Mail send.")
-  
-        }else{
-          console.log("Daily Backup Mail not send.")
-        }
-      }
-      
-      main().catch(
-        console.error
-        );
-    },
-    null,
-    true,
-    // 'America/Los_Angeles'
-    );
-    console.log('After job instantiation');
-    job.start();
-  },
 
   getAadharNumber:async(imageFile,imageUrl, userId)=>{
   

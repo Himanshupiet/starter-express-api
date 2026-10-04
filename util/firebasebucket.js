@@ -16,8 +16,10 @@ const fireBaseJson={
 
 const serviceAccount = JSON.stringify()
 
+const certHandler = (admin.credential && admin.credential.cert) ? admin.credential.cert : admin.cert;
+
 admin.initializeApp({
-  credential: admin.credential.cert({
+  credential: certHandler({
     "type": "service_account",
     "project_id": process.env.FIRBASE_PROJECT_ID,
     "private_key_id": process.env.FIRBASE_PRIVATE_KEY_ID,
@@ -33,5 +35,11 @@ admin.initializeApp({
   storageBucket: `${process.env.FIRBASE_PROJECT_ID}.appspot.com`
 });
 
-const bucket = admin.storage().bucket();
+let bucket;
+if (typeof admin.storage === 'function') {
+  bucket = admin.storage().bucket();
+} else {
+  const { getStorage } = require("firebase-admin/storage");
+  bucket = getStorage().bucket();
+}
 module.exports = { bucket, fireBaseJson };

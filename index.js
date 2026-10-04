@@ -2,11 +2,6 @@ const express = require("express");
 const path = require("path");
 const cron = require('node-cron');
 const app = express();
-const http = require('http');
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server);
-const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -19,9 +14,6 @@ const { decryptAES } = require("./util/helper");
 const cloudinary = require("cloudinary").v2;
 
 const bcrypt = require("bcryptjs");
-const NodeCache = require("node-cache");
-const myCache = new NodeCache();
-module.exports = myCache;
 const api = process.env.API_URL;
 const PORT = process.env.PORT;
 const mongoUrl = process.env.MONGO_LOCAL_CONN_URL;
@@ -90,14 +82,6 @@ app.use(`${api}/student`, student);
 
 
 
-// Socket.IO setup
-io.on('connection', (socket) => {
-  console.log('a user connected');
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
-  });
-});
-
 //Database
 const connectToMongo = async () => {
   await mongoose
@@ -112,7 +96,7 @@ const connectToMongo = async () => {
     )
     .then(async () => {
       console.log("Connected to MongoDB")
-      server.listen(PORT || 3010, () => {
+      app.listen(PORT || 3010, () => {
         console.log(`server is running http://localhost:${PORT}`);
       });
       if (process.env.REDIS_START && process.env.REDIS_START === 'true') {

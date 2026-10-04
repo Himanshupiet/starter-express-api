@@ -297,7 +297,6 @@ module.exports = {
           if(userData){
               //await whatsAppMessage(sendSMSandEmaildata.phoneNumber,null, 'registration',WSData)
               if(userData.userInfo && userData.userInfo.roleName==='STUDENT'){
-                // myCache.del("AllList")
                 const newPaymentData = paymentModel({
                   userId:userData.userInfo.userId,
                   session: CURRENTSESSION,
