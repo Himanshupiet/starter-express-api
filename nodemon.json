@@ -1,0 +1,17 @@
+{
+  "watch": [
+    "api",
+    "models",
+    "routes",
+    "util",
+    "index.js"
+  ],
+  "ignore": [
+    "node_modules",
+    ".git",
+    "*.log",
+    "build",
+    "dist"
+  ],
+  "ext": "js,json"
+}
