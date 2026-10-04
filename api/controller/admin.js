@@ -1,5 +1,5 @@
 const moment = require("moment-timezone");
-const admin = require('firebase-admin');
+const { bucket } = require("../../util/firebasebucket");
 const multer = require('multer');
 const fast2sms = require("fast-two-sms");
 const mongoose = require("mongoose");
@@ -3960,7 +3960,6 @@ module.exports = {
   },
 
   getAllImages: async (req, res) => {
-    const bucket = admin.storage().bucket();
     try {
       const selectedClass = req.query.selectedClass || undefined
       const allStudentPhoto = await userModel.find({ $and: [activeParam, { 'userInfo.roleName': 'STUDENT' }, { 'document.stPhoto': { $exists: true } }, { 'userInfo.class': selectedClass }] }, { 'document.stPhoto': 1 })
