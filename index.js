@@ -70,7 +70,6 @@ const public = require("./routes/public");
 const role = require("./routes/role");
 const authorize = require("./routes/authorize");
 const admin = require("./routes/admin");
-const user = require("./routes/user");
 const securitylog = require("./routes/secuirtylog");
 const cronJob = require("./routes/cronJob");
 const student = require("./routes/student");
@@ -80,7 +79,6 @@ const { downloadAllImages } = require("./util/dowloadAllfile");
 const { connectRedis } = require("./util/redisDB");
 const { uploadPhotos } = require("./util/uploadMultipleImage");
 const { restoreBackup } = require("./util/restoreDbBakup");
-const { wpInitClient } = require("./util/whatsAppClientInstance");
 
 app.use(`${api}/public`, public);
 app.use(`${api}/role`, role);

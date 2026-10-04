@@ -20,7 +20,6 @@ const {
 
 } = require("../../util/helper");
 const { blogModel } = require("../../models/blog");
-const myCache=require("../..");
 require("dotenv/config");
 const SECRET = process.env.SECRET;
 const activeParam = {$and:[{deleted:false},{isApproved:true}, {isActive:true}]}

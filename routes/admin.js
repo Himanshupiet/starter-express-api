@@ -48,7 +48,6 @@ router.get("/getAllInvoice",  admin.getAllInvoice)
 router.get("/getInvoicesByUserId",  admin.getInvoicesByUserId)
 router.post("/deleteTransaction",  admin.deleteTransaction)
 router.post("/deletePayment",  admin.deletePayment)
-router.post("/initiate-payment", admin.initiatePayment)
 router.post("/sendMessage", admin.sendMessage)
 router.get("/getAllMessage", admin.getAllMessage)
 router.get('/getAllNotes', admin.getAllNotes)
@@ -57,19 +56,15 @@ router.post('/uploadDocFireBase', admin.uploadDocFireBase)
 router.post('/removeDoc', admin.removeDocFireBase)
 router.get('/download-all-images', admin.getAllImages)
 router.post('/resetRedisCache', admin.resetRedisCashe)
-router.post('/userPaymentSetting',admin.userPaymentSetting)
-router.get('/getWpQR', admin.getQRCode)
-router.get('/getWpGroups', admin.getGroups)
-router.post('/payment-callback', admin.paymentCallback);
+router.post('/userPaymentSetting', admin.userPaymentSetting);
 router.post('/llmQuery', llmQueryController.processPrompt);
 
 
 // router for blog
-
-router.post("/addBlogPost",  admin.createBlogPost)
 router.post("/uploadImage",  admin.uploadImage)
-router.post("/deleteBlogPost",  admin.deleteBlogPost)
-router.post("/updateBlogPost",  admin.updateBlogPost)
+// router.post("/addBlogPost",  admin.createBlogPost)
+// router.post("/deleteBlogPost",  admin.deleteBlogPost)
+// router.post("/updateBlogPost",  admin.updateBlogPost)
 
 
 
