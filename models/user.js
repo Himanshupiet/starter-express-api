@@ -208,6 +208,8 @@ userSchema.virtual("id").get(function () {
   return this._id.toHexString();
 });
 
+userSchema.index({ 'userInfo.userId': 1 });
+
 userSchema.set("toJSON", {
   virtuals: true,
 });

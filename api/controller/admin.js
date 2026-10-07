@@ -3628,46 +3628,66 @@ module.exports = {
           sortOrder = { 'created': isDesc }
         }
 
-        const sumData = await invoiceModel.aggregate([
-          {
-            "$match": {
-              ...dateFilter,
-              ...filter,
-              "deleted": false
+        const matchCriteria = { ...dateFilter, ...filter, deleted: false };
+
+        const [sumData, count, pagedInvoices] = await Promise.all([
+          invoiceModel.aggregate([
+            {
+              "$match": matchCriteria
+            },
+            {
+              "$group": {
+                "_id": null,
+                "totalAmount": { "$sum": "$amount" }
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                totalAmount: 1
+              }
             }
-          },
-          {
-            "$group": {
-              "_id": null,
-              "totalAmount": { "$sum": "$amount" }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              totalAmount: 1
-            }
-          }
-        ])
-        // console.log("sumData", sumData[0]? sumData[0].totalAmount:0)
-        totalPaidAmount = sumData[0] ? sumData[0].totalAmount : 0
-        totalCount = await invoiceModel.find({ ...dateFilter, ...filter, deleted: false }).countDocuments()
-        if (downloadAllow) {
-          invoiceData = await invoiceModel.find({ ...dateFilter, ...filter, deleted: false }).sort(sortOrder).limit(limit).lean()
-        } else {
-          invoiceData = await invoiceModel.find({ ...dateFilter, ...filter, deleted: false }).sort(sortOrder).skip(limit * pageNumber).limit(limit).lean()
-        }
+          ]),
+          invoiceModel.countDocuments(matchCriteria),
+          downloadAllow
+            ? invoiceModel.find(matchCriteria).sort(sortOrder).limit(limit).lean()
+            : invoiceModel.find(matchCriteria).sort(sortOrder).skip(limit * pageNumber).limit(limit).lean()
+        ]);
+
+        totalPaidAmount = sumData[0] ? sumData[0].totalAmount : 0;
+        totalCount = count;
+        invoiceData = pagedInvoices;
       }
       if (invoiceData && invoiceData.length > 0) {
+        const userIds = [...new Set(invoiceData.map(it => it.invoiceInfo && it.invoiceInfo.userId).filter(Boolean))];
+        const receiverIds = [...new Set(invoiceData.map(it => it.invoiceInfo && it.invoiceInfo.paymentRecieverId).filter(Boolean))];
+
+        const [usersList, receiversList] = await Promise.all([
+          userIds.length > 0 ? userModel.find({ 'userInfo.userId': { $in: userIds } }, { 'userInfo.password': 0 }).lean() : [],
+          receiverIds.length > 0 ? userModel.find({ '_id': { $in: receiverIds } }, { 'userInfo.password': 0 }).lean() : []
+        ]);
+
+        const userMap = new Map();
+        for (const u of usersList) {
+          if (u.userInfo && u.userInfo.userId) {
+            userMap.set(u.userInfo.userId, u);
+          }
+        }
+
+        const receiverMap = new Map();
+        for (const r of receiversList) {
+          if (r._id) {
+            receiverMap.set(r._id.toString(), r);
+          }
+        }
+
         let allInvoice = []
         for (let it of invoiceData) {
           if (it.invoiceInfo && it.invoiceInfo.userId) {
-            const userData = await userModel.findOne({ 'userInfo.userId': it.invoiceInfo.userId }, { 'userInfo.password': 0 }).lean();
-            it.invoiceInfo['userData'] = userData
+            it.invoiceInfo['userData'] = userMap.get(it.invoiceInfo.userId) || null;
           }
           if (it.invoiceInfo && it.invoiceInfo.paymentRecieverId) {
-            const recieverData = await userModel.findOne({ '_id': it.invoiceInfo.paymentRecieverId }, { 'userInfo.password': 0 }).lean();
-            //console.log("recieverDatarecieverDatarecieverData", recieverData)
+            const recieverData = receiverMap.get(it.invoiceInfo.paymentRecieverId.toString());
             it.invoiceInfo['recieverName'] = recieverData && recieverData.userInfo && recieverData.userInfo.fullName ? recieverData.userInfo.fullName : 'N/A'
           }
           allInvoice.push(it)

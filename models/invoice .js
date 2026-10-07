@@ -56,6 +56,10 @@ invoiceSchema.virtual("id").get(function () {
   return this._id.toHexString();
 });
 
+invoiceSchema.index({ deleted: 1, created: -1 });
+invoiceSchema.index({ deleted: 1, 'invoiceInfo.submittedDate': -1 });
+invoiceSchema.index({ deleted: 1, userId: 1 });
+
 invoiceSchema.set("toJSON", {
   virtuals: true,
 });
